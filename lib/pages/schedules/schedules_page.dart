@@ -12,233 +12,435 @@ class SchedulesPage extends StatefulWidget {
 }
 
 class _SchedulesPageState extends State<SchedulesPage> {
-  bool showFilters = false;
+
   String searchText = "";
+
+  String contentType = "all";
+
+  DateTime? fromDate;
+  DateTime? toDate;
 
   @override
   void initState() {
     super.initState();
-    context.read<ScheduleProvider>().loadSchedules(); // ✅ today → today
+    Future.microtask(() {
+      context.read<ScheduleProvider>().loadSchedules();
+    });
   }
 
-  Future<void> _pickDate(BuildContext context, {required bool isFrom}) async {
-    final provider = context.read<ScheduleProvider>();
+  /// SAFE DATE PARSER
+  DateTime? parseDate(String? value) {
+    if (value == null || value.isEmpty) return null;
 
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2035),
-    );
+    try {
+      return DateTime.parse(value);
+    } catch (_) {
+      return null;
+    }
+  }
 
-    if (picked != null) {
-      final date =
-          "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
+  /// SEARCH MATCH
+  bool matchSearch(String name, List groups) {
 
-      if (!isFrom && date.compareTo(provider.fromDate) < 0) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("To date cannot be before From date")),
-        );
-        return;
+    if (searchText.isEmpty) return true;
+
+    final s = searchText.toLowerCase();
+
+    if (name.toLowerCase().contains(s)) return true;
+
+    for (var g in groups) {
+      if (g.groupName.toLowerCase().contains(s)) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  /// DATE FILTER
+  bool matchDate(List groups) {
+
+    if (fromDate == null && toDate == null) return true;
+
+    for (var g in groups) {
+
+      final start = parseDate(g.fromDate);
+      final end = parseDate(g.toDate);
+
+      if (start == null || end == null) continue;
+
+      if (fromDate != null && start.isBefore(fromDate!)) {
+        return false;
       }
 
-      provider.updateDateRange(
-        isFrom ? date : provider.fromDate,
-        isFrom ? provider.toDate : date,
-      );
+      if (toDate != null && end.isAfter(toDate!)) {
+        return false;
+      }
     }
+
+    return true;
+  }
+
+  /// FILTER UI
+  void openFilter() {
+
+    showModalBottomSheet(
+      context: context,
+      builder: (_) {
+
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+
+            return Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+
+                  const Text(
+                    "Filters",
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  DropdownButtonFormField<String>(
+                    value: contentType,
+                    decoration: const InputDecoration(
+                      labelText: "Content Type",
+                      border: OutlineInputBorder(),
+                    ),
+                    items: const [
+                      DropdownMenuItem(value: "all", child: Text("All")),
+                      DropdownMenuItem(value: "ads", child: Text("Ads")),
+                      DropdownMenuItem(value: "live", child: Text("Live Content")),
+                      DropdownMenuItem(value: "carousel", child: Text("Carousels")),
+                    ],
+                    onChanged: (v) {
+                      setModalState(() {
+                        contentType = v!;
+                      });
+                    },
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  ListTile(
+                    title: Text(
+                      "From: ${fromDate != null ? fromDate!.toLocal().toString().split(" ")[0] : "Select"}",
+                    ),
+                    trailing: const Icon(Icons.date_range),
+                    onTap: () async {
+
+                      final picked = await showDatePicker(
+                        context: context,
+                        firstDate: DateTime(2020),
+                        lastDate: DateTime(2100),
+                        initialDate: DateTime.now(),
+                      );
+
+                      if (picked != null) {
+                        setModalState(() {
+                          fromDate = picked;
+                        });
+                      }
+                    },
+                  ),
+
+                  ListTile(
+                    title: Text(
+                      "To: ${toDate != null ? toDate!.toLocal().toString().split(" ")[0] : "Select"}",
+                    ),
+                    trailing: const Icon(Icons.date_range),
+                    onTap: () async {
+
+                      final picked = await showDatePicker(
+                        context: context,
+                        firstDate: DateTime(2020),
+                        lastDate: DateTime(2100),
+                        initialDate: DateTime.now(),
+                      );
+
+                      if (picked != null) {
+                        setModalState(() {
+                          toDate = picked;
+                        });
+                      }
+                    },
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  Row(
+                    children: [
+
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () {
+
+                            setState(() {
+                              contentType = "all";
+                              fromDate = null;
+                              toDate = null;
+                            });
+
+                            Navigator.pop(context);
+                          },
+                          child: const Text("Clear"),
+                        ),
+                      ),
+
+                      const SizedBox(width: 10),
+
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            setState(() {});
+                            Navigator.pop(context);
+                          },
+                          child: const Text("Apply"),
+                        ),
+                      ),
+                    ],
+                  )
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  /// CARD UI
+  Widget buildCard({
+    required String title,
+    required int duration,
+    required List groups,
+    required dynamic data,
+  }) {
+
+    final totalGroups = groups.length;
+
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+
+      child: ExpansionTile(
+        title: Row(
+          children: [
+
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ),
+
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.blue.shade100,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                "$totalGroups groups",
+                style: const TextStyle(fontSize: 12),
+              ),
+            ),
+
+            IconButton(
+              icon: const Icon(Icons.delete, color: Colors.red),
+              onPressed: () {
+
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => DeleteSchedulePage(schedule: data),
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+
+        subtitle: Text("Duration: ${duration}s"),
+
+        children: groups.map<Widget>((g) {
+
+          return ListTile(
+            title: Text(g.groupName),
+            subtitle: Text("${g.fromDate} → ${g.toDate}"),
+            trailing: Text(g.completedPercentage),
+          );
+
+        }).toList(),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+
     final provider = context.watch<ScheduleProvider>();
 
-    // 🔍 Filter schedules by search text
-    final filteredSchedules = provider.schedules.where((schedule) {
-      final adMatch = schedule.adName.toLowerCase().contains(
-        searchText.toLowerCase(),
-      );
-      final groupMatch = schedule.groups.any(
-        (g) => g.groupName.toLowerCase().contains(searchText.toLowerCase()),
-      );
-      return adMatch || groupMatch;
-    }).toList();
+    var ads = provider.ads
+        .where((a) => matchSearch(a.adName, a.groups))
+        .where((a) => matchDate(a.groups))
+        .toList();
+
+    var liveContents = provider.liveContents
+        .where((l) => matchSearch(l.contentName, l.groups))
+        .where((l) => matchDate(l.groups))
+        .toList();
+
+    var carousels = provider.carousels
+        .where((c) => matchSearch(c.carouselName, c.groups))
+        .where((c) => matchDate(c.groups))
+        .toList();
 
     return Scaffold(
+
       appBar: AppBar(
         title: const Text("Schedules"),
         actions: [
-          // 🔍 FILTER TOGGLE
-          IconButton(
-            icon: Icon(
-              Icons.filter_list,
-              color: showFilters ? Colors.blue : null,
-            ),
-            tooltip: "Filters",
-            onPressed: () {
-              setState(() => showFilters = !showFilters);
-            },
-          ),
 
-          // ➕ CREATE
           IconButton(
             icon: const Icon(Icons.add),
-            tooltip: "Create Schedule",
             onPressed: () {
+
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => const CreateSchedulePage()),
+                MaterialPageRoute(
+                  builder: (_) => const CreateSchedulePage(),
+                ),
               );
             },
           ),
         ],
       ),
+
       body: Column(
         children: [
-          // 🔹 SEARCH BOX
+
+          /// SEARCH + FILTER
           Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: TextField(
-              decoration: InputDecoration(
-                hintText: "Search by ad or group...",
-                prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              onChanged: (v) => setState(() => searchText = v),
-            ),
-          ),
+            padding: const EdgeInsets.all(12),
 
-          // 🎛 FILTERS (HIDE / SHOW)
-          AnimatedCrossFade(
-            duration: const Duration(milliseconds: 250),
-            crossFadeState: showFilters
-                ? CrossFadeState.showFirst
-                : CrossFadeState.showSecond,
-            firstChild: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          icon: const Icon(Icons.date_range),
-                          label: Text("From: ${provider.fromDate}"),
-                          onPressed: () => _pickDate(context, isFrom: true),
-                        ),
+            child: Row(
+              children: [
+
+                Expanded(
+                  child: TextField(
+                    decoration: InputDecoration(
+                      hintText: "Search schedules...",
+                      prefixIcon: const Icon(Icons.search),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
                       ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          icon: const Icon(Icons.date_range),
-                          label: Text("To: ${provider.toDate}"),
-                          onPressed: () => _pickDate(context, isFrom: false),
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 8),
-
-                  // 🧹 CLEAR FILTERS
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton.icon(
-                      icon: const Icon(Icons.clear),
-                      label: const Text("Clear Filters"),
-                      onPressed: provider.resetDateRange,
                     ),
+
+                    onChanged: (v) {
+
+                      Future.microtask(() {
+
+                        setState(() {
+                          searchText = v;
+                        });
+
+                      });
+                    },
                   ),
-                ],
-              ),
+                ),
+
+                const SizedBox(width: 10),
+
+                IconButton(
+                  icon: const Icon(Icons.filter_list),
+                  onPressed: openFilter,
+                ),
+              ],
             ),
-            secondChild: const SizedBox(),
           ),
 
-          const Divider(),
-
-          // 📋 LIST
           Expanded(
+
             child: provider.loading
                 ? const Center(child: CircularProgressIndicator())
-                : filteredSchedules.isEmpty
-                ? const Center(child: Text("No schedules found"))
+
                 : RefreshIndicator(
                     onRefresh: provider.loadSchedules,
-                    child: ListView.builder(
-                      itemCount: filteredSchedules.length,
-                      itemBuilder: (_, i) {
-                        final ad = filteredSchedules[i];
-                        final totalGroups = ad.groups.length;
 
-                        return Card(
-                          margin: const EdgeInsets.all(10),
-                          child: ExpansionTile(
-                            title: Row(
-                              children: [
-                                Expanded(child: Text(ad.adName)),
+                    child: ListView(
+                      children: [
 
-                                const SizedBox(width: 8),
-
-                                // 🔹 Badge with tooltip showing total groups
-                                Tooltip(
-                                  message: ad.groups
-                                      .map((g) => g.groupName)
-                                      .join(", "),
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 4,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: Colors.blue.shade100,
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Text(
-                                      "$totalGroups group${totalGroups > 1 ? 's' : ''}",
-                                      style: const TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-
-                                const SizedBox(width: 8),
-
-                                // 🔹 Delete icon
-                                IconButton(
-                                  icon: const Icon(
-                                    Icons.delete,
-                                    color: Colors.red,
-                                  ),
-                                  tooltip: "Delete Schedule",
-                                  onPressed: () {
-                                    // Navigate to delete page
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) =>
-                                            DeleteSchedulePage(schedule: ad),
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ],
+                        if ((contentType == "all" || contentType == "ads") &&
+                            ads.isNotEmpty)
+                          const Padding(
+                            padding: EdgeInsets.all(12),
+                            child: Text(
+                              "Ads",
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
-                            subtitle: Text("Duration: ${ad.adDuration}s"),
-                            children: ad.groups.map((g) {
-                              return ListTile(
-                                title: Text(g.groupName),
-                                subtitle: Text("${g.fromDate} → ${g.toDate}"),
-                                trailing: Text(g.completedPercentage),
-                              );
-                            }).toList(),
                           ),
-                        );
-                      },
+
+                        if (contentType == "all" || contentType == "ads")
+                          ...ads.map((ad) => buildCard(
+                                title: ad.adName,
+                                duration: ad.adDuration,
+                                groups: ad.groups,
+                                data: ad,
+                              )),
+
+                        if ((contentType == "all" || contentType == "live") &&
+                            liveContents.isNotEmpty)
+                          const Padding(
+                            padding: EdgeInsets.all(12),
+                            child: Text(
+                              "Live Content",
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+
+                        if (contentType == "all" || contentType == "live")
+                          ...liveContents.map((live) => buildCard(
+                                title: live.contentName,
+                                duration: live.contentDuration,
+                                groups: live.groups,
+                                data: live,
+                              )),
+
+                        if ((contentType == "all" ||
+                                contentType == "carousel") &&
+                            carousels.isNotEmpty)
+                          const Padding(
+                            padding: EdgeInsets.all(12),
+                            child: Text(
+                              "Carousels",
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+
+                        if (contentType == "all" ||
+                            contentType == "carousel")
+                          ...carousels.map((carousel) => buildCard(
+                                title: carousel.carouselName,
+                                duration: carousel.carouselDuration,
+                                groups: carousel.groups,
+                                data: carousel,
+                              )),
+                      ],
                     ),
                   ),
           ),

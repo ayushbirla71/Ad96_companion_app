@@ -3,15 +3,21 @@ import '../models/schedule.dart';
 import '../services/schedule_service.dart';
 
 class ScheduleProvider extends ChangeNotifier {
-  List<ScheduleAd> schedules = [];
+
+  /// DATA
+  List<ScheduleAd> ads = [];
+  List<ScheduleAd> liveContents = [];
+  List<ScheduleAd> carousels = [];
+ 
+
   bool loading = false;
   String? error;
 
-  // 🔹 Default dates (used for reset)
+  /// DEFAULT DATE
   final String defaultFromDate = _today();
   final String defaultToDate = _today();
 
-  // 🔹 Active filters
+  /// ACTIVE FILTER
   late String fromDate = defaultFromDate;
   late String toDate = defaultToDate;
 
@@ -20,19 +26,34 @@ class ScheduleProvider extends ChangeNotifier {
     return "${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}";
   }
 
-  // 📥 Load schedules
+  /// LOAD SCHEDULES
   Future<void> loadSchedules() async {
     loading = true;
     error = null;
     notifyListeners();
 
     try {
-      final data = await ScheduleService.fetchSchedules(
+
+      final response = await ScheduleService.fetchSchedules(
         fromDate: fromDate,
         toDate: toDate,
       );
 
-      schedules = data.map((e) => ScheduleAd.fromJson(e)).toList();
+      /// ADS
+      ads = (response["ads"] ?? [])
+          .map<ScheduleAd>((e) => ScheduleAd.fromJson(e))
+          .toList();
+
+      /// LIVE CONTENT
+      liveContents = (response["live_contents"] ?? [])
+          .map<ScheduleAd>((e) => ScheduleAd.fromJson(e))
+          .toList();
+
+      /// CAROUSELS
+      carousels = (response["carousels"] ?? [])
+          .map<ScheduleAd>((e) => ScheduleAd.fromJson(e))
+          .toList();
+
     } catch (e) {
       error = e.toString();
     }
@@ -41,17 +62,18 @@ class ScheduleProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // 📅 Update date filter
+  /// UPDATE DATE RANGE
   void updateDateRange(String from, String to) {
     fromDate = from;
     toDate = to;
     loadSchedules();
   }
 
-  // 🧹 Clear date filters (Devices-style)
+  /// RESET FILTER
   void resetDateRange() {
     fromDate = defaultFromDate;
     toDate = defaultToDate;
     loadSchedules();
   }
+
 }

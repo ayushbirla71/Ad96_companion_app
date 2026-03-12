@@ -2,7 +2,7 @@ import 'dart:convert';
 import '../services/api_service.dart';
 
 class ScheduleService {
-  static Future<List<dynamic>> fetchSchedules({
+  static Future<Map<String, dynamic>> fetchSchedules({
     required String fromDate,
     required String toDate,
   }) async {
@@ -12,7 +12,7 @@ class ScheduleService {
 
     if (response.statusCode == 200) {
       final body = jsonDecode(response.body);
-      return body["ads"] ?? [];
+      return body;
     } else {
       throw Exception("Failed to load schedules");
     }

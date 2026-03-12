@@ -13,12 +13,14 @@ class DevicesPage extends StatefulWidget {
 }
 
 class _DevicesPageState extends State<DevicesPage> {
-  bool showFilters = false;
 
   @override
   void initState() {
     super.initState();
-    _loadData();
+
+    Future.microtask(() {
+      _loadData();
+    });
   }
 
   void _loadData() {
@@ -26,30 +28,152 @@ class _DevicesPageState extends State<DevicesPage> {
     context.read<GroupProvider>().loadGroups();
   }
 
+  /// FILTER UI
+  void openFilter() {
+
+    final deviceProvider = context.read<DeviceProvider>();
+    final groupProvider = context.read<GroupProvider>();
+
+    showModalBottomSheet(
+      context: context,
+      builder: (_) {
+
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+
+            return Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+
+                  const Text(
+                    "Filters",
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  /// STATUS
+                  DropdownButtonFormField<String>(
+                    value: deviceProvider.statusFilter,
+                    decoration: const InputDecoration(
+                      labelText: "Status",
+                      border: OutlineInputBorder(),
+                    ),
+                    items: const [
+                      DropdownMenuItem(value: "all", child: Text("All")),
+                      DropdownMenuItem(value: "online", child: Text("Online")),
+                      DropdownMenuItem(value: "offline", child: Text("Offline")),
+                      DropdownMenuItem(value: "active", child: Text("Active")),
+                    ],
+                    onChanged: (v) {
+                      setModalState(() {
+                        deviceProvider.setStatusFilter(v!);
+                      });
+                    },
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  /// GROUP
+                  DropdownButtonFormField<String>(
+                    value: deviceProvider.groupFilter,
+                    decoration: const InputDecoration(
+                      labelText: "Group",
+                      border: OutlineInputBorder(),
+                    ),
+                    items: [
+                      const DropdownMenuItem(
+                        value: "all",
+                        child: Text("All Groups"),
+                      ),
+                      ...groupProvider.groups.map(
+                        (g) => DropdownMenuItem(
+                          value: g.id,
+                          child: Text(g.name),
+                        ),
+                      ),
+                    ],
+                    onChanged: (v) {
+                      setModalState(() {
+                        deviceProvider.setGroupFilter(v!);
+                      });
+                    },
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  Row(
+                    children: [
+
+                      /// CLEAR
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () {
+
+                            deviceProvider.clearFilters();
+
+                            Navigator.pop(context);
+                          },
+                          child: const Text("Clear"),
+                        ),
+                      ),
+
+                      const SizedBox(width: 10),
+
+                      /// APPLY
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            setState(() {});
+                            Navigator.pop(context);
+                          },
+                          child: const Text("Apply"),
+                        ),
+                      ),
+                    ],
+                  )
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+
     final deviceProvider = context.watch<DeviceProvider>();
-    final groupProvider = context.watch<GroupProvider>();
 
     return Scaffold(
       appBar: AppBar(
         title: const Text("Devices"),
         actions: [
-          // 🔄 REFRESH
+
+          /// REFRESH
           IconButton(
             tooltip: "Refresh",
             icon: const Icon(Icons.refresh),
             onPressed: _loadData,
           ),
 
-          // ➕ ADD DEVICE
+          /// ADD DEVICE
           IconButton(
             icon: const Icon(Icons.add),
             tooltip: "Add Device",
             onPressed: () {
+
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => const AddDeviceStep1Page()),
+                MaterialPageRoute(
+                  builder: (_) => const AddDeviceStep1Page(),
+                ),
               );
             },
           ),
@@ -58,101 +182,49 @@ class _DevicesPageState extends State<DevicesPage> {
 
       body: Column(
         children: [
-          // 🔍 SEARCH + FILTER TOGGLE
+
+          /// SEARCH + FILTER
           Padding(
-            padding: const EdgeInsets.all(10),
+            padding: const EdgeInsets.all(12),
+
             child: Row(
               children: [
+
                 Expanded(
                   child: TextField(
                     decoration: InputDecoration(
                       hintText: "Search device...",
                       prefixIcon: const Icon(Icons.search),
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(10),
                       ),
                     ),
-                    onChanged: deviceProvider.setSearch,
+
+                    onChanged: (v) {
+
+                      Future.microtask(() {
+                        deviceProvider.setSearch(v);
+                      });
+
+                    },
                   ),
                 ),
-                const SizedBox(width: 8),
+
+                const SizedBox(width: 10),
+
                 IconButton(
-                  tooltip: "Filters",
-                  icon: Icon(
-                    Icons.filter_list,
-                    color: showFilters ? Colors.blue : null,
-                  ),
-                  onPressed: () {
-                    setState(() => showFilters = !showFilters);
-                  },
+                  icon: const Icon(Icons.filter_list),
+                  onPressed: openFilter,
                 ),
               ],
             ),
           ),
 
-          // 🎛 FILTERS + CLEAR BUTTON
-          AnimatedCrossFade(
-            duration: const Duration(milliseconds: 250),
-            crossFadeState: showFilters
-                ? CrossFadeState.showFirst
-                : CrossFadeState.showSecond,
-            firstChild: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10),
-              child: Column(
-                children: [
-                  DropdownButtonFormField<String>(
-                    value: deviceProvider.statusFilter,
-                    decoration: const InputDecoration(labelText: "Status"),
-                    items: const [
-                      DropdownMenuItem(value: "all", child: Text("All")),
-                      DropdownMenuItem(value: "online", child: Text("Online")),
-                      DropdownMenuItem(value: "offline", child: Text("Offline")),
-                      DropdownMenuItem(value: "active", child: Text("Active")),
-                    ],
-                    onChanged: (v) => deviceProvider.setStatusFilter(v!),
-                  ),
-                  const SizedBox(height: 8),
-                  DropdownButtonFormField<String>(
-                    value: deviceProvider.groupFilter,
-                    decoration: const InputDecoration(labelText: "Group"),
-                    items: [
-                      const DropdownMenuItem(
-                        value: "all",
-                        child: Text("All Groups"),
-                      ),
-                      ...groupProvider.groups.map(
-                        (g) =>
-                            DropdownMenuItem(value: g.id, child: Text(g.name)),
-                      ),
-                    ],
-                    onChanged: (v) => deviceProvider.setGroupFilter(v!),
-                  ),
-
-                  const SizedBox(height: 8),
-
-                  // 🧹 CLEAR FILTERS
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton.icon(
-                      icon: const Icon(Icons.clear),
-                      label: const Text("Clear Filters"),
-                      onPressed: () {
-                        deviceProvider.clearFilters();
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            secondChild: const SizedBox(),
-          ),
-
-          const SizedBox(height: 8),
-
-          // 📺 DEVICE LIST
+          /// DEVICE LIST
           Expanded(
             child: Builder(
               builder: (_) {
+
                 if (deviceProvider.loading) {
                   return const Center(child: CircularProgressIndicator());
                 }
@@ -167,24 +239,49 @@ class _DevicesPageState extends State<DevicesPage> {
 
                 return RefreshIndicator(
                   onRefresh: () async => _loadData(),
+
                   child: ListView.builder(
                     itemCount: deviceProvider.filteredDevices.length,
+
                     itemBuilder: (_, i) {
+
                       final d = deviceProvider.filteredDevices[i];
+
                       final isOnline =
                           d.status == "online" || d.status == "active";
 
                       return Card(
-                        margin: const EdgeInsets.all(10),
+                        margin: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+
                         child: ListTile(
-                          leading: Icon(
-                            Icons.tv,
-                            color: isOnline ? Colors.green : Colors.red,
+
+                          leading: CircleAvatar(
+                            backgroundColor:
+                                isOnline ? Colors.green : Colors.red,
+                            child: const Icon(
+                              Icons.tv,
+                              color: Colors.white,
+                            ),
                           ),
-                          title: Text(d.deviceName),
-                          subtitle: Text("${d.groupName} • ${d.status}"),
+
+                          title: Text(
+                            d.deviceName,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+
+                          subtitle: Text(
+                            "${d.groupName} • ${d.status}",
+                          ),
+
                           trailing: const Icon(Icons.chevron_right),
+
                           onTap: () {
+
                             Navigator.push(
                               context,
                               MaterialPageRoute(

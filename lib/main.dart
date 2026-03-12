@@ -1,3 +1,5 @@
+import 'package:cms_app/providers/channel_provider.dart';
+import 'package:cms_app/providers/live_content_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'app/app.dart';
@@ -16,6 +18,8 @@ void main() {
         ChangeNotifierProvider(create: (_) => AdProvider()), 
         ChangeNotifierProvider(create: (_) => ScheduleProvider()),
         ChangeNotifierProvider(create: (_) => GroupProvider()),
+         ChangeNotifierProvider(create: (_) => LiveContentProvider()),
+         ChangeNotifierProvider(create: (_) => ChannelProvider()),
 
       ],
       child: const MyApp(),

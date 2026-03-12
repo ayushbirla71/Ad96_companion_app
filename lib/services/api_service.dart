@@ -7,6 +7,16 @@ import '../utils/token_storage.dart';
 import 'package:path/path.dart'; // for basename
 
 class ApiService {
+
+    static Future<Map<String, String>> _headers({bool json = false}) async {
+    final token = await TokenStorage.getToken();
+
+    return {
+      if (json) "Content-Type": "application/json",
+      if (token != null) "Authorization": "Bearer $token",
+    };
+    }
+    
   static Future<http.Response> post(
     String endpoint,
     Map<String, dynamic> body,
@@ -78,5 +88,14 @@ class ApiService {
       body: jsonEncode(body),
     );
   }
+
+   static Future<http.Response> delete(String endpoint) async {
+
+    return http.delete(
+      Uri.parse(ApiConstants.baseUrl + endpoint),
+      headers: await _headers(),
+    );
+  }
+
 
 }
