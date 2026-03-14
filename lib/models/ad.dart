@@ -14,7 +14,7 @@ class Ad {
     required this.duration,
     required this.status,
   });
-
+  String get id => adId;
   factory Ad.fromJson(Map<String, dynamic> json) {
     return Ad(
       adId: json['ad_id'],

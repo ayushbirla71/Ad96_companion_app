@@ -1,3 +1,4 @@
+import 'package:cms_app/pages/carousel/carousels_page.dart';
 import 'package:cms_app/pages/channel/channel_list_page.dart';
 import 'package:cms_app/pages/liveContent/live_content_page.dart';
 import 'package:flutter/material.dart';
@@ -198,14 +199,20 @@ final schedules =
                         ),
 
                         _QuickAction(
-                          icon: Icons.cloud_upload,
-                          label: "Upload",
-                          onTap: () => navigate(const ChannelListPage()),
+                          icon: Icons.analytics,
+                          label: "Reports",
+                         onTap: () => navigate(const CarouselPage()),
                         ),
 
                         _QuickAction(
                           icon: Icons.live_tv,
                           label: "Live",
+                          onTap: () => navigate(const ChannelListPage()),
+                        ),
+
+                        _QuickAction(
+                          icon: Icons.live_tv,
+                          label: "Live Content",
                           onTap: () => navigate(const LiveContentPage()),
                         ),
 

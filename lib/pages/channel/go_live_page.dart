@@ -18,7 +18,6 @@ class GoLivePage extends StatefulWidget {
 class _GoLivePageState extends State<GoLivePage> {
   CameraController? controller;
   List<CameraDescription> cameras = [];
-
   bool isStreaming = false;
   bool isLoading = true;
 
@@ -31,7 +30,6 @@ class _GoLivePageState extends State<GoLivePage> {
   Future<void> initCamera() async {
     try {
       cameras = await availableCameras();
-
       if (cameras.isNotEmpty) {
         controller = CameraController(
           cameras.first,
@@ -39,7 +37,6 @@ class _GoLivePageState extends State<GoLivePage> {
           enableAudio: true,
           androidUseOpenGL: true,
         );
-
         await controller!.initialize();
       }
     } catch (e) {
@@ -55,10 +52,8 @@ class _GoLivePageState extends State<GoLivePage> {
 
   Future<void> startStream() async {
     if (controller == null) return;
-
     try {
       await controller!.startVideoStreaming(widget.rtmpUrl);
-
       setState(() {
         isStreaming = true;
       });
@@ -69,10 +64,8 @@ class _GoLivePageState extends State<GoLivePage> {
 
   Future<void> stopStream() async {
     if (controller == null) return;
-
     try {
       await controller!.stopVideoStreaming();
-
       setState(() {
         isStreaming = false;
       });
@@ -85,10 +78,12 @@ class _GoLivePageState extends State<GoLivePage> {
     if (cameras.length < 2 || controller == null) return;
 
     final currentCamera = controller!.description;
+    final newCamera = cameras.firstWhere((c) => c != currentCamera);
 
-    final newCamera = cameras.firstWhere(
-      (camera) => camera != currentCamera,
-    );
+    final wasStreaming = isStreaming;
+    if (wasStreaming) {
+      await stopStream(); // stop current stream before switching
+    }
 
     await controller!.dispose();
 
@@ -98,10 +93,13 @@ class _GoLivePageState extends State<GoLivePage> {
       enableAudio: true,
       androidUseOpenGL: true,
     );
-
     await controller!.initialize();
 
     if (mounted) setState(() {});
+
+    if (wasStreaming) {
+      await startStream(); // restart streaming with new camera
+    }
   }
 
   @override
@@ -112,7 +110,6 @@ class _GoLivePageState extends State<GoLivePage> {
 
   Widget liveBadge() {
     if (!isStreaming) return const SizedBox();
-
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
@@ -149,36 +146,24 @@ class _GoLivePageState extends State<GoLivePage> {
       ),
       body: Column(
         children: [
-
-          /// CAMERA PREVIEW
-          Expanded(
-            child: CameraPreview(controller!),
-          ),
-
+          Expanded(child: CameraPreview(controller!)),
           const SizedBox(height: 20),
-
-          /// CONTROLS
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-
               /// SWITCH CAMERA
               IconButton(
                 icon: const Icon(Icons.cameraswitch),
                 iconSize: 36,
                 onPressed: switchCamera,
               ),
-
               const SizedBox(width: 30),
 
               /// GO LIVE BUTTON
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: isStreaming ? Colors.red : Colors.green,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 30,
-                    vertical: 15,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
                 ),
                 onPressed: isStreaming ? stopStream : startStream,
                 child: Text(
@@ -188,7 +173,6 @@ class _GoLivePageState extends State<GoLivePage> {
               ),
             ],
           ),
-
           const SizedBox(height: 30)
         ],
       ),

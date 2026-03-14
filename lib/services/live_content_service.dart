@@ -1,52 +1,71 @@
 import 'dart:convert';
 import 'package:cms_app/services/api_service.dart';
-import 'package:http/http.dart' as http;
 import '../models/liveContent.dart';
 
 class LiveContentService {
-
+  /// FETCH ALL CONTENTS
   Future<List<LiveContent>> fetchLiveContents() async {
+    final response = await ApiService.get("/live-content/all");
 
-    final response = await ApiService.get(
-      "/live-content/all");
+    print("api callllll");
 
-      print("api callllll");
-
-       if (response.statusCode == 200) {
+    if (response.statusCode == 200) {
       final body = jsonDecode(response.body);
-      print("bodya groupq >>>>>>>>>>>> $body");
-      // return body["data"] ?? [];
-            List data = body["data"] ?? [];
 
-      /// Convert JSON → Model
+      print("body >>>>>>>>>>>> $body");
+
+      List data = body["data"] ?? [];
+
       return data.map((e) => LiveContent.fromJson(e)).toList();
     } else {
-      throw Exception("Failed to load groups");
+      throw Exception("Failed to load live contents");
     }
-}
+  }
 
-Future<void> createLiveContent({
-  required String name,
-  required String url,
-  required int duration,
-  required String type,
-  required String status,
-}) async {
-
-  final response = await ApiService.post(
-    "/live-content/create",
-    {
+  /// CREATE CONTENT
+  Future<LiveContent> createLiveContent({
+    required String name,
+    required String url,
+    required int duration,
+    required String type,
+    required String status,
+    String? channelId,
+    DateTime? startTime,
+    DateTime? endTime,
+    bool autoplay = false,
+    bool mute = false,
+    bool loop = false,
+  }) async {
+    final response = await ApiService.post("/live-content/create", {
       "name": name,
       "url": url,
       "duration": duration,
-      "type": type,
+      "content_type": type,
       "status": status,
-    },
-  );
+      "channel_id": channelId,
+      "start_time": startTime?.toIso8601String(),
+      "end_time": endTime?.toIso8601String(),
+      "config": {"autoplay": autoplay, "mute": mute, "loop": loop},
+    });
 
-  if (response.statusCode != 200) {
-    throw Exception("Failed to create live content");
+    if (response.statusCode == 200 ||  response.statusCode == 201 ) {
+      final body = jsonDecode(response.body);
+
+      final data = body["data"];
+
+      return LiveContent.fromJson(data);
+    } else {
+      print("errrrrrrrrrrrrrrrror  ${response.body}");
+      throw Exception("Failed to create live content");
+    }
+  }
+
+  /// DELETE CONTENT
+  Future<void> deleteLiveContent(String id) async {
+    final response = await ApiService.delete("/live-content/$id");
+
+    if (response.statusCode != 200) {
+      throw Exception("Failed to delete content");
+    }
   }
 }
-}
-

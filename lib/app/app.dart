@@ -49,11 +49,13 @@
 // }
 
 
+import 'package:cms_app/utils/app_navigator.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../pages/login/login_page.dart';
 import '../pages/home/home_page.dart';
+
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -61,6 +63,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+       navigatorKey: AppNavigator.navigatorKey,
       debugShowCheckedModeBanner: false,
       home: Consumer<AuthProvider>(
         builder: (_, auth, __) {

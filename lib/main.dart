@@ -1,3 +1,4 @@
+import 'package:cms_app/providers/carousel_provider.dart';
 import 'package:cms_app/providers/channel_provider.dart';
 import 'package:cms_app/providers/live_content_provider.dart';
 import 'package:flutter/material.dart';
@@ -20,6 +21,7 @@ void main() {
         ChangeNotifierProvider(create: (_) => GroupProvider()),
          ChangeNotifierProvider(create: (_) => LiveContentProvider()),
          ChangeNotifierProvider(create: (_) => ChannelProvider()),
+          ChangeNotifierProvider(create: (_) => CarouselProvider()),
 
       ],
       child: const MyApp(),

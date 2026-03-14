@@ -3,11 +3,13 @@ import '../models/liveContent.dart';
 import '../services/live_content_service.dart';
 
 class LiveContentProvider extends ChangeNotifier {
-
   final LiveContentService _service = LiveContentService();
 
   List<LiveContent> _contents = [];
   List<LiveContent> get contents => _contents;
+
+  /// alias
+  List<LiveContent> get liveContents => _contents;
 
   bool _loading = false;
   bool get loading => _loading;
@@ -16,63 +18,136 @@ class LiveContentProvider extends ChangeNotifier {
   String _statusFilter = "All";
   String _typeFilter = "All";
 
-  List<LiveContent> get filteredContents {
+  String get search => _search;
+  String get statusFilter => _statusFilter;
+  String get typeFilter => _typeFilter;
 
+  /// FILTERED LIST
+  List<LiveContent> get filteredContents {
     List<LiveContent> list = List.from(_contents);
 
-    /// SEARCH
-    if (_search.isNotEmpty) {
-      list = list.where((e) =>
-          e.name.toLowerCase().contains(_search.toLowerCase())
-      ).toList();
+    if (_search.trim().isNotEmpty) {
+      list = list
+          .where((e) => e.name.toLowerCase().contains(_search.toLowerCase()))
+          .toList();
     }
 
-    /// STATUS FILTER
     if (_statusFilter != "All") {
-      list = list.where((e) =>
-          e.status.toLowerCase() == _statusFilter.toLowerCase()
-      ).toList();
+      list = list
+          .where((e) => e.status.toLowerCase() == _statusFilter.toLowerCase())
+          .toList();
     }
 
-    /// TYPE FILTER
     if (_typeFilter != "All") {
-      list = list.where((e) =>
-          e.type.toLowerCase() == _typeFilter.toLowerCase()
-      ).toList();
+      list = list
+          .where((e) => e.type.toLowerCase() == _typeFilter.toLowerCase())
+          .toList();
     }
 
     return list;
   }
 
+  /// FETCH CONTENTS
   Future<void> fetchContents() async {
-
-    _loading = true;
-    notifyListeners();
-
     try {
+      _loading = true;
+      notifyListeners();
 
-      _contents = await _service.fetchLiveContents();
+      final data = await _service.fetchLiveContents();
 
+      _contents = data;
     } catch (e) {
-      debugPrint("Live content error: $e");
+      debugPrint("Live content fetch error: $e");
+    } finally {
+      _loading = false;
+      notifyListeners();
     }
-
-    _loading = false;
-    notifyListeners();
   }
 
+  /// ALIAS
+  Future<void> loadLiveContents() async {
+    await fetchContents();
+  }
+
+  /// CREATE CONTENT (NEW)
+  Future<void> createContent({
+    required String name,
+    required String url,
+    required int duration,
+    required String type,
+    required String status,
+    String? channelId,
+    DateTime? startTime,
+    DateTime? endTime,
+    bool autoplay = false,
+    bool mute = false,
+    bool loop = false,
+  }) async {
+    try {
+      _loading = true;
+      notifyListeners();
+
+      final content = await _service.createLiveContent(
+        name: name,
+        url: url,
+        duration: duration,
+        type: type,
+        status: status,
+        startTime: startTime,
+        endTime: endTime,
+        autoplay: autoplay,
+         channelId: channelId,
+        mute: mute,
+        loop: loop,
+      );
+
+      /// Add new content to list
+      _contents.insert(0, content);
+    } catch (e) {
+      debugPrint("Create live content error: $e");
+    } finally {
+      _loading = false;
+      notifyListeners();
+    }
+  }
+
+  /// SEARCH
   void setSearch(String value) {
     _search = value;
     notifyListeners();
   }
 
+  /// STATUS FILTER
   void setStatusFilter(String value) {
     _statusFilter = value;
     notifyListeners();
   }
 
+  /// TYPE FILTER
   void setTypeFilter(String value) {
     _typeFilter = value;
     notifyListeners();
+  }
+
+  /// RESET FILTERS
+  void resetFilters() {
+    _search = "";
+    _statusFilter = "All";
+    _typeFilter = "All";
+
+    notifyListeners();
+  }
+
+  /// DELETE CONTENT
+  Future<void> deleteContent(String id) async {
+    try {
+      await _service.deleteLiveContent(id);
+
+      _contents.removeWhere((e) => e.id == id);
+
+      notifyListeners();
+    } catch (e) {
+      debugPrint("Delete content error: $e");
+    }
   }
 }

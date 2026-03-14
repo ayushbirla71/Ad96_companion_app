@@ -76,7 +76,7 @@ class _ChannelListPageState extends State<ChannelListPage> {
                             context,
                             MaterialPageRoute(
                               builder: (_) =>
-                                  ChannelDetailsPage(channel: channel),
+                                  ChannelDetailsPage(channelId: channel.channelId),
                             ),
                           );
                         },

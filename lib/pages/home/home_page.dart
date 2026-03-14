@@ -1,3 +1,7 @@
+import 'package:cms_app/pages/ads/ad_create_page.dart';
+import 'package:cms_app/pages/channel/create_channel_page.dart';
+import 'package:cms_app/pages/devices/add_device_step1.dart';
+import 'package:cms_app/pages/schedules/create_schedule_page.dart';
 import 'package:flutter/material.dart';
 import '../ads/ads_page.dart';
 import '../devices/devices_page.dart';
@@ -23,6 +27,11 @@ class _HomePageState extends State<HomePage> {
     GroupsPage(),
     SchedulesPage(),
     SettingsPage(),
+    AddAdPage(),
+    AddDeviceStep1Page(),
+    CreateChannelPage(),
+    CreateSchedulePage()
+    
   ];
 
   void changeTab(int i) {
@@ -31,33 +40,47 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  void onPlusPressed() {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
-        return Padding(
-          padding: const EdgeInsets.all(20),
-          child: Wrap(
-            spacing: 20,
-            runSpacing: 20,
-            children: [
-              _quickAction(Icons.campaign, "New Ad"),
-              _quickAction(Icons.tv, "Add Device"),
-              _quickAction(Icons.group, "Create Group"),
-              _quickAction(Icons.schedule, "New Schedule"),
-            ],
-          ),
-        );
-      },
-    );
-  }
+ void onPlusPressed() {
+  showModalBottomSheet(
+    context: context,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    ),
+    builder: (context) {
+      return Padding(
+        padding: const EdgeInsets.all(20),
+        child: Wrap(
+          spacing: 20,
+          runSpacing: 20,
+          children: [
+            _quickAction(Icons.campaign, "New Ad", () {
+              Navigator.pop(context); // close bottom sheet
+              changeTab(6); // go to AdsPage
+            }),
+            _quickAction(Icons.tv, "Add Device", () {
+              Navigator.pop(context);
+              changeTab(7); // go to DevicesPage
+            }),
+            _quickAction(Icons.live_tv, "Create Live Channel", () {
+              Navigator.pop(context);
+              changeTab(8); // go to GroupsPage
+            }),
+            _quickAction(Icons.schedule, "New Schedule", () {
+              Navigator.pop(context);
+              changeTab(9); // go to SchedulesPage
+            }),
+          ],
+        ),
+      );
+    },
+  );
+}
 
-  Widget _quickAction(IconData icon, String label) {
-    return SizedBox(
-      width: 100,
+Widget _quickAction(IconData icon, String label, VoidCallback onTap) {
+  return SizedBox(
+    width: 100,
+    child: InkWell(
+      onTap: onTap, // use the callback here
       child: Column(
         children: [
           CircleAvatar(
@@ -69,8 +92,9 @@ class _HomePageState extends State<HomePage> {
           Text(label, textAlign: TextAlign.center),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   @override
   Widget build(BuildContext context) {

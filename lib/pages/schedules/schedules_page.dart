@@ -435,7 +435,7 @@ class _SchedulesPageState extends State<SchedulesPage> {
                         if (contentType == "all" ||
                             contentType == "carousel")
                           ...carousels.map((carousel) => buildCard(
-                                title: carousel.carouselName,
+                                title: carousel.contentName,
                                 duration: carousel.carouselDuration,
                                 groups: carousel.groups,
                                 data: carousel,
