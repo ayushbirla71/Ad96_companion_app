@@ -13,7 +13,6 @@ class CarouselPage extends StatefulWidget {
 }
 
 class _CarouselPageState extends State<CarouselPage> {
-
   @override
   void initState() {
     super.initState();
@@ -31,7 +30,6 @@ class _CarouselPageState extends State<CarouselPage> {
 
   @override
   Widget build(BuildContext context) {
-
     final provider = context.watch<CarouselProvider>();
 
     return Scaffold(
@@ -43,18 +41,15 @@ class _CarouselPageState extends State<CarouselPage> {
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (_) => const CreateCarouselPage(),
-                ),
+                MaterialPageRoute(builder: (_) => const CreateCarouselPage()),
               );
             },
-          )
+          ),
         ],
       ),
 
       body: Column(
         children: [
-
           /// SEARCH
           Padding(
             padding: const EdgeInsets.all(12),
@@ -73,44 +68,41 @@ class _CarouselPageState extends State<CarouselPage> {
                 : ListView.builder(
                     itemCount: provider.filteredCarousels.length,
                     itemBuilder: (_, i) {
-
                       final c = provider.filteredCarousels[i];
 
                       return Card(
                         margin: const EdgeInsets.all(10),
 
                         child: ListTile(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    CarouselDetailsPage(id: c.carouselId),
+                              ),
+                            );
+                          },
 
                           title: Text(c.name),
 
                           subtitle: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-
                               Text("Items: ${c.items.length}"),
-
                               Text(
                                 "Duration: ${formatDuration(c.totalDuration)}",
                               ),
-
-                              Text("Status: ${c.status}")
+                              Text("Status: ${c.status}"),
                             ],
                           ),
 
                           trailing: PopupMenuButton(
-
                             itemBuilder: (_) => [
-
-                              const PopupMenuItem(
-                                value: "edit",
-                                child: Text("Edit"),
-                              ),
-
                               const PopupMenuItem(
                                 value: "toggle",
                                 child: Text("Toggle Status"),
                               ),
-
                               const PopupMenuItem(
                                 value: "delete",
                                 child: Text("Delete"),
@@ -118,25 +110,10 @@ class _CarouselPageState extends State<CarouselPage> {
                             ],
 
                             onSelected: (v) async {
-
-                              if (v == "edit") {
-
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) =>
-                                        CarouselDetailsPage(id: c.carouselId),
-                                  ),
-                                );
-
-                              } else if (v == "toggle") {
-
+                              if (v == "toggle") {
                                 await provider.toggleStatus(c);
-
                               } else if (v == "delete") {
-
                                 await provider.deleteCarousel(c.carouselId);
-
                               }
                             },
                           ),
@@ -144,7 +121,7 @@ class _CarouselPageState extends State<CarouselPage> {
                       );
                     },
                   ),
-          )
+          ),
         ],
       ),
     );

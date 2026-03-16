@@ -45,27 +45,25 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   void navigate(Widget page) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => page),
-    );
+    Navigator.push(context, MaterialPageRoute(builder: (_) => page));
   }
 
   @override
   Widget build(BuildContext context) {
     final ads = context.watch<AdProvider>().ads.length;
-    final activeAds = context.watch<AdProvider>()
+    final activeAds = context
+        .watch<AdProvider>()
         .ads
         .where((ad) => ad.status == "completed")
         .length;
 
     final devices = context.watch<DeviceProvider>().devices.length;
-   final provider = context.watch<ScheduleProvider>();
+    final provider = context.watch<ScheduleProvider>();
 
-final schedules =
-    provider.ads.length +
-    provider.liveContents.length +
-    provider.carousels.length;
+    final schedules =
+        provider.ads.length +
+        provider.liveContents.length +
+        provider.carousels.length;
 
     return Scaffold(
       appBar: AppBar(
@@ -74,10 +72,8 @@ final schedules =
         actions: const [
           Padding(
             padding: EdgeInsets.only(right: 10),
-            child: CircleAvatar(
-              child: Icon(Icons.person),
-            ),
-          )
+            child: CircleAvatar(child: Icon(Icons.person)),
+          ),
         ],
       ),
       body: loading
@@ -90,12 +86,13 @@ final schedules =
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-
                     /// Greeting
                     const Text(
                       "Welcome Back 👋",
-                      style:
-                          TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
 
                     const SizedBox(height: 4),
@@ -156,8 +153,10 @@ final schedules =
                     /// Quick Actions
                     const Text(
                       "Quick Actions",
-                      style:
-                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
 
                     const SizedBox(height: 12),
@@ -167,7 +166,6 @@ final schedules =
                       physics: const NeverScrollableScrollPhysics(),
                       crossAxisCount: 4,
                       children: [
-
                         _QuickAction(
                           icon: Icons.campaign,
                           label: "Ads",
@@ -181,37 +179,37 @@ final schedules =
                         ),
 
                         _QuickAction(
-                          icon: Icons.group,
+                          icon: Icons.group_work,
                           label: "Groups",
                           onTap: () => navigate(const GroupsPage()),
                         ),
 
                         _QuickAction(
-                          icon: Icons.schedule,
+                          icon: Icons.event_note,
                           label: "Schedule",
                           onTap: () => navigate(const SchedulesPage()),
                         ),
 
                         _QuickAction(
-                          icon: Icons.analytics,
+                          icon: Icons.bar_chart,
                           label: "Reports",
                           onTap: () {},
                         ),
 
                         _QuickAction(
-                          icon: Icons.analytics,
-                          label: "Reports",
-                         onTap: () => navigate(const CarouselPage()),
+                          icon: Icons.view_carousel,
+                          label: "Carousels",
+                          onTap: () => navigate(const CarouselPage()),
                         ),
 
                         _QuickAction(
                           icon: Icons.live_tv,
-                          label: "Live",
+                          label: "Channels",
                           onTap: () => navigate(const ChannelListPage()),
                         ),
 
                         _QuickAction(
-                          icon: Icons.live_tv,
+                          icon: Icons.stream,
                           label: "Live Content",
                           onTap: () => navigate(const LiveContentPage()),
                         ),
@@ -242,7 +240,7 @@ final schedules =
                               "Tip: Keep your devices online to ensure ads run smoothly.",
                               style: TextStyle(fontSize: 14),
                             ),
-                          )
+                          ),
                         ],
                       ),
                     ),
@@ -277,10 +275,7 @@ class _QuickAction extends StatelessWidget {
             child: Icon(icon, color: Colors.indigo),
           ),
           const SizedBox(height: 6),
-          Text(
-            label,
-            style: const TextStyle(fontSize: 12),
-          )
+          Text(label, style: const TextStyle(fontSize: 12)),
         ],
       ),
     );

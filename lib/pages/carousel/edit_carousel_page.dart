@@ -1,19 +1,21 @@
-
 import 'dart:io';
-import 'package:cms_app/models/carousel.dart';
-import 'package:cms_app/providers/carousel_provider.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:provider/provider.dart';
 
-class CreateCarouselPage extends StatefulWidget {
-  const CreateCarouselPage({super.key});
+import '../../models/carousel.dart';
+import '../../providers/carousel_provider.dart';
+
+class EditCarouselPage extends StatefulWidget {
+  final String id;
+
+  const EditCarouselPage({super.key, required this.id});
 
   @override
-  State<CreateCarouselPage> createState() => _CreateCarouselPageState();
+  State<EditCarouselPage> createState() => _EditCarouselPageState();
 }
 
-class _CreateCarouselPageState extends State<CreateCarouselPage> {
+class _EditCarouselPageState extends State<EditCarouselPage> {
 
   final nameController = TextEditingController();
 
@@ -26,27 +28,27 @@ class _CreateCarouselPageState extends State<CreateCarouselPage> {
   @override
   void initState() {
     super.initState();
-    loadAds();
+    loadData();
   }
 
-  /// LOAD ADS
-  Future<void> loadAds() async {
-    try {
-      final provider = context.read<CarouselProvider>();
-      final ads = await provider.fetchAds();
+  /// LOAD CAROUSEL + ADS
+  Future<void> loadData() async {
 
-      print("adssssssssssssssssssssss ${ads}");
+    final provider = context.read<CarouselProvider>();
 
-      setState(() {
-        availableAds = ads;
-        loadingAds = false;
-      });
+    final carousel = provider.carousels.firstWhere(
+      (c) => c.carouselId == widget.id,
+    );
 
-    } catch (e) {
-      setState(() {
-        loadingAds = false;
-      });
-    }
+    nameController.text = carousel.name;
+
+    final ads = await provider.fetchAds();
+
+    setState(() {
+      items = List.from(carousel.items);
+      availableAds = ads;
+      loadingAds = false;
+    });
   }
 
   /// ADD EXISTING AD
@@ -55,7 +57,6 @@ class _CreateCarouselPageState extends State<CreateCarouselPage> {
     final ad = availableAds.firstWhere((a) => a["ad_id"] == adId);
 
     setState(() {
-
       items.add(
         CarouselItem(
           id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -73,7 +74,6 @@ class _CreateCarouselPageState extends State<CreateCarouselPage> {
   void addNewAd() {
 
     setState(() {
-
       items.add(
         CarouselItem(
           id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -98,17 +98,15 @@ class _CreateCarouselPageState extends State<CreateCarouselPage> {
     final index = items.indexWhere((e) => e.id == id);
 
     setState(() {
-
       items[index] = items[index].copyWith(
         name: name ?? items[index].name,
         duration: duration ?? items[index].duration,
         fileUrl: fileUrl ?? items[index].fileUrl,
       );
-
     });
   }
 
-  /// FILE PICKER
+  /// UPLOAD FILE
   Future<void> uploadFile(String itemId) async {
 
     final result = await FilePicker.platform.pickFiles();
@@ -128,32 +126,17 @@ class _CreateCarouselPageState extends State<CreateCarouselPage> {
     return items.fold(0, (sum, e) => sum + (e.duration ?? 0));
   }
 
-  /// CREATE CAROUSEL
-  Future<void> create() async {
+  /// SAVE
+  Future<void> save() async {
 
-    if (nameController.text.trim().isEmpty) {
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Carousel name required")),
-      );
-
-      return;
-    }
-
-    if (items.isEmpty) {
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Add at least one ad")),
-      );
-
-      return;
-    }
+    if (nameController.text.trim().isEmpty) return;
 
     setState(() => loading = true);
 
     final provider = context.read<CarouselProvider>();
 
-    final success = await provider.createCarousel(
+    await provider.updateCarousel(
+      carouselId: widget.id,
       name: nameController.text,
       items: items,
     );
@@ -162,13 +145,7 @@ class _CreateCarouselPageState extends State<CreateCarouselPage> {
 
     if (!mounted) return;
 
-    if (success) Navigator.pop(context);
-  }
-
-  @override
-  void dispose() {
-    nameController.dispose();
-    super.dispose();
+    Navigator.pop(context);
   }
 
   @override
@@ -183,20 +160,14 @@ class _CreateCarouselPageState extends State<CreateCarouselPage> {
     return Scaffold(
 
       appBar: AppBar(
-        title: const Text("Create Carousel"),
+        title: const Text("Edit Carousel"),
         actions: [
-
           IconButton(
-            onPressed: loading ? null : create,
+            onPressed: loading ? null : save,
             icon: loading
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
+                ? const CircularProgressIndicator()
                 : const Icon(Icons.save),
           )
-
         ],
       ),
 
@@ -206,120 +177,66 @@ class _CreateCarouselPageState extends State<CreateCarouselPage> {
         child: Column(
           children: [
 
-            /// CAROUSEL INFO
-            Card(
-              elevation: 2,
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-
-                    const Text(
-                      "Carousel Info",
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-
-                    const SizedBox(height: 12),
-
-                    TextField(
-                      controller: nameController,
-                      decoration: const InputDecoration(
-                        labelText: "Carousel Name",
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                  ],
-                ),
+            /// CAROUSEL NAME
+            TextField(
+              controller: nameController,
+              decoration: const InputDecoration(
+                labelText: "Carousel Name",
+                border: OutlineInputBorder(),
               ),
             ),
 
             const SizedBox(height: 20),
 
-            /// ADD ADS SECTION
-            Card(
-              elevation: 2,
+            /// ADD BUTTONS
+           Wrap(
+  spacing: 10,
+  runSpacing: 10,
+  crossAxisAlignment: WrapCrossAlignment.center,
+  children: [
 
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-
-                child: Row(
-                  children: [
-
-                    /// SELECT EXISTING AD
-                    Expanded(
-                      child: DropdownButtonFormField<String>(
-                        isExpanded: true, 
-
-                        hint: const Text("Select Existing Ad"),
-
-                        decoration: const InputDecoration(
-                          border: OutlineInputBorder(),
-                        ),
-
-                        items: availableAds
-                            .map<DropdownMenuItem<String>>((ad) {
-
-                          return DropdownMenuItem<String>(
-                            value: ad["ad_id"].toString(),
-                            child: Text(ad["name"]),
-                          );
-
-                        }).toList(),
-
-                        onChanged: (value) {
-                          if (value != null) addExistingAd(value);
-                        },
-                      ),
-                    ),
-
-                    const SizedBox(width: 10),
-
-                    /// UPLOAD NEW AD
-                    ElevatedButton.icon(
-
-                      onPressed: addNewAd,
-
-                      icon: const Icon(Icons.upload),
-
-                      label: const Text("Upload Ad"),
-
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 16,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+    /// SELECT EXISTING AD
+    SizedBox(
+      width: 250,
+      child: DropdownButtonFormField<String>(
+        isExpanded: true,
+        hint: const Text("Select Existing Ad"),
+        decoration: const InputDecoration(
+          border: OutlineInputBorder(),
+        ),
+        items: availableAds.map<DropdownMenuItem<String>>((ad) {
+          return DropdownMenuItem<String>(
+            value: ad["ad_id"].toString(),
+            child: Text(
+              ad["name"],
+              overflow: TextOverflow.ellipsis,
             ),
+          );
+        }).toList(),
+        onChanged: (value) {
+          if (value != null) {
+            addExistingAd(value);
+          }
+        },
+      ),
+    ),
+
+    /// UPLOAD BUTTON
+    ElevatedButton.icon(
+      onPressed: addNewAd,
+      icon: const Icon(Icons.upload),
+      label: const Text("Upload New Ad"),
+    ),
+
+    /// ITEMS COUNT
+    Text(
+      "Items: ${items.length}",
+      style: const TextStyle(fontWeight: FontWeight.bold),
+    ),
+  ],
+),
 
             const SizedBox(height: 20),
-
-            /// ITEMS HEADER
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-
-                const Text(
-                  "Carousel Items",
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-
-                Text("Total: ${items.length}"),
-              ],
-            ),
-
-            const SizedBox(height: 10),
 
             /// ITEMS LIST
             Expanded(
@@ -344,11 +261,9 @@ class _CreateCarouselPageState extends State<CreateCarouselPage> {
 
                   return Card(
                     key: ValueKey(item.id),
-                    elevation: 2,
-                    margin: const EdgeInsets.symmetric(vertical: 6),
 
                     child: Padding(
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.all(12),
 
                       child: item.isNew
                           ? buildNewAdItem(item)
@@ -359,30 +274,26 @@ class _CreateCarouselPageState extends State<CreateCarouselPage> {
               ),
             ),
 
-            const SizedBox(height: 10),
-
             /// SUMMARY
-            Card(
-              color: Colors.grey.shade100,
+            Container(
+              padding: const EdgeInsets.all(16),
 
-              child: Padding(
-                padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(10),
+              ),
 
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
 
-                    Text(
-                      "Items: ${items.length}",
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
+                  Text("Items: ${items.length}"),
 
-                    Text(
-                      "Duration: ${totalDuration ~/ 60}m ${totalDuration % 60}s",
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                  ],
-                ),
+                  Text(
+                    "Duration: ${totalDuration ~/ 60}m ${totalDuration % 60}s",
+                  ),
+
+                ],
               ),
             )
           ],
@@ -406,27 +317,20 @@ class _CreateCarouselPageState extends State<CreateCarouselPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
 
-              Text(
-                item.name ?? "",
-                style: const TextStyle(fontSize: 16),
-              ),
+              Text(item.name ?? "", style: const TextStyle(fontSize: 16)),
 
               Text("Duration: ${item.duration}s"),
+
             ],
           ),
         ),
 
         SizedBox(
           width: 80,
-
           child: TextField(
             keyboardType: TextInputType.number,
-
-            controller:
-                TextEditingController(text: item.duration.toString()),
-
+            controller: TextEditingController(text: item.duration.toString()),
             decoration: const InputDecoration(labelText: "Sec"),
-
             onChanged: (v) {
               updateItem(item.id, duration: int.tryParse(v) ?? 0);
             },
@@ -467,11 +371,9 @@ class _CreateCarouselPageState extends State<CreateCarouselPage> {
 
             SizedBox(
               width: 80,
-
               child: TextField(
                 keyboardType: TextInputType.number,
                 decoration: const InputDecoration(labelText: "Sec"),
-
                 onChanged: (v) {
                   updateItem(item.id, duration: int.tryParse(v) ?? 0);
                 },
@@ -503,6 +405,7 @@ class _CreateCarouselPageState extends State<CreateCarouselPage> {
                 "File uploaded",
                 style: TextStyle(color: Colors.green),
               ),
+
           ],
         ),
       ],

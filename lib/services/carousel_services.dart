@@ -55,11 +55,13 @@ class CarouselService {
 
     final response = await ApiService.get("/ads/all");
 
+    print("adssssss. resp.  ${response.body}");
+
     if (response.statusCode == 200) {
 
       final body = jsonDecode(response.body);
 
-      return body["data"] ?? [];
+      return body["ads"] ?? [];
 
     }
 

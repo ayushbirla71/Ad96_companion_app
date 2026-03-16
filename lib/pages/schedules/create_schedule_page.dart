@@ -43,17 +43,16 @@ class _CreateSchedulePageState extends State<CreateSchedulePage> {
     {"start": "18:00", "end": "22:00"},
   ];
 
-
-String getContentTypeValue() {
-  switch (selectedContentType) {
-    case ContentType.live:
-      return "live_content";
-    case ContentType.ad:
-      return "ad";
-    case ContentType.carousel:
-      return "carousel";
+  String getContentTypeValue() {
+    switch (selectedContentType) {
+      case ContentType.live:
+        return "live_content";
+      case ContentType.ad:
+        return "ad";
+      case ContentType.carousel:
+        return "carousel";
+    }
   }
-}
 
   final List<String> weekdayNames = [
     "Sun",
@@ -309,6 +308,78 @@ String getContentTypeValue() {
                                 .toList(),
                           ),
                   ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            /// SCHEDULE DURATION
+            _cardSection(
+              "Schedule Duration",
+              Column(
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: RadioListTile(
+                          title: const Text("Single Day"),
+                          value: ScheduleType.single,
+                          groupValue: scheduleType,
+                          onChanged: (v) {
+                            setState(() => scheduleType = v!);
+                          },
+                        ),
+                      ),
+                      Expanded(
+                        child: RadioListTile(
+                          title: const Text("Multiple Days"),
+                          value: ScheduleType.multiple,
+                          groupValue: scheduleType,
+                          onChanged: (v) {
+                            setState(() => scheduleType = v!);
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  /// SINGLE DATE
+                  if (scheduleType == ScheduleType.single)
+                    _dateButton("Date: $singleDate", () async {
+                      final d = await _pickDate(context);
+                      if (d != null) {
+                        setState(() => singleDate = d);
+                      }
+                    }),
+
+                  /// MULTIPLE DATE
+                  if (scheduleType == ScheduleType.multiple)
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _dateButton("From: $fromDate", () async {
+                            final d = await _pickDate(context);
+                            if (d != null) {
+                              setState(() => fromDate = d);
+                            }
+                          }),
+                        ),
+
+                        const SizedBox(width: 10),
+
+                        Expanded(
+                          child: _dateButton("To: $toDate", () async {
+                            final d = await _pickDate(context);
+                            if (d != null) {
+                              setState(() => toDate = d);
+                            }
+                          }),
+                        ),
+                      ],
+                    ),
                 ],
               ),
             ),
