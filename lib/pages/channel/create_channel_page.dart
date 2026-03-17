@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
+import '../../providers/channel_provider.dart';
 
 class CreateChannelPage extends StatefulWidget {
   const CreateChannelPage({super.key});
@@ -10,68 +10,99 @@ class CreateChannelPage extends StatefulWidget {
 }
 
 class _CreateChannelPageState extends State<CreateChannelPage> {
-
   final TextEditingController nameController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
 
   bool loading = false;
 
-  Future createChannel() async {
+  Future<void> createChannel() async {
+  if (!_formKey.currentState!.validate()) return;
 
-    setState(() {
-      loading = true;
-    });
+  setState(() {
+    loading = true;
+  });
 
-    final res = await http.post(
-      Uri.parse("https://stg-cms.ad96.in/api/streaming/channel"),
-      headers: {"Content-Type": "application/json"},
-      body: jsonEncode({
-        "name": nameController.text
-      }),
+  try {
+    await context
+        .read<ChannelProvider>()
+        .createChannel(nameController.text.trim());
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Channel created successfully")),
     );
 
+    Navigator.pop(context);
+
+  } catch (e) {
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(e.toString()),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+
+  if (mounted) {
     setState(() {
       loading = false;
     });
-
-    Navigator.pop(context);
+  }
+}
+  @override
+  void dispose() {
+    nameController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
-
       appBar: AppBar(
         title: const Text("Create Channel"),
       ),
-
       body: Padding(
-
         padding: const EdgeInsets.all(20),
-
-        child: Column(
-
-          children: [
-
-            TextField(
-              controller: nameController,
-              decoration: const InputDecoration(
-                labelText: "Channel Name",
+        child: Form(
+          key: _formKey,
+          child: Column(
+            children: [
+              /// CHANNEL NAME FIELD
+              TextFormField(
+                controller: nameController,
+                decoration: const InputDecoration(
+                  labelText: "Channel Name",
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return "Channel name is required";
+                  }
+                  return null;
+                },
               ),
-            ),
 
-            const SizedBox(height: 30),
+              const SizedBox(height: 30),
 
-            loading
-                ? const CircularProgressIndicator()
-
-                : ElevatedButton(
-
-                    onPressed: createChannel,
-
-                    child: const Text("Create Channel"),
-                  )
-          ],
+              /// CREATE BUTTON
+              SizedBox(
+                width: double.infinity,
+                child: loading
+                    ? const Center(child: CircularProgressIndicator())
+                    : ElevatedButton(
+                        onPressed: createChannel,
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                        ),
+                        child: const Text("Create Channel"),
+                      ),
+              ),
+            ],
+          ),
         ),
       ),
     );

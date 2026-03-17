@@ -39,7 +39,18 @@ class ChannelService {
     });
 
     if (response.statusCode != 200 && response.statusCode != 201) {
-      throw Exception("Channel creation failed: ${response.body}");
+      try {
+        final body = jsonDecode(response.body);
+
+        final message =
+            body["error"]?["details"] ??
+            body["message"] ??
+            "Channel creation failed";
+
+        throw Exception(message);
+      } catch (e) {
+        throw Exception("Channel creation failed");
+      }
     }
   }
 
@@ -52,7 +63,7 @@ class ChannelService {
     }
   }
 
-    static Future<void> startChannel(String id) async {
+  static Future<void> startChannel(String id) async {
     final response = await ApiService.put(
       "/streaming/channel/$id/start", // endpoint for starting the channel
       {}, // any body if needed
