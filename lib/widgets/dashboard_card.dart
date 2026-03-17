@@ -4,7 +4,7 @@ class DashboardCard extends StatelessWidget {
   final String title;
   final String value;
   final IconData icon;
-  final Gradient? gradient; // Add this optional parameter
+  final Gradient? gradient;
 
   const DashboardCard(
     this.title,
@@ -18,35 +18,40 @@ class DashboardCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        gradient: gradient ??
-            LinearGradient(colors: [Colors.blue.shade200, Colors.blue.shade400]),
+        gradient:
+            gradient ??
+            LinearGradient(
+              colors: [Colors.blue.shade200, Colors.blue.shade400],
+            ),
         borderRadius: BorderRadius.circular(12),
         boxShadow: const [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 6,
-            offset: Offset(0, 3),
-          )
+          BoxShadow(color: Colors.black12, blurRadius: 6, offset: Offset(0, 3)),
         ],
       ),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 40, color: Colors.white),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
+          Flexible(child: Icon(icon, size: 36, color: Colors.white)),
+          const SizedBox(height: 6),
+          Flexible(
+            child: FittedBox(
+              child: Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 26,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
             ),
           ),
           const SizedBox(height: 4),
-          Text(
-            title,
-            style: const TextStyle(color: Colors.white70),
+          Flexible(
+            child: FittedBox(
+              child: Text(title, style: const TextStyle(color: Colors.white70)),
+            ),
           ),
         ],
       ),

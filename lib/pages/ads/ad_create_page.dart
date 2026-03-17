@@ -29,7 +29,6 @@
 //   );
 // }
 
-
 //   Future<void> pickFile() async {
 //     final res = await FilePicker.platform.pickFiles(
 //       type: FileType.custom,
@@ -93,7 +92,6 @@
 //   }
 // }
 
-
 //   @override
 //   Widget build(BuildContext context) {
 //     return Scaffold(
@@ -148,18 +146,6 @@
 //   }
 // }
 
-
-
-
-
-
-
-
-
-
-
-
-
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -184,6 +170,7 @@ class _AddAdPageState extends State<AddAdPage> {
   String? _fileType;
   int progress = 0;
   String status = "";
+  int? selectedImageDuration;
 
   bool isAdmin = false;
   bool loadingClients = false;
@@ -232,9 +219,9 @@ class _AddAdPageState extends State<AddAdPage> {
   /* ================= HELPERS ================= */
 
   void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   /* ================= FILE PICKER ================= */
@@ -280,7 +267,10 @@ class _AddAdPageState extends State<AddAdPage> {
         "name": _nameCtrl.text,
         "file_url": uploadedFileName,
         "type": _fileType,
-        "duration": isImage ? int.parse(_durationCtrl.text) : 0,
+        // "duration": isImage ? int.parse(_durationCtrl.text) : 0,
+        "duration": isImage
+            ? selectedImageDuration
+            : int.tryParse(_durationCtrl.text) ?? 0,
         "isMultipartUpload": false,
       };
 
@@ -320,7 +310,6 @@ class _AddAdPageState extends State<AddAdPage> {
         padding: const EdgeInsets.all(16),
         child: ListView(
           children: [
-
             /* ===== ADMIN CLIENT SELECT ===== */
             if (isAdmin) ...[
               const Text(
@@ -370,14 +359,37 @@ class _AddAdPageState extends State<AddAdPage> {
             ],
 
             /* ===== IMAGE DURATION ===== */
+            // if (isImage)
+            //   TextField(
+            //     controller: _durationCtrl,
+            //     keyboardType: TextInputType.number,
+            //     decoration:
+            //         const InputDecoration(labelText: "Duration (seconds)"),
+            //   ),
+
+            /* ===== IMAGE / VIDEO DURATION ===== */
             if (isImage)
+              DropdownButtonFormField<int>(
+                value: selectedImageDuration,
+                decoration: const InputDecoration(labelText: "Image Duration"),
+                items: const [
+                  DropdownMenuItem(value: 10, child: Text("10 seconds")),
+                  DropdownMenuItem(value: 20, child: Text("20 seconds")),
+                ],
+                onChanged: (val) {
+                  setState(() {
+                    selectedImageDuration = val;
+                  });
+                },
+              )
+            else if (_file != null)
               TextField(
                 controller: _durationCtrl,
                 keyboardType: TextInputType.number,
-                decoration:
-                    const InputDecoration(labelText: "Duration (seconds)"),
+                decoration: const InputDecoration(
+                  labelText: "Duration (seconds)",
+                ),
               ),
-
             const SizedBox(height: 20),
 
             /* ===== UPLOAD PROGRESS ===== */
@@ -390,10 +402,7 @@ class _AddAdPageState extends State<AddAdPage> {
             const SizedBox(height: 30),
 
             /* ===== SUBMIT ===== */
-            ElevatedButton(
-              onPressed: submit,
-              child: const Text("Upload Ad"),
-            ),
+            ElevatedButton(onPressed: submit, child: const Text("Upload Ad")),
           ],
         ),
       ),

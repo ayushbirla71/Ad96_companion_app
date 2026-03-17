@@ -30,8 +30,7 @@ class _HomePageState extends State<HomePage> {
     AddAdPage(),
     AddDeviceStep1Page(),
     CreateChannelPage(),
-    CreateSchedulePage()
-    
+    CreateSchedulePage(),
   ];
 
   void changeTab(int i) {
@@ -40,74 +39,78 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
- void onPlusPressed() {
-  showModalBottomSheet(
-    context: context,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-    ),
-    builder: (context) {
-      return Padding(
-        padding: const EdgeInsets.all(20),
-        child: Wrap(
-          spacing: 20,
-          runSpacing: 20,
+  void onPlusPressed() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return SizedBox(
+          height: 220,
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: GridView.count(
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisCount: 2,
+              mainAxisSpacing: 20,
+              crossAxisSpacing: 20,
+              childAspectRatio: 1.8,
+              children: [
+                _quickAction(Icons.campaign, "New Ad", () {
+                  Navigator.pop(context);
+                  changeTab(6);
+                }),
+                _quickAction(Icons.tv, "Add Device", () {
+                  Navigator.pop(context);
+                  changeTab(7);
+                }),
+                _quickAction(Icons.live_tv, "Create Live Channel", () {
+                  Navigator.pop(context);
+                  changeTab(8);
+                }),
+                _quickAction(Icons.schedule, "New Schedule", () {
+                  Navigator.pop(context);
+                  changeTab(9);
+                }),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _quickAction(IconData icon, String label, VoidCallback onTap) {
+    return SizedBox(
+      width: 100,
+      child: InkWell(
+        onTap: onTap, // use the callback here
+        child: Column(
           children: [
-            _quickAction(Icons.campaign, "New Ad", () {
-              Navigator.pop(context); // close bottom sheet
-              changeTab(6); // go to AdsPage
-            }),
-            _quickAction(Icons.tv, "Add Device", () {
-              Navigator.pop(context);
-              changeTab(7); // go to DevicesPage
-            }),
-            _quickAction(Icons.live_tv, "Create Live Channel", () {
-              Navigator.pop(context);
-              changeTab(8); // go to GroupsPage
-            }),
-            _quickAction(Icons.schedule, "New Schedule", () {
-              Navigator.pop(context);
-              changeTab(9); // go to SchedulesPage
-            }),
+            CircleAvatar(
+              radius: 26,
+              backgroundColor: Colors.indigo.shade50,
+              child: Icon(icon, color: Colors.indigo),
+            ),
+            const SizedBox(height: 6),
+            Text(label, textAlign: TextAlign.center),
           ],
         ),
-      );
-    },
-  );
-}
-
-Widget _quickAction(IconData icon, String label, VoidCallback onTap) {
-  return SizedBox(
-    width: 100,
-    child: InkWell(
-      onTap: onTap, // use the callback here
-      child: Column(
-        children: [
-          CircleAvatar(
-            radius: 26,
-            backgroundColor: Colors.indigo.shade50,
-            child: Icon(icon, color: Colors.indigo),
-          ),
-          const SizedBox(height: 6),
-          Text(label, textAlign: TextAlign.center),
-        ],
       ),
-    ),
-  );
-}
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: IndexedStack(
-        index: index,
-        children: pages,
-      ),
+      body: IndexedStack(index: index, children: pages),
 
       floatingActionButton: FloatingActionButton(
         onPressed: onPlusPressed,
         backgroundColor: Colors.indigo,
-        child: const Icon(Icons.add, size: 28),
+        child: const Icon(Icons.add, size: 28, color: Colors.white),
       ),
 
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
@@ -120,7 +123,6 @@ Widget _quickAction(IconData icon, String label, VoidCallback onTap) {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-
               /// Left items
               _navItem(Icons.dashboard, "Dashboard", 0),
               _navItem(Icons.campaign, "Ads", 1),
@@ -145,17 +147,14 @@ Widget _quickAction(IconData icon, String label, VoidCallback onTap) {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            icon,
-            color: selected ? Colors.indigo : Colors.grey,
-          ),
+          Icon(icon, color: selected ? Colors.indigo : Colors.grey),
           Text(
             label,
             style: TextStyle(
               fontSize: 12,
               color: selected ? Colors.indigo : Colors.grey,
             ),
-          )
+          ),
         ],
       ),
     );

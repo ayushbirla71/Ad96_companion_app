@@ -312,6 +312,79 @@ class _CreateSchedulePageState extends State<CreateSchedulePage> {
               ),
             ),
 
+            // const SizedBox(height: 16),
+
+            // /// SCHEDULE DURATION
+            // _cardSection(
+            //   "Schedule Duration",
+            //   Column(
+            //     children: [
+            //       Row(
+            //         children: [
+            //           Expanded(
+            //             child: RadioListTile(
+            //               title: const Text("Single Day"),
+            //               value: ScheduleType.single,
+            //               groupValue: scheduleType,
+            //               onChanged: (v) {
+            //                 setState(() => scheduleType = v!);
+            //               },
+            //             ),
+            //           ),
+            //           Expanded(
+            //             child: RadioListTile(
+            //               title: const Text("Multiple Days"),
+            //               value: ScheduleType.multiple,
+            //               groupValue: scheduleType,
+            //               onChanged: (v) {
+            //                 setState(() => scheduleType = v!);
+            //               },
+            //             ),
+            //           ),
+            //         ],
+            //       ),
+
+            //       const SizedBox(height: 10),
+
+            //       /// SINGLE DATE
+            //       if (scheduleType == ScheduleType.single)
+            //         _dateButton("Date: $singleDate", () async {
+            //           final d = await _pickDate(context);
+            //           if (d != null) {
+            //             setState(() => singleDate = d);
+            //           }
+            //         }),
+
+            //       /// MULTIPLE DATE
+            //       if (scheduleType == ScheduleType.multiple)
+            //         Row(
+            //           children: [
+            //             Expanded(
+            //               child: _dateButton("From: $fromDate", () async {
+            //                 final d = await _pickDate(context);
+            //                 if (d != null) {
+            //                   setState(() => fromDate = d);
+            //                 }
+            //               }),
+            //             ),
+
+            //             const SizedBox(width: 10),
+
+            //             Expanded(
+            //               child: _dateButton("To: $toDate", () async {
+            //                 final d = await _pickDate(context);
+            //                 if (d != null) {
+            //                   setState(() => toDate = d);
+            //                 }
+            //               }),
+            //             ),
+            //           ],
+            //         ),
+            //     ],
+            //   ),
+            // ),
+
+            // const SizedBox(height: 16),
             const SizedBox(height: 16),
 
             /// SCHEDULE DURATION
@@ -322,20 +395,33 @@ class _CreateSchedulePageState extends State<CreateSchedulePage> {
                   Row(
                     children: [
                       Expanded(
-                        child: RadioListTile(
-                          title: const Text("Single Day"),
+                        child: RadioListTile<ScheduleType>(
+                          title: const Text(
+                            "Single Day",
+                            overflow: TextOverflow.ellipsis,
+                          ),
                           value: ScheduleType.single,
                           groupValue: scheduleType,
+                          dense: true,
+                          visualDensity: VisualDensity.compact,
+                          contentPadding: EdgeInsets.zero,
                           onChanged: (v) {
                             setState(() => scheduleType = v!);
                           },
                         ),
                       ),
+
                       Expanded(
-                        child: RadioListTile(
-                          title: const Text("Multiple Days"),
+                        child: RadioListTile<ScheduleType>(
+                          title: const Text(
+                            "Multiple Days",
+                            overflow: TextOverflow.ellipsis,
+                          ),
                           value: ScheduleType.multiple,
                           groupValue: scheduleType,
+                          dense: true,
+                          visualDensity: VisualDensity.compact,
+                          contentPadding: EdgeInsets.zero,
                           onChanged: (v) {
                             setState(() => scheduleType = v!);
                           },
@@ -455,9 +541,19 @@ class _CreateSchedulePageState extends State<CreateSchedulePage> {
                                         border: OutlineInputBorder(),
                                         prefixIcon: Icon(Icons.access_time),
                                       ),
-                                      child: Text(
-                                        formatTimeDisplay(
-                                          timeSlots[i]["start"]!,
+                                      // child: Text(
+                                      //   formatTimeDisplay(
+                                      //     timeSlots[i]["start"]!,
+                                      //   ),
+                                      // ),
+                                      child: FittedBox(
+                                        fit: BoxFit.scaleDown,
+                                        alignment: Alignment.centerLeft,
+                                        child: Text(
+                                          formatTimeDisplay(
+                                            timeSlots[i]["start"]!,
+                                          ),
+                                          style: const TextStyle(fontSize: 16),
                                         ),
                                       ),
                                     ),
@@ -486,8 +582,18 @@ class _CreateSchedulePageState extends State<CreateSchedulePage> {
                                         border: OutlineInputBorder(),
                                         prefixIcon: Icon(Icons.access_time),
                                       ),
-                                      child: Text(
-                                        formatTimeDisplay(timeSlots[i]["end"]!),
+                                      // child: Text(
+                                      //   formatTimeDisplay(timeSlots[i]["end"]!),
+                                      // ),
+                                      child: FittedBox(
+                                        fit: BoxFit.scaleDown,
+                                        alignment: Alignment.centerLeft,
+                                        child: Text(
+                                          formatTimeDisplay(
+                                            timeSlots[i]["end"]!,
+                                          ),
+                                          style: const TextStyle(fontSize: 16),
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -595,11 +701,45 @@ class _CreateSchedulePageState extends State<CreateSchedulePage> {
     );
   }
 
+  // Widget _dateButton(String text, VoidCallback onTap) {
+  //   return OutlinedButton.icon(
+  //     icon: const Icon(Icons.date_range),
+  //     label: Text(text),
+  //     onPressed: onTap,
+  //   );
+  // }
+
   Widget _dateButton(String text, VoidCallback onTap) {
-    return OutlinedButton.icon(
-      icon: const Icon(Icons.date_range),
-      label: Text(text),
-      onPressed: onTap,
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(30),
+          border: Border.all(color: Colors.grey.shade300),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.calendar_today, size: 18, color: Colors.purple),
+
+            const SizedBox(width: 6),
+
+            Expanded(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  text,
+                  style: const TextStyle(
+                    color: Colors.purple,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
