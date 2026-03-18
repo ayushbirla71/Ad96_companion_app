@@ -23,72 +23,45 @@ class _AddDeviceStep1PageState extends State<AddDeviceStep1Page> {
   bool _isLoading = false;
   Map<String, dynamic>? deviceInfo;
 
-  Future<void> _updateDeviceAndContinue() async {
-  if (deviceInfo == null ||
-      nameController.text.isEmpty ||
-      selectedGroup == null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Fill all required fields")),
-    );
-    return;
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<GroupProvider>().loadGroups();
+    });
   }
 
-  setState(() => _isLoading = true);
+  /// ✅ GROUP BOTTOM SHEET
+  void showGroupBottomSheet(GroupProvider groupProvider) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) {
+        return ListView.builder(
+          padding: const EdgeInsets.all(16),
+          itemCount: groupProvider.groups.length,
+          itemBuilder: (context, index) {
+            final g = groupProvider.groups[index];
 
-  try {
-    final body = {
-      "device_name": nameController.text,
-      "group_id": selectedGroup,
-      "tags": tagsController.text
-          .split(',')
-          .map((e) => e.trim())
-          .where((e) => e.isNotEmpty)
-          .toList(),
-    };
-
-    print("device idddd ${deviceInfo!['device_id']}");
-
-    final response = await ApiService.post(
-      "/device/update/${deviceInfo!['device_id']}",
-      body,
-    );
-
-    final data = jsonDecode(response.body);
-
-    print("responcesss..... ${data}");
-
-    if (response.statusCode == 200) {
-      // ✅ Navigate to step 2 after successful update
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => AddDeviceStep2Page(
-            deviceData: {
-              "pairingCode": pairingController.text,
-              "deviceName": nameController.text,
-              "group_id": selectedGroup,
-              "tags": body["tags"],
-              ...deviceInfo!,
-            },
-          ),
-        ),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Update failed")),
-      );
-    }
-  } catch (e) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Error: $e")),
+            return ListTile(
+              leading: const Icon(Icons.group),
+              title: Text(g.name),
+              onTap: () {
+                setState(() {
+                  selectedGroup = g.id;
+                });
+                Navigator.pop(context);
+              },
+            );
+          },
+        );
+      },
     );
   }
 
-  setState(() => _isLoading = false);
-}
-
-
-
+  /// FETCH DEVICE
   Future<void> fetchByPairingCode(String code) async {
     setState(() => loading = true);
 
@@ -97,7 +70,6 @@ class _AddDeviceStep1PageState extends State<AddDeviceStep1Page> {
 
       if (response.statusCode == 200) {
         final body = jsonDecode(response.body);
-        print("bodya pairing >>>>>>>>>>>> $body");
 
         deviceInfo = {
           "device_id": body['device_id'],
@@ -108,60 +80,80 @@ class _AddDeviceStep1PageState extends State<AddDeviceStep1Page> {
           "registrationStatus": body['registration_status'],
         };
 
-        // ✅ PREFILL INPUT FIELDS (EDITABLE)
         nameController.text = body['device_name'] ?? '';
         tagsController.text = (body['tags'] as List?)?.join(', ') ?? '';
-
-        // ✅ Optional: preselect group if exists
-        // selectedGroup = body['group_id'];
       } else {
         deviceInfo = null;
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text("Invalid pairing code")));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Invalid pairing code")),
+        );
       }
     } catch (e) {
       deviceInfo = null;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("Error: $e")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error: $e")),
+      );
     }
 
     setState(() => loading = false);
   }
-  void next() {
+
+  /// UPDATE + NEXT
+  Future<void> _updateDeviceAndContinue() async {
     if (deviceInfo == null ||
         nameController.text.isEmpty ||
         selectedGroup == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Fill all required fields")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Fill all required fields")),
+      );
       return;
     }
 
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => AddDeviceStep2Page(
-          deviceData: {
-            "pairingCode": pairingController.text,
-            "deviceName": nameController.text,
-            "group": selectedGroup,
-            "tags": tagsController.text,
-            ...deviceInfo!,
-          },
-        ),
-      ),
-    );
-  }
+    setState(() => _isLoading = true);
 
-  @override
-  void initState() {
-    super.initState();
-    // Load groups from API
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<GroupProvider>().loadGroups();
-    });
+    try {
+      final body = {
+        "device_name": nameController.text,
+        "group_id": selectedGroup,
+        "tags": tagsController.text
+            .split(',')
+            .map((e) => e.trim())
+            .where((e) => e.isNotEmpty)
+            .toList(),
+      };
+
+      final response = await ApiService.post(
+        "/device/update/${deviceInfo!['device_id']}",
+        body,
+      );
+
+      if (response.statusCode == 200) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => AddDeviceStep2Page(
+              deviceData: {
+                "pairingCode": pairingController.text,
+                "deviceName": nameController.text,
+                "group_id": selectedGroup,
+                "tags": body["tags"],
+                ...deviceInfo!,
+              },
+            ),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Update failed")),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error: $e")),
+      );
+    }
+
+    setState(() => _isLoading = false);
   }
 
   @override
@@ -174,19 +166,21 @@ class _AddDeviceStep1PageState extends State<AddDeviceStep1Page> {
         padding: const EdgeInsets.all(16),
         child: ListView(
           children: [
+            /// PAIRING CODE
             TextField(
               controller: pairingController,
               keyboardType: TextInputType.number,
-              maxLength: 6, // only allow 6 digits
+              maxLength: 6,
               decoration: const InputDecoration(
                 labelText: "Pairing Code",
-                counterText: "", // hides the counter
+                counterText: "",
+                border: OutlineInputBorder(),
               ),
               onChanged: (value) {
                 if (value.length == 6) {
-                  fetchByPairingCode(value); // call API automatically
+                  fetchByPairingCode(value);
                 } else {
-                  setState(() => deviceInfo = null); // reset if incomplete
+                  setState(() => deviceInfo = null);
                 }
               },
             ),
@@ -205,45 +199,71 @@ class _AddDeviceStep1PageState extends State<AddDeviceStep1Page> {
 
             const SizedBox(height: 20),
 
+            /// DEVICE NAME
             TextField(
               controller: nameController,
-              decoration: const InputDecoration(labelText: "Device Name"),
+              decoration: const InputDecoration(
+                labelText: "Device Name",
+                border: OutlineInputBorder(),
+              ),
             ),
 
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
 
+            /// ✅ GROUP SELECT (BOTTOM SHEET)
             groupProvider.loading
                 ? const Center(child: CircularProgressIndicator())
-                : DropdownButtonFormField<String>(
-                    value: selectedGroup,
-                    hint: const Text("Select Group"),
-                    items: groupProvider.groups
-                        .map(
-                          (g) => DropdownMenuItem(
-                            value: g.id,
-                            child: Text(g.name),
+                : GestureDetector(
+                    onTap: () => showGroupBottomSheet(groupProvider),
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 14, horizontal: 12),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: Colors.grey.shade300),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            selectedGroup == null
+                                ? "Select Group"
+                                : groupProvider.groups
+                                    .firstWhere(
+                                        (g) => g.id == selectedGroup)
+                                    .name,
+                            style: TextStyle(
+                              color: selectedGroup == null
+                                  ? Colors.grey
+                                  : Colors.black,
+                            ),
                           ),
-                        )
-                        .toList(),
-                    onChanged: (v) => setState(() => selectedGroup = v),
+                          const Icon(Icons.arrow_drop_down),
+                        ],
+                      ),
+                    ),
                   ),
 
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
 
+            /// TAGS
             TextField(
               controller: tagsController,
               enabled: deviceInfo != null,
               decoration: const InputDecoration(
                 labelText: "Tags (comma separated)",
+                border: OutlineInputBorder(),
               ),
             ),
 
             const SizedBox(height: 30),
 
+            /// BUTTON
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-               onPressed: _isLoading ? null : _updateDeviceAndContinue,
+                onPressed: _isLoading ? null : _updateDeviceAndContinue,
                 child: _isLoading
                     ? const SizedBox(
                         height: 20,

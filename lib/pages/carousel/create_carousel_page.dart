@@ -1,3 +1,368 @@
+// import 'dart:io';
+// import 'package:cms_app/models/carousel.dart';
+// import 'package:cms_app/providers/carousel_provider.dart';
+// import 'package:file_picker/file_picker.dart';
+// import 'package:flutter/material.dart';
+// import 'package:provider/provider.dart';
+
+// class CreateCarouselPage extends StatefulWidget {
+//   const CreateCarouselPage({super.key});
+
+//   @override
+//   State<CreateCarouselPage> createState() => _CreateCarouselPageState();
+// }
+
+// class _CreateCarouselPageState extends State<CreateCarouselPage> {
+//   final nameController = TextEditingController();
+
+//   List<CarouselItem> items = [];
+//   List<dynamic> availableAds = [];
+
+//   bool loading = false;
+//   bool loadingAds = true;
+
+//   @override
+//   void initState() {
+//     super.initState();
+//     loadAds();
+//   }
+
+//   /// LOAD ADS
+//   Future<void> loadAds() async {
+//     try {
+//       final provider = context.read<CarouselProvider>();
+//       final ads = await provider.fetchAds();
+
+//       setState(() {
+//         availableAds = ads;
+//         loadingAds = false;
+//       });
+//     } catch (e) {
+//       setState(() {
+//         loadingAds = false;
+//       });
+//     }
+//   }
+
+//   /// ADD EXISTING AD
+//   void addExistingAd(String adId) {
+//     final ad = availableAds.firstWhere((a) => a["ad_id"] == adId);
+
+//     setState(() {
+//       items.add(
+//         CarouselItem(
+//           id: DateTime.now().millisecondsSinceEpoch.toString(),
+//           adId: ad["ad_id"],
+//           name: ad["name"],
+//           duration: ad["duration"],
+//           displayOrder: items.length + 1,
+//           isNew: false,
+//         ),
+//       );
+//     });
+//   }
+
+//   /// ADD NEW AD
+//   void addNewAd() {
+//     setState(() {
+//       items.add(
+//         CarouselItem(
+//           id: DateTime.now().millisecondsSinceEpoch.toString(),
+//           name: "",
+//           duration: 0,
+//           fileUrl: "",
+//           displayOrder: items.length + 1,
+//           isNew: true,
+//         ),
+//       );
+//     });
+//   }
+
+//   void removeItem(String id) {
+//     setState(() {
+//       items.removeWhere((e) => e.id == id);
+//     });
+//   }
+
+//   void updateItem(String id, {String? name, int? duration, String? fileUrl}) {
+//     final index = items.indexWhere((e) => e.id == id);
+
+//     setState(() {
+//       items[index] = items[index].copyWith(
+//         name: name ?? items[index].name,
+//         duration: duration ?? items[index].duration,
+//         fileUrl: fileUrl ?? items[index].fileUrl,
+//       );
+//     });
+//   }
+
+//   /// FILE PICKER
+//   Future<void> uploadFile(String itemId) async {
+//     final result = await FilePicker.platform.pickFiles();
+
+//     if (result == null) return;
+
+//     final file = File(result.files.single.path!);
+
+//     final provider = context.read<CarouselProvider>();
+//     final fileUrl = await provider.uploadAdFile(file);
+
+//     updateItem(itemId, fileUrl: fileUrl);
+//   }
+
+//   int get totalDuration {
+//     return items.fold(0, (sum, e) => sum + (e.duration ?? 0));
+//   }
+
+//   /// CREATE CAROUSEL
+//   Future<void> create() async {
+//     if (nameController.text.trim().isEmpty) {
+//       ScaffoldMessenger.of(context).showSnackBar(
+//         const SnackBar(content: Text("Carousel name required")),
+//       );
+//       return;
+//     }
+
+//     if (items.isEmpty) {
+//       ScaffoldMessenger.of(context).showSnackBar(
+//         const SnackBar(content: Text("Add at least one ad")),
+//       );
+//       return;
+//     }
+
+//     setState(() => loading = true);
+
+//     final provider = context.read<CarouselProvider>();
+
+//     final success = await provider.createCarousel(
+//       name: nameController.text,
+//       items: items,
+//     );
+
+//     setState(() => loading = false);
+
+//     if (!mounted) return;
+
+//     if (success) Navigator.pop(context);
+//   }
+
+//   /// 🔥 BOTTOM SHEET FOR EXISTING ADS
+//   void showExistingAdsBottomSheet() {
+//     showModalBottomSheet(
+//       context: context,
+//       shape: const RoundedRectangleBorder(
+//         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+//       ),
+//       builder: (context) {
+//         return Padding(
+//           padding: const EdgeInsets.all(16),
+//           child: Column(
+//             children: [
+//               const Text(
+//                 "Select Ad",
+//                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+//               ),
+//               const SizedBox(height: 10),
+
+//               Expanded(
+//                 child: ListView.builder(
+//                   itemCount: availableAds.length,
+//                   itemBuilder: (context, index) {
+//                     final ad = availableAds[index];
+
+//                     return ListTile(
+//                       leading: const Icon(Icons.campaign),
+//                       title: Text(ad["name"]),
+//                       subtitle: Text("Duration: ${ad["duration"]}s"),
+//                       onTap: () {
+//                         addExistingAd(ad["ad_id"]);
+//                         Navigator.pop(context);
+//                       },
+//                     );
+//                   },
+//                 ),
+//               ),
+//             ],
+//           ),
+//         );
+//       },
+//     );
+//   }
+
+//   @override
+//   void dispose() {
+//     nameController.dispose();
+//     super.dispose();
+//   }
+
+//   @override
+//   Widget build(BuildContext context) {
+//     if (loadingAds) {
+//       return const Scaffold(
+//         body: Center(child: CircularProgressIndicator()),
+//       );
+//     }
+
+//     return Scaffold(
+//       appBar: AppBar(
+//         title: const Text("Create Carousel"),
+//         actions: [
+//           IconButton(
+//             onPressed: loading ? null : create,
+//             icon: loading
+//                 ? const SizedBox(
+//                     width: 20,
+//                     height: 20,
+//                     child: CircularProgressIndicator(strokeWidth: 2),
+//                   )
+//                 : const Icon(Icons.save),
+//           ),
+//         ],
+//       ),
+
+//       body: Padding(
+//         padding: const EdgeInsets.all(16),
+//         child: Column(
+//           children: [
+//             /// NAME
+//             TextField(
+//               controller: nameController,
+//               decoration: const InputDecoration(
+//                 labelText: "Carousel Name",
+//                 border: OutlineInputBorder(),
+//               ),
+//             ),
+
+//             const SizedBox(height: 20),
+
+//             /// ✅ ADD ITEM BUTTON WITH DROPDOWN
+//             PopupMenuButton<String>(
+//               onSelected: (value) {
+//                 if (value == "upload") {
+//                   addNewAd();
+//                 } else if (value == "existing") {
+//                   showExistingAdsBottomSheet();
+//                 }
+//               },
+//               child: Container(
+//                 width: double.infinity,
+//                 padding: const EdgeInsets.symmetric(vertical: 14),
+//                 decoration: BoxDecoration(
+//                   borderRadius: BorderRadius.circular(10),
+//                   border: Border.all(color: Colors.grey.shade300),
+//                 ),
+//                 child: const Row(
+//                   mainAxisAlignment: MainAxisAlignment.center,
+//                   children: [
+//                     Icon(Icons.add),
+//                     SizedBox(width: 8),
+//                     Text("Add Item"),
+//                   ],
+//                 ),
+//               ),
+
+//               /// 🔥 UPLOAD FIRST
+//               itemBuilder: (context) => [
+//                 const PopupMenuItem(
+//                   value: "upload",
+//                   child: Row(
+//                     children: [
+//                       Icon(Icons.upload),
+//                       SizedBox(width: 10),
+//                       Text("Upload New Ad"),
+//                     ],
+//                   ),
+//                 ),
+//                 const PopupMenuItem(
+//                   value: "existing",
+//                   child: Row(
+//                     children: [
+//                       Icon(Icons.list),
+//                       SizedBox(width: 10),
+//                       Text("Select Existing Ad"),
+//                     ],
+//                   ),
+//                 ),
+//               ],
+//             ),
+
+//             const SizedBox(height: 20),
+
+//             /// ITEMS
+//             Expanded(
+//               child: ReorderableListView.builder(
+//                 itemCount: items.length,
+//                 onReorder: (oldIndex, newIndex) {
+//                   if (newIndex > oldIndex) newIndex--;
+
+//                   final item = items.removeAt(oldIndex);
+//                   items.insert(newIndex, item);
+
+//                   setState(() {});
+//                 },
+//                 itemBuilder: (context, index) {
+//                   final item = items[index];
+
+//                   return Card(
+//                     key: ValueKey(item.id),
+//                     margin: const EdgeInsets.symmetric(vertical: 6),
+//                     child: Padding(
+//                       padding: const EdgeInsets.all(12),
+//                       child: item.isNew
+//                           ? buildNewAdItem(item)
+//                           : buildExistingAdItem(item),
+//                     ),
+//                   );
+//                 },
+//               ),
+//             ),
+//           ],
+//         ),
+//       ),
+//     );
+//   }
+
+//   Widget buildExistingAdItem(CarouselItem item) {
+//     return Row(
+//       children: [
+//         const Icon(Icons.drag_handle),
+//         const SizedBox(width: 10),
+//         Expanded(child: Text(item.name ?? "")),
+//         IconButton(
+//           icon: const Icon(Icons.delete),
+//           onPressed: () => removeItem(item.id),
+//         ),
+//       ],
+//     );
+//   }
+
+//   Widget buildNewAdItem(CarouselItem item) {
+//     return Column(
+//       children: [
+//         TextField(
+//           decoration: const InputDecoration(labelText: "Ad Name"),
+//           onChanged: (v) => updateItem(item.id, name: v),
+//         ),
+//         const SizedBox(height: 10),
+//         ElevatedButton(
+//           onPressed: () => uploadFile(item.id),
+//           child: const Text("Upload File"),
+//         ),
+//       ],
+//     );
+//   }
+// }
+
+
+
+
+
+
+
+
+
+
+
 
 import 'dart:io';
 import 'package:cms_app/models/carousel.dart';
@@ -14,7 +379,6 @@ class CreateCarouselPage extends StatefulWidget {
 }
 
 class _CreateCarouselPageState extends State<CreateCarouselPage> {
-
   final nameController = TextEditingController();
 
   List<CarouselItem> items = [];
@@ -35,13 +399,10 @@ class _CreateCarouselPageState extends State<CreateCarouselPage> {
       final provider = context.read<CarouselProvider>();
       final ads = await provider.fetchAds();
 
-      print("adssssssssssssssssssssss ${ads}");
-
       setState(() {
         availableAds = ads;
         loadingAds = false;
       });
-
     } catch (e) {
       setState(() {
         loadingAds = false;
@@ -51,11 +412,9 @@ class _CreateCarouselPageState extends State<CreateCarouselPage> {
 
   /// ADD EXISTING AD
   void addExistingAd(String adId) {
-
     final ad = availableAds.firstWhere((a) => a["ad_id"] == adId);
 
     setState(() {
-
       items.add(
         CarouselItem(
           id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -71,9 +430,7 @@ class _CreateCarouselPageState extends State<CreateCarouselPage> {
 
   /// ADD NEW AD
   void addNewAd() {
-
     setState(() {
-
       items.add(
         CarouselItem(
           id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -94,23 +451,19 @@ class _CreateCarouselPageState extends State<CreateCarouselPage> {
   }
 
   void updateItem(String id, {String? name, int? duration, String? fileUrl}) {
-
     final index = items.indexWhere((e) => e.id == id);
 
     setState(() {
-
       items[index] = items[index].copyWith(
         name: name ?? items[index].name,
         duration: duration ?? items[index].duration,
         fileUrl: fileUrl ?? items[index].fileUrl,
       );
-
     });
   }
 
   /// FILE PICKER
   Future<void> uploadFile(String itemId) async {
-
     final result = await FilePicker.platform.pickFiles();
 
     if (result == null) return;
@@ -118,7 +471,6 @@ class _CreateCarouselPageState extends State<CreateCarouselPage> {
     final file = File(result.files.single.path!);
 
     final provider = context.read<CarouselProvider>();
-
     final fileUrl = await provider.uploadAdFile(file);
 
     updateItem(itemId, fileUrl: fileUrl);
@@ -130,22 +482,25 @@ class _CreateCarouselPageState extends State<CreateCarouselPage> {
 
   /// CREATE CAROUSEL
   Future<void> create() async {
-
     if (nameController.text.trim().isEmpty) {
-
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Carousel name required")),
       );
-
       return;
     }
 
     if (items.isEmpty) {
-
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Add at least one ad")),
       );
+      return;
+    }
 
+    /// ✅ VALIDATION FOR NEW ADS
+    if (items.any((e) => e.isNew && (e.fileUrl == null || e.fileUrl!.isEmpty))) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please upload all new ads")),
+      );
       return;
     }
 
@@ -165,6 +520,48 @@ class _CreateCarouselPageState extends State<CreateCarouselPage> {
     if (success) Navigator.pop(context);
   }
 
+  /// BOTTOM SHEET FOR EXISTING ADS
+  void showExistingAdsBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              const Text(
+                "Select Ad",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 10),
+              Expanded(
+                child: ListView.builder(
+                  itemCount: availableAds.length,
+                  itemBuilder: (context, index) {
+                    final ad = availableAds[index];
+
+                    return ListTile(
+                      leading: const Icon(Icons.campaign),
+                      title: Text(ad["name"]),
+                      subtitle: Text("Duration: ${ad["duration"]}s"),
+                      onTap: () {
+                        addExistingAd(ad["ad_id"]);
+                        Navigator.pop(context);
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   void dispose() {
     nameController.dispose();
@@ -173,7 +570,6 @@ class _CreateCarouselPageState extends State<CreateCarouselPage> {
 
   @override
   Widget build(BuildContext context) {
-
     if (loadingAds) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
@@ -181,11 +577,9 @@ class _CreateCarouselPageState extends State<CreateCarouselPage> {
     }
 
     return Scaffold(
-
       appBar: AppBar(
         title: const Text("Create Carousel"),
         actions: [
-
           IconButton(
             onPressed: loading ? null : create,
             icon: loading
@@ -195,161 +589,96 @@ class _CreateCarouselPageState extends State<CreateCarouselPage> {
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : const Icon(Icons.save),
-          )
-
+          ),
         ],
       ),
 
       body: Padding(
         padding: const EdgeInsets.all(16),
-
         child: Column(
           children: [
-
-            /// CAROUSEL INFO
-            Card(
-              elevation: 2,
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-
-                    const Text(
-                      "Carousel Info",
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-
-                    const SizedBox(height: 12),
-
-                    TextField(
-                      controller: nameController,
-                      decoration: const InputDecoration(
-                        labelText: "Carousel Name",
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                  ],
-                ),
+            /// NAME
+            TextField(
+              controller: nameController,
+              decoration: const InputDecoration(
+                labelText: "Carousel Name",
+                border: OutlineInputBorder(),
               ),
             ),
 
             const SizedBox(height: 20),
 
-            /// ADD ADS SECTION
-            Card(
-              elevation: 2,
-
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-
-                child: Row(
+            /// ADD ITEM DROPDOWN
+            PopupMenuButton<String>(
+              onSelected: (value) {
+                if (value == "upload") {
+                  addNewAd();
+                } else if (value == "existing") {
+                  showExistingAdsBottomSheet();
+                }
+              },
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.grey.shade300),
+                ),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-
-                    /// SELECT EXISTING AD
-                    Expanded(
-                      child: DropdownButtonFormField<String>(
-                        isExpanded: true, 
-
-                        hint: const Text("Select Existing Ad"),
-
-                        decoration: const InputDecoration(
-                          border: OutlineInputBorder(),
-                        ),
-
-                        items: availableAds
-                            .map<DropdownMenuItem<String>>((ad) {
-
-                          return DropdownMenuItem<String>(
-                            value: ad["ad_id"].toString(),
-                            child: Text(ad["name"]),
-                          );
-
-                        }).toList(),
-
-                        onChanged: (value) {
-                          if (value != null) addExistingAd(value);
-                        },
-                      ),
-                    ),
-
-                    const SizedBox(width: 10),
-
-                    /// UPLOAD NEW AD
-                    ElevatedButton.icon(
-
-                      onPressed: addNewAd,
-
-                      icon: const Icon(Icons.upload),
-
-                      label: const Text("Upload Ad"),
-
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 16,
-                        ),
-                      ),
-                    ),
+                    Icon(Icons.add),
+                    SizedBox(width: 8),
+                    Text("Add Item"),
                   ],
                 ),
               ),
-            ),
-
-            const SizedBox(height: 20),
-
-            /// ITEMS HEADER
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-
-                const Text(
-                  "Carousel Items",
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+              itemBuilder: (context) => [
+                const PopupMenuItem(
+                  value: "upload",
+                  child: Row(
+                    children: [
+                      Icon(Icons.upload),
+                      SizedBox(width: 10),
+                      Text("Upload New Ad"),
+                    ],
                   ),
                 ),
-
-                Text("Total: ${items.length}"),
+                const PopupMenuItem(
+                  value: "existing",
+                  child: Row(
+                    children: [
+                      Icon(Icons.list),
+                      SizedBox(width: 10),
+                      Text("Select Existing Ad"),
+                    ],
+                  ),
+                ),
               ],
             ),
 
-            const SizedBox(height: 10),
+            const SizedBox(height: 20),
 
             /// ITEMS LIST
             Expanded(
               child: ReorderableListView.builder(
-
                 itemCount: items.length,
-
                 onReorder: (oldIndex, newIndex) {
-
                   if (newIndex > oldIndex) newIndex--;
 
                   final item = items.removeAt(oldIndex);
-
                   items.insert(newIndex, item);
 
                   setState(() {});
                 },
-
                 itemBuilder: (context, index) {
-
                   final item = items[index];
 
                   return Card(
                     key: ValueKey(item.id),
-                    elevation: 2,
                     margin: const EdgeInsets.symmetric(vertical: 6),
-
                     child: Padding(
-                      padding: const EdgeInsets.all(16),
-
+                      padding: const EdgeInsets.all(12),
                       child: item.isNew
                           ? buildNewAdItem(item)
                           : buildExistingAdItem(item),
@@ -358,81 +687,19 @@ class _CreateCarouselPageState extends State<CreateCarouselPage> {
                 },
               ),
             ),
-
-            const SizedBox(height: 10),
-
-            /// SUMMARY
-            Card(
-              color: Colors.grey.shade100,
-
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-
-                    Text(
-                      "Items: ${items.length}",
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-
-                    Text(
-                      "Duration: ${totalDuration ~/ 60}m ${totalDuration % 60}s",
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                  ],
-                ),
-              ),
-            )
           ],
         ),
       ),
     );
   }
 
-  /// EXISTING AD ITEM
+  /// EXISTING AD
   Widget buildExistingAdItem(CarouselItem item) {
-
     return Row(
       children: [
-
         const Icon(Icons.drag_handle),
-
         const SizedBox(width: 10),
-
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-
-              Text(
-                item.name ?? "",
-                style: const TextStyle(fontSize: 16),
-              ),
-
-              Text("Duration: ${item.duration}s"),
-            ],
-          ),
-        ),
-
-        SizedBox(
-          width: 80,
-
-          child: TextField(
-            keyboardType: TextInputType.number,
-
-            controller:
-                TextEditingController(text: item.duration.toString()),
-
-            decoration: const InputDecoration(labelText: "Sec"),
-
-            onChanged: (v) {
-              updateItem(item.id, duration: int.tryParse(v) ?? 0);
-            },
-          ),
-        ),
-
+        Expanded(child: Text(item.name ?? "")),
         IconButton(
           icon: const Icon(Icons.delete),
           onPressed: () => removeItem(item.id),
@@ -441,71 +708,64 @@ class _CreateCarouselPageState extends State<CreateCarouselPage> {
     );
   }
 
-  /// NEW AD ITEM
-  Widget buildNewAdItem(CarouselItem item) {
+  /// NEW AD
+ Widget buildNewAdItem(CarouselItem item) {
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Row(
+        children: [
+          const Icon(Icons.drag_handle),
+          const SizedBox(width: 10),
 
-    return Column(
-      children: [
-
-        Row(
-          children: [
-
-            const Icon(Icons.drag_handle),
-
-            const SizedBox(width: 10),
-
-            Expanded(
-              child: TextField(
-                decoration: const InputDecoration(labelText: "Ad Name"),
-                onChanged: (v) {
-                  updateItem(item.id, name: v);
-                },
+          /// NAME INPUT
+          Expanded(
+            child: TextField(
+              decoration: const InputDecoration(
+                labelText: "Ad Name",
+                border: OutlineInputBorder(),
               ),
+              onChanged: (v) => updateItem(item.id, name: v),
             ),
+          ),
 
-            const SizedBox(width: 10),
+          const SizedBox(width: 10),
 
-            SizedBox(
-              width: 80,
+          /// ✅ ONLY DELETE ICON
+          IconButton(
+            icon: const Icon(Icons.delete, color: Colors.red),
+            onPressed: () => removeItem(item.id),
+          ),
+        ],
+      ),
 
-              child: TextField(
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: "Sec"),
+      const SizedBox(height: 12),
 
-                onChanged: (v) {
-                  updateItem(item.id, duration: int.tryParse(v) ?? 0);
-                },
-              ),
+      Row(
+        children: [
+          /// UPLOAD BUTTON
+          ElevatedButton.icon(
+            onPressed: () => uploadFile(item.id),
+            icon: const Icon(Icons.upload),
+            label: const Text("Upload File"),
+          ),
+
+          const SizedBox(width: 10),
+
+          /// STATUS
+          if (item.fileUrl != null && item.fileUrl!.isNotEmpty)
+            const Text(
+              "Uploaded",
+              style: TextStyle(color: Colors.green),
+            )
+          else
+            const Text(
+              "Not uploaded",
+              style: TextStyle(color: Colors.red),
             ),
-
-            IconButton(
-              icon: const Icon(Icons.delete),
-              onPressed: () => removeItem(item.id),
-            ),
-          ],
-        ),
-
-        const SizedBox(height: 10),
-
-        Row(
-          children: [
-
-            ElevatedButton.icon(
-              onPressed: () => uploadFile(item.id),
-              icon: const Icon(Icons.upload),
-              label: const Text("Upload File"),
-            ),
-
-            const SizedBox(width: 10),
-
-            if (item.fileUrl != null && item.fileUrl!.isNotEmpty)
-              const Text(
-                "File uploaded",
-                style: TextStyle(color: Colors.green),
-              ),
-          ],
-        ),
-      ],
-    );
-  }
+        ],
+      ),
+    ],
+  );
+}
 }
