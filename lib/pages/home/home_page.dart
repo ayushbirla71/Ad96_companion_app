@@ -9,6 +9,7 @@ import '../schedules/schedules_page.dart';
 import '../settings/settings_page.dart';
 import 'dashboard_page.dart';
 import '../deviceGroups/device_groups_page.dart';
+import 'package:cms_app/pages/channel/channel_list_pagenew.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -102,15 +103,57 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  void navigate(Widget page) {
+    Navigator.push(context, MaterialPageRoute(builder: (_) => page));
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: IndexedStack(index: index, children: pages),
 
-      floatingActionButton: FloatingActionButton(
-        onPressed: onPlusPressed,
-        backgroundColor: Colors.indigo,
-        child: const Icon(Icons.add, size: 28, color: Colors.white),
+      // floatingActionButton: FloatingActionButton(
+      //   onPressed: onPlusPressed,
+      //   backgroundColor: Colors.indigo,
+      //   child: const Icon(Icons.add, size: 28, color: Colors.white),
+      // ),
+      floatingActionButton: GestureDetector(
+        onTap: () => navigate(const ChannelGroupAssignPage()),
+        child: Container(
+          width: 90,
+          height: 90,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: const LinearGradient(
+              colors: [Color(0xFF3F7BD9), Color(0xFF1A4FB5)],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.blue.withOpacity(0.5),
+                blurRadius: 12,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: const [
+              Icon(Icons.wifi_tethering, color: Colors.white, size: 34),
+              SizedBox(height: 2),
+              Text(
+                "GO LIVE",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
 
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
