@@ -463,18 +463,60 @@ class _CreateCarouselPageState extends State<CreateCarouselPage> {
   }
 
   /// FILE PICKER
-  Future<void> uploadFile(String itemId) async {
-    final result = await FilePicker.platform.pickFiles();
+ Future<void> uploadFile(String itemId) async {
+  try {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.any,
+      withData: true, // ✅ important for Android
+    );
 
-    if (result == null) return;
+    if (result == null || result.files.isEmpty) {
+      print("❌ No file selected");
+      return;
+    }
 
-    final file = File(result.files.single.path!);
+    final pickedFile = result.files.single;
 
+    File file;
+
+    if (pickedFile.path != null) {
+      /// ✅ Normal case (path available)
+      file = File(pickedFile.path!);
+    } else {
+      /// ✅ Android fix (no path → use bytes)
+      final bytes = pickedFile.bytes;
+
+      if (bytes == null) {
+        print("❌ No bytes available");
+        return;
+      }
+
+      final tempDir = Directory.systemTemp;
+      final tempFile = File("${tempDir.path}/${pickedFile.name}");
+
+      await tempFile.writeAsBytes(bytes);
+      file = tempFile;
+    }
+
+    print("✅ File ready: ${file.path}");
+
+    /// UPLOAD
     final provider = context.read<CarouselProvider>();
     final fileUrl = await provider.uploadAdFile(file);
 
+    if (fileUrl == null || fileUrl.isEmpty) {
+      print("❌ Upload failed");
+      return;
+    }
+
+    print("✅ Uploaded: $fileUrl");
+
     updateItem(itemId, fileUrl: fileUrl);
+
+  } catch (e) {
+    print("❌ Upload error: $e");
   }
+}
 
   int get totalDuration {
     return items.fold(0, (sum, e) => sum + (e.duration ?? 0));

@@ -35,6 +35,7 @@
 //   }
 // }
 
+import 'package:cms_app/pages/login/login_page.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
@@ -85,6 +86,12 @@ class SettingsPage extends StatelessWidget {
 
               if (ok == true) {
                 await auth.logout();
+
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (_) => const LoginPage()),
+                  (route) => false,
+                );
               }
             },
           ),
