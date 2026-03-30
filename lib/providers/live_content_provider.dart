@@ -150,4 +150,24 @@ class LiveContentProvider extends ChangeNotifier {
       debugPrint("Delete content error: $e");
     }
   }
+
+
+  /// DELETE CONTENT
+  Future<void> deleteSchedules(String contentId) async {
+    try {
+      await _service.deleteSchedules(contentId: contentId);
+
+      notifyListeners();
+    } catch (e) {
+      debugPrint("Delete content error: $e");
+    }
+  }
+
+
+
+
+
+
+
+  
 }

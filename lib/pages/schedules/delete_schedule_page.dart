@@ -126,45 +126,60 @@ class _DeleteSchedulePageState extends State<DeleteSchedulePage> {
     }
   }
 
-  Future<void> deleteSchedule() async {
-    if (selectedGroupId == null) return;
+ Future<void> deleteSchedule() async {
+  if (selectedGroupId == null) return;
 
-    setState(() => deleting = true);
+  setState(() => deleting = true);
 
-    final dateRange = getDateRangeForTimeOption();
+  final dateRange = getDateRangeForTimeOption();
 
-    final payload = {
-      "adId": widget.schedule.adId,
-      "groupId": selectedGroupId,
-      "startDate": dateRange["from"],
-      "endDate": dateRange["to"],
-      "timeRangeType": selectedTimeRange,
-    };
+  final payload = {
+    "adId": widget.schedule.adId,
+    "contentId": widget.schedule.contentId,
 
-    try {
-      final response = await ApiService.post(
-        "/schedule/multiple-delete",
-        payload,
+    "groupId": selectedGroupId == "all" ? null : selectedGroupId,
+
+    "startDate": dateRange["from"],
+    "endDate": dateRange["to"],
+
+    "timeRangeType": selectedTimeRange,
+
+    "contentType": widget.schedule.contentType,
+  };
+
+  print(widget.schedule);
+
+  print("DELETE PAYLOAD >>> $payload");
+
+  try {
+    final response = await ApiService.post(
+      "/schedule/multiple-delete",
+      payload,
+    );
+
+    final result = jsonDecode(response.body);
+
+    print("DELETE RESPONSE >>> $result");
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Schedule deleted successfully")),
       );
 
-      final result = jsonDecode(response.body);
-      if (result != null && result["message"] != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Schedule deleted successfully")),
-        );
-        Navigator.pop(context, true);
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Failed: ${result?["error"] ?? 'Unknown'}")),
-        );
-      }
-    } catch (e) {
+      Navigator.pop(context, true);
+    } else {
       ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Error: $e")));
-    } finally {
-      setState(() => deleting = false);
+        SnackBar(content: Text(result["error"] ?? "Delete failed")),
+      );
     }
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Error: $e")),
+    );
   }
+
+  setState(() => deleting = false);
+}
 
   @override
   Widget build(BuildContext context) {

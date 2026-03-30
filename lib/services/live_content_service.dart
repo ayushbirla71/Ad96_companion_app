@@ -48,7 +48,7 @@ class LiveContentService {
       "config": {"autoplay": autoplay, "mute": mute, "loop": loop},
     });
 
-    if (response.statusCode == 200 ||  response.statusCode == 201 ) {
+    if (response.statusCode == 200 || response.statusCode == 201) {
       final body = jsonDecode(response.body);
 
       final data = body["data"];
@@ -66,6 +66,31 @@ class LiveContentService {
 
     if (response.statusCode != 200) {
       throw Exception("Failed to delete content");
+    }
+  }
+
+   Future<void> deleteSchedules({required String contentId}) async {
+    try {
+      final now = DateTime.now();
+
+      final startDate =
+          "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
+
+      final endDate = startDate;
+
+      final response = await ApiService.post("/schedule/live/multiple-delete", {
+        "contentId": contentId,
+        "contentType": "live_content",
+        "startDate": startDate,
+        "endDate": endDate,
+      });
+
+      if (response.statusCode != 200) {
+        throw Exception("Failed to delete content");
+      }
+    } catch (e) {
+      print("❌ Delete schedules error: $e");
+      rethrow;
     }
   }
 }

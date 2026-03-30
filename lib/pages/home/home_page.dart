@@ -9,7 +9,7 @@ import '../schedules/schedules_page.dart';
 import '../settings/settings_page.dart';
 import 'dashboard_page.dart';
 import '../deviceGroups/device_groups_page.dart';
-import 'package:cms_app/pages/channel/channel_list_pagenew.dart';
+import 'package:cms_app/pages/channel/assign_live_content_to_groups.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -118,7 +118,7 @@ class _HomePageState extends State<HomePage> {
       //   child: const Icon(Icons.add, size: 28, color: Colors.white),
       // ),
       floatingActionButton: GestureDetector(
-        onTap: () => navigate(const ChannelGroupAssignPage()),
+        onTap: () => navigate(const AssignLiveContentToGroups()),
         child: Container(
           width: 90,
           height: 90,

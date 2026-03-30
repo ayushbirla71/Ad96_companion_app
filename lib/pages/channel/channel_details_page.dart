@@ -172,6 +172,8 @@ class _ChannelDetailsPageState extends State<ChannelDetailsPage> {
                                 builder: (_) => GoLivePage(
                                   rtmpUrl: streamUrl,
                                   channelName: channel.name,
+                                  channelId: channel.channelId,
+                                  contentId: "",
                                 ),
                               ),
                             );

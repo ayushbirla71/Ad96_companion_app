@@ -37,6 +37,7 @@ class ScheduleAd {
 
   final String carouselName;
   final int carouselDuration;
+  final String contentType;
 
   final List<ScheduleGroup> groups;
 
@@ -51,6 +52,7 @@ class ScheduleAd {
     required this.carouselName,
     required this.carouselDuration,
     required this.groups,
+    required this.contentType,
   });
 
   factory ScheduleAd.fromJson(Map<String, dynamic> json) {
@@ -58,6 +60,8 @@ class ScheduleAd {
       adId: json["adId"] ?? "",
       contentId: json["contentId"] ?? "",
       carouselId: json["carouselId"] ?? "",
+
+      contentType : json["contentType"] ?? "",
 
       adName: json["adName"] ?? "",
       adDuration: json["adDuration"] ?? 0,

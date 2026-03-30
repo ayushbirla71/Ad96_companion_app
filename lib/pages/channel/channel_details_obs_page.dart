@@ -37,6 +37,7 @@ class _ChannelDetailsPageState extends State<ChannelDetailsPageObs> {
     setState(() => _buttonLoading = true); // show loader
 
     try {
+      print("channel status.... ${channel.status}");
       if (channel.status == "live") {
         await provider.stopChannel(channel.channelId);
       } else {

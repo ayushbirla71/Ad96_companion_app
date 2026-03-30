@@ -9,8 +9,17 @@ import 'providers/device_provider.dart';
 import 'providers/ad_provider.dart';
 import 'providers/schedule_provider.dart';
 import 'providers/group_provider.dart';
+import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
+
 
 void main() {
+
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // ✅ NEW WAY
+  // await FMTCStore('mapStore').manage.create();
+
+
   runApp(
     MultiProvider(
       providers: [
