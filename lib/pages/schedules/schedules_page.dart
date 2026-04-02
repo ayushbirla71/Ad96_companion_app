@@ -23,7 +23,9 @@ class _SchedulesPageState extends State<SchedulesPage> {
   @override
   void initState() {
     super.initState();
-    Future.microtask(() {
+    
+    // 🔥 FIX: Replaced Future.microtask with addPostFrameCallback
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<ScheduleProvider>().loadSchedules();
     });
   }
@@ -343,13 +345,12 @@ class _SchedulesPageState extends State<SchedulesPage> {
                     ),
 
                     onChanged: (v) {
-
+                      // Safe to use microtask here if you want to debounce slightly, 
+                      // or just setState directly.
                       Future.microtask(() {
-
                         setState(() {
                           searchText = v;
                         });
-
                       });
                     },
                   ),

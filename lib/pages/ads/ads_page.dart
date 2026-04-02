@@ -12,16 +12,100 @@ class AdsPage extends StatefulWidget {
 }
 
 class _AdsPageState extends State<AdsPage> {
-  bool showFilters = false;
-
   @override
   void initState() {
     super.initState();
-    _loadData();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadData();
+    });
   }
 
   void _loadData() {
     context.read<AdProvider>().loadAds();
+  }
+
+  // 🎛️ MODAL FILTER UI
+  void openFilter() {
+    final adProvider = context.read<AdProvider>();
+
+    showModalBottomSheet(
+      context: context,
+      builder: (_) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    "Filters",
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  /// STATUS DROPDOWN
+                  DropdownButtonFormField<String>(
+                    value: adProvider.statusFilter,
+                    decoration: const InputDecoration(
+                      labelText: "Status",
+                      border: OutlineInputBorder(),
+                    ),
+                    items: const [
+                      DropdownMenuItem(value: "all", child: Text("All")),
+                      DropdownMenuItem(
+                          value: "pending", child: Text("Pending")),
+                      DropdownMenuItem(
+                          value: "processing", child: Text("Processing")),
+                      DropdownMenuItem(
+                          value: "completed", child: Text("Completed")),
+                    ],
+                    onChanged: (v) {
+                      setModalState(() {
+                        adProvider.setStatusFilter(v!);
+                      });
+                    },
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  Row(
+                    children: [
+                      /// CLEAR BUTTON
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () {
+                            adProvider.clearFilters();
+                            Navigator.pop(context);
+                          },
+                          child: const Text("Clear"),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+
+                      /// APPLY BUTTON
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            // The provider already updates when onChanged fires, 
+                            // so we just need to close the modal.
+                            Navigator.pop(context);
+                          },
+                          child: const Text("Apply"),
+                        ),
+                      ),
+                    ],
+                  )
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 
   @override
@@ -53,7 +137,7 @@ class _AdsPageState extends State<AdsPage> {
         children: [
           // 🔍 SEARCH + FILTER TOGGLE
           Padding(
-            padding: const EdgeInsets.all(10),
+            padding: const EdgeInsets.all(12),
             child: Row(
               children: [
                 Expanded(
@@ -62,66 +146,25 @@ class _AdsPageState extends State<AdsPage> {
                       hintText: "Search ad...",
                       prefixIcon: const Icon(Icons.search),
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(10),
                       ),
                     ),
-                    onChanged: adProvider.setSearch,
+                    onChanged: (v) {
+                       Future.microtask(() {
+                         adProvider.setSearch(v);
+                       });
+                    },
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 10),
                 IconButton(
                   tooltip: "Filters",
-                  icon: Icon(
-                    Icons.filter_list,
-                    color: showFilters ? Colors.blue : null,
-                  ),
-                  onPressed: () {
-                    setState(() => showFilters = !showFilters);
-                  },
+                  icon: const Icon(Icons.filter_list),
+                  onPressed: openFilter, // Trigger Bottom Sheet
                 ),
               ],
             ),
           ),
-
-          // 🎛 FILTERS + CLEAR BUTTON
-          AnimatedCrossFade(
-            duration: const Duration(milliseconds: 250),
-            crossFadeState: showFilters
-                ? CrossFadeState.showFirst
-                : CrossFadeState.showSecond,
-            firstChild: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10),
-              child: Column(
-                children: [
-                  DropdownButtonFormField<String>(
-                    value: adProvider.statusFilter,
-                    decoration: const InputDecoration(labelText: "Status"),
-                    items: const [
-                      DropdownMenuItem(value: "all", child: Text("All")),
-                      DropdownMenuItem(value: "pending", child: Text("Pending")),
-                      DropdownMenuItem(
-                          value: "processing", child: Text("Processing")),
-                      DropdownMenuItem(
-                          value: "completed", child: Text("Completed")),
-                    ],
-                    onChanged: (v) => adProvider.setStatusFilter(v!),
-                  ),
-                  const SizedBox(height: 8),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton.icon(
-                      icon: const Icon(Icons.clear),
-                      label: const Text("Clear Filters"),
-                      onPressed: adProvider.clearFilters,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            secondChild: const SizedBox(),
-          ),
-
-          const SizedBox(height: 8),
 
           // 📺 ADS LIST
           Expanded(
@@ -151,10 +194,16 @@ class _AdsPageState extends State<AdsPage> {
                       final icon = isVideo ? Icons.play_circle : Icons.image;
 
                       return Card(
-                        margin: const EdgeInsets.all(10),
+                        margin: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
                         child: ListTile(
                           leading: Icon(icon),
-                          title: Text(ad.name),
+                          title: Text(
+                            ad.name,
+                            style: const TextStyle(fontWeight: FontWeight.w600),
+                          ),
                           subtitle: Text(ad.status),
                           trailing: const Icon(Icons.chevron_right),
                           onTap: () {

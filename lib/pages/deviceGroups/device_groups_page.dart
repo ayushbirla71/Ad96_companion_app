@@ -17,7 +17,9 @@ class _GroupsPageState extends State<GroupsPage> {
   @override
   void initState() {
     super.initState();
-    context.read<GroupProvider>().loadGroups();
+   WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<GroupProvider>().loadGroups();
+    });
   }
 
   @override

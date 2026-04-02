@@ -16,18 +16,29 @@ class AdProvider extends ChangeNotifier {
   Future<void> loadAds() async {
     loading = true;
     error = null;
-    notifyListeners();
+    notifyListeners(); // Tell UI to show loader
 
     try {
       final data = await AdService.fetchAds();
       ads = data.map((e) => Ad.fromJson(e)).toList();
-      applyFilters(); // 🔥 re-apply filters after reload
+      
+      // 🔥 OPTIMIZATION: Filter the list directly here without calling 
+      // applyFilters() to prevent firing an extra notifyListeners() prematurely.
+      filteredAds = ads.where((ad) {
+        final matchesSearch = ad.name
+            .toLowerCase()
+            .contains(searchQuery.toLowerCase());
+        final matchesStatus =
+            statusFilter == "all" || ad.status == statusFilter;
+        return matchesSearch && matchesStatus;
+      }).toList();
+      
     } catch (e) {
       error = e.toString();
     }
 
     loading = false;
-    notifyListeners();
+    notifyListeners(); // Tell UI to hide loader and show data
   }
 
   // 🔍 Search
@@ -42,14 +53,14 @@ class AdProvider extends ChangeNotifier {
     applyFilters();
   }
 
-  // 🧹 Clear Filters (NEW)
+  // 🧹 Clear Filters
   void clearFilters() {
     searchQuery = "";
     statusFilter = "all";
     applyFilters();
   }
 
-  // 🧠 Apply all filters
+  // 🧠 Apply all filters (Used for local UI updates)
   void applyFilters() {
     filteredAds = ads.where((ad) {
       final matchesSearch = ad.name

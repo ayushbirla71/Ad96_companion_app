@@ -13,12 +13,12 @@ class DevicesPage extends StatefulWidget {
 }
 
 class _DevicesPageState extends State<DevicesPage> {
-
   @override
   void initState() {
     super.initState();
 
-    Future.microtask(() {
+    // 🔥 FIX: Replaced Future.microtask with addPostFrameCallback
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadData();
     });
   }
@@ -30,23 +30,19 @@ class _DevicesPageState extends State<DevicesPage> {
 
   /// FILTER UI
   void openFilter() {
-
     final deviceProvider = context.read<DeviceProvider>();
     final groupProvider = context.read<GroupProvider>();
 
     showModalBottomSheet(
       context: context,
       builder: (_) {
-
         return StatefulBuilder(
           builder: (context, setModalState) {
-
             return Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-
                   const Text(
                     "Filters",
                     style: TextStyle(
@@ -54,7 +50,6 @@ class _DevicesPageState extends State<DevicesPage> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-
                   const SizedBox(height: 20),
 
                   /// STATUS
@@ -109,27 +104,23 @@ class _DevicesPageState extends State<DevicesPage> {
 
                   Row(
                     children: [
-
                       /// CLEAR
                       Expanded(
                         child: OutlinedButton(
                           onPressed: () {
-
                             deviceProvider.clearFilters();
-
                             Navigator.pop(context);
                           },
                           child: const Text("Clear"),
                         ),
                       ),
-
                       const SizedBox(width: 10),
 
                       /// APPLY
                       Expanded(
                         child: ElevatedButton(
                           onPressed: () {
-                            setState(() {});
+                            // setState(() {}); is not needed here as Provider updates the UI automatically
                             Navigator.pop(context);
                           },
                           child: const Text("Apply"),
@@ -148,14 +139,12 @@ class _DevicesPageState extends State<DevicesPage> {
 
   @override
   Widget build(BuildContext context) {
-
     final deviceProvider = context.watch<DeviceProvider>();
 
     return Scaffold(
       appBar: AppBar(
         title: const Text("Devices"),
         actions: [
-
           /// REFRESH
           IconButton(
             tooltip: "Refresh",
@@ -168,7 +157,6 @@ class _DevicesPageState extends State<DevicesPage> {
             icon: const Icon(Icons.add),
             tooltip: "Add Device",
             onPressed: () {
-
               Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -179,17 +167,13 @@ class _DevicesPageState extends State<DevicesPage> {
           ),
         ],
       ),
-
       body: Column(
         children: [
-
           /// SEARCH + FILTER
           Padding(
             padding: const EdgeInsets.all(12),
-
             child: Row(
               children: [
-
                 Expanded(
                   child: TextField(
                     decoration: InputDecoration(
@@ -199,19 +183,16 @@ class _DevicesPageState extends State<DevicesPage> {
                         borderRadius: BorderRadius.circular(10),
                       ),
                     ),
-
                     onChanged: (v) {
-
-                      Future.microtask(() {
-                        deviceProvider.setSearch(v);
-                      });
-
+                       // 🔥 Using microtask inside onChanged is fine, but not strictly necessary 
+                       // unless you are avoiding a specific textfield stutter. 
+                       Future.microtask(() {
+                         deviceProvider.setSearch(v);
+                       });
                     },
                   ),
                 ),
-
                 const SizedBox(width: 10),
-
                 IconButton(
                   icon: const Icon(Icons.filter_list),
                   onPressed: openFilter,
@@ -224,7 +205,6 @@ class _DevicesPageState extends State<DevicesPage> {
           Expanded(
             child: Builder(
               builder: (_) {
-
                 if (deviceProvider.loading) {
                   return const Center(child: CircularProgressIndicator());
                 }
@@ -239,14 +219,10 @@ class _DevicesPageState extends State<DevicesPage> {
 
                 return RefreshIndicator(
                   onRefresh: () async => _loadData(),
-
                   child: ListView.builder(
                     itemCount: deviceProvider.filteredDevices.length,
-
                     itemBuilder: (_, i) {
-
                       final d = deviceProvider.filteredDevices[i];
-
                       final isOnline =
                           d.status == "online" || d.status == "active";
 
@@ -255,9 +231,7 @@ class _DevicesPageState extends State<DevicesPage> {
                           horizontal: 12,
                           vertical: 6,
                         ),
-
                         child: ListTile(
-
                           leading: CircleAvatar(
                             backgroundColor:
                                 isOnline ? Colors.green : Colors.red,
@@ -266,27 +240,21 @@ class _DevicesPageState extends State<DevicesPage> {
                               color: Colors.white,
                             ),
                           ),
-
                           title: Text(
                             d.deviceName,
                             style: const TextStyle(
                               fontWeight: FontWeight.w600,
                             ),
                           ),
-
                           subtitle: Text(
                             "${d.groupName} • ${d.status}",
                           ),
-
                           trailing: const Icon(Icons.chevron_right),
-
                           onTap: () {
-
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (_) =>
-                                    DeviceDetailsPage(device: d),
+                                builder: (_) => DeviceDetailsPage(device: d),
                               ),
                             );
                           },

@@ -2,7 +2,7 @@
  xmlns:tools="http://schemas.android.com/tools" >
 
     <application
-        android:label="cms_app"
+        android:label="Ad96 Companion"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:appComponentFactory="androidx.core.app.CoreComponentFactory"
