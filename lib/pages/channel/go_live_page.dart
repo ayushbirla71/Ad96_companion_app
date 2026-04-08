@@ -2025,7 +2025,7 @@ class _GoLivePageState extends State<GoLivePage> with WidgetsBindingObserver {
     if (_isCleaned || !mounted) return;
 
     final newController = CameraController(
-      ResolutionPreset.medium,
+      ResolutionPreset.medium,// or veryHigh / ultraHigh
       enableAudio: true,
       androidUseOpenGL: true,
     );
@@ -2044,7 +2044,7 @@ class _GoLivePageState extends State<GoLivePage> with WidgetsBindingObserver {
     }
   }
 
-  Future<void> _toggleOrientation() async {
+ Future<void> _toggleOrientation() async {
     if (isStreaming || isPreparing || isSwitching) return;
 
     setState(() {
@@ -2059,7 +2059,8 @@ class _GoLivePageState extends State<GoLivePage> with WidgetsBindingObserver {
         await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
       }
       
-      await Future.delayed(const Duration(milliseconds: 300));
+      // Increased delay: Gives the OS memory time to allocate the flipped high-res buffer
+      await Future.delayed(const Duration(milliseconds: 600)); 
       await _setupController();
     } finally {
       if (mounted) setState(() => isSwitching = false);
@@ -2182,7 +2183,7 @@ class _GoLivePageState extends State<GoLivePage> with WidgetsBindingObserver {
     super.dispose();
   }
 
-  Widget _buildPreview() {
+ Widget _buildPreview() {
     final bool isReady = controller?.value.isInitialized ?? false;
     if (!isReady || controller == null || isSwitching) {
         return Container(
@@ -2192,8 +2193,8 @@ class _GoLivePageState extends State<GoLivePage> with WidgetsBindingObserver {
     }
 
     return Center(
-      key: ValueKey("preview_${currentCamera!.name}_$userSelectedLandscape"),
-      child: CameraPreview(controller!),
+        key: ValueKey("preview_${currentCamera!.name}_$userSelectedLandscape"),
+          child: CameraPreview(controller!),
     );
   }
 

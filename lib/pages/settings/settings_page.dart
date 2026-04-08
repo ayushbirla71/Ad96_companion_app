@@ -11,7 +11,6 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  // Local state for the UI toggles (Wire these up to your providers later)
   bool _notificationsEnabled = true;
   bool _darkModeEnabled = false;
 
@@ -20,112 +19,109 @@ class _SettingsPageState extends State<SettingsPage> {
     final auth = context.read<AuthProvider>();
 
     return Scaffold(
+      backgroundColor: const Color(0xFFF5F7FB),
       appBar: AppBar(
         title: const Text("Settings"),
+        centerTitle: true,
         elevation: 0,
       ),
       body: ListView(
+        padding: const EdgeInsets.all(16),
         children: [
-          const SizedBox(height: 10),
+          /// 🔹 PROFILE CARD
+          // Container(
+          //   padding: const EdgeInsets.all(16),
+          //   decoration: BoxDecoration(
+          //     gradient: const LinearGradient(
+          //       colors: [Color(0xFF3F7BD9), Color(0xFF1A4FB5)],
+          //     ),
+          //     borderRadius: BorderRadius.circular(16),
+          //   ),
+          //   child: const Row(
+          //     children: [
+          //       CircleAvatar(
+          //         radius: 28,
+          //         backgroundColor: Colors.white,
+          //         child: Icon(Icons.person, size: 30, color: Colors.indigo),
+          //       ),
+          //       SizedBox(width: 12),
+          //       Column(
+          //         crossAxisAlignment: CrossAxisAlignment.start,
+          //         children: [
+          //           Text(
+          //             "Admin User",
+          //             style: TextStyle(
+          //               color: Colors.white,
+          //               fontSize: 16,
+          //               fontWeight: FontWeight.bold,
+          //             ),
+          //           ),
+          //           Text(
+          //             "admin@cms.com",
+          //             style: TextStyle(color: Colors.white70),
+          //           ),
+          //         ],
+          //       )
+          //     ],
+          //   ),
+          // ),
 
-          // --- ACCOUNT SECTION ---
-          _buildSectionHeader("Account"),
-          ListTile(
-            leading: const Icon(Icons.person_outline),
-            title: const Text("Edit Profile"),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () {
-              // TODO: Navigate to Edit Profile Page
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.lock_outline),
-            title: const Text("Change Password"),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () {
-              // TODO: Navigate to Change Password Page
-            },
-          ),
+          const SizedBox(height: 20),
 
-          const Divider(height: 30),
+          /// 🔹 ACCOUNT SECTION
+          _buildSectionTitle("Account"),
+          _buildCard([
+            _tile(Icons.person_outline, "Edit Profile"),
+            _divider(),
+            _tile(Icons.lock_outline, "Change Password"),
+          ]),
 
-          // --- PREFERENCES SECTION ---
-          _buildSectionHeader("Preferences"),
-          SwitchListTile(
-            secondary: const Icon(Icons.notifications_active_outlined),
-            title: const Text("Push Notifications"),
-            value: _notificationsEnabled,
-            activeColor: Colors.blue,
-            onChanged: (bool value) {
-              setState(() {
-                _notificationsEnabled = value;
-              });
-            },
-          ),
-          SwitchListTile(
-            secondary: const Icon(Icons.dark_mode_outlined),
-            title: const Text("Dark Mode"),
-            value: _darkModeEnabled,
-            activeColor: Colors.blue,
-            onChanged: (bool value) {
-              setState(() {
-                _darkModeEnabled = value;
-              });
-              // TODO: Call your ThemeProvider to actually change the app theme
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.language),
-            title: const Text("Language"),
-            subtitle: const Text("English (US)"),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () {
-              // TODO: Show Language Picker
-            },
-          ),
+          const SizedBox(height: 16),
 
-          const Divider(height: 30),
-
-          // --- ABOUT & SUPPORT SECTION ---
-          _buildSectionHeader("Support & About"),
-          ListTile(
-            leading: const Icon(Icons.help_outline),
-            title: const Text("Help Center"),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () {
-              // TODO: Open Help Center URL or Page
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.privacy_tip_outlined),
-            title: const Text("Privacy Policy"),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () {
-              // TODO: Open Privacy Policy
-            },
-          ),
-          const ListTile(
-            leading: Icon(Icons.info_outline),
-            title: Text("App Version"),
-            trailing: Text(
-              "v1.0.0",
-              style: TextStyle(color: Colors.grey, fontSize: 14),
+          /// 🔹 PREFERENCES
+          _buildSectionTitle("Preferences"),
+          _buildCard([
+            SwitchListTile(
+              secondary: const Icon(Icons.notifications_active_outlined),
+              title: const Text("Push Notifications"),
+              value: _notificationsEnabled,
+              onChanged: (v) => setState(() => _notificationsEnabled = v),
             ),
-          ),
+            _divider(),
+            SwitchListTile(
+              secondary: const Icon(Icons.dark_mode_outlined),
+              title: const Text("Dark Mode"),
+              value: _darkModeEnabled,
+              onChanged: (v) => setState(() => _darkModeEnabled = v),
+            ),
+            _divider(),
+            _tile(Icons.language, "Language"),
+          ]),
 
-          const Divider(height: 30),
+          const SizedBox(height: 16),
 
-          // --- DANGER ZONE (LOGOUT) ---
-          ListTile(
-            leading: const Icon(Icons.logout, color: Colors.redAccent),
-            title: const Text(
-              "Logout",
-              style: TextStyle(
-                color: Colors.redAccent,
-                fontWeight: FontWeight.bold,
+          /// 🔹 SUPPORT
+          _buildSectionTitle("Support & About"),
+          _buildCard([
+            _tile(Icons.help_outline, "Help Center"),
+            _divider(),
+            _tile(Icons.privacy_tip_outlined, "Privacy Policy"),
+            _divider(),
+            const ListTile(
+              leading: Icon(Icons.info_outline),
+              title: Text("App Version"),
+              trailing: Text(
+                "v1.0.0",
+                style: TextStyle(color: Colors.grey),
               ),
             ),
-            onTap: () async {
+          ]),
+
+          const SizedBox(height: 24),
+
+          /// 🔴 LOGOUT BUTTON
+          ElevatedButton.icon(
+            onPressed: () async {
               final ok = await showDialog<bool>(
                 context: context,
                 builder: (_) => AlertDialog(
@@ -139,7 +135,6 @@ class _SettingsPageState extends State<SettingsPage> {
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.redAccent,
-                        foregroundColor: Colors.white,
                       ),
                       onPressed: () => Navigator.pop(context, true),
                       child: const Text("Logout"),
@@ -154,33 +149,74 @@ class _SettingsPageState extends State<SettingsPage> {
                 if (context.mounted) {
                   Navigator.pushAndRemoveUntil(
                     context,
-                    MaterialPageRoute(builder: (_) => const LoginPage()),
+                    MaterialPageRoute(
+                        builder: (_) => const LoginPage()),
                     (route) => false,
                   );
                 }
               }
             },
+            icon: const Icon(Icons.logout),
+            label: const Text("Logout"),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.redAccent,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
           ),
-          
-          const SizedBox(height: 40), // Bottom padding
+
+          const SizedBox(height: 20),
         ],
       ),
     );
   }
 
-  // Helper widget to create consistent section headers
-  Widget _buildSectionHeader(String title) {
+  /// 🔹 SECTION TITLE
+  Widget _buildSectionTitle(String title) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.only(bottom: 8, left: 4),
       child: Text(
-        title.toUpperCase(),
+        title,
         style: const TextStyle(
-          color: Colors.blue,
-          fontSize: 13,
+          color: Colors.indigo,
           fontWeight: FontWeight.bold,
-          letterSpacing: 1.2,
+          fontSize: 14,
         ),
       ),
     );
+  }
+
+  /// 🔹 CARD CONTAINER
+  Widget _buildCard(List<Widget> children) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+          ),
+        ],
+      ),
+      child: Column(children: children),
+    );
+  }
+
+  /// 🔹 COMMON TILE
+  Widget _tile(IconData icon, String title) {
+    return ListTile(
+      leading: Icon(icon, color: Colors.indigo),
+      title: Text(title),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: () {},
+    );
+  }
+
+  /// 🔹 DIVIDER
+  Widget _divider() {
+    return const Divider(height: 1);
   }
 }

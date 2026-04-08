@@ -2,6 +2,7 @@ import 'package:cms_app/pages/ads/ad_create_page.dart';
 import 'package:cms_app/pages/channel/create_channel_page.dart';
 import 'package:cms_app/pages/devices/add_device_step1.dart';
 import 'package:cms_app/pages/schedules/create_schedule_page.dart';
+import 'package:cms_app/pages/subscription/feature_not_available_page.dart';
 import 'package:flutter/material.dart';
 import '../ads/ads_page.dart';
 import '../devices/devices_page.dart';

@@ -1,6 +1,7 @@
 import 'package:cms_app/pages/carousel/carousels_page.dart';
 import 'package:cms_app/pages/channel/channel_list_page.dart';
 import 'package:cms_app/pages/liveContent/live_content_page.dart';
+import 'package:cms_app/pages/subscription/feature_not_available_page.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/ad_provider.dart';
@@ -69,10 +70,18 @@ class _DashboardPageState extends State<DashboardPage> {
       appBar: AppBar(
         title: const Text("CMS Dashboard"),
         elevation: 0,
-        actions: const [
+        actions: [
           Padding(
-            padding: EdgeInsets.only(right: 10),
-            child: CircleAvatar(child: Icon(Icons.person)),
+            padding: const EdgeInsets.only(right: 10),
+            child: GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const SettingsPage()),
+                );
+              },
+              child: const CircleAvatar(child: Icon(Icons.person)),
+            ),
           ),
         ],
       ),
