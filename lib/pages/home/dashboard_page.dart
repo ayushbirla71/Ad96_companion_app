@@ -202,25 +202,29 @@ class _DashboardPageState extends State<DashboardPage> {
                         _QuickAction(
                           icon: Icons.bar_chart,
                           label: "Reports",
-                          onTap: () {},
+                         onTap: () => navigate(const FeatureNotAvailablePage()),
+                          
                         ),
 
                         _QuickAction(
                           icon: Icons.view_carousel,
                           label: "Carousels",
-                          onTap: () => navigate(const CarouselPage()),
+                          // onTap: () => navigate(const CarouselPage()),
+                          onTap: () => navigate(const FeatureNotAvailablePage()),
                         ),
 
                         _QuickAction(
                           icon: Icons.live_tv,
                           label: "Channels",
-                          onTap: () => navigate(const ChannelListPage()),
+                          // onTap: () => navigate(const ChannelListPage()),
+                            onTap: () => navigate(const FeatureNotAvailablePage()),
                         ),
 
                         _QuickAction(
                           icon: Icons.stream,
                           label: "Live Content",
-                          onTap: () => navigate(const LiveContentPage()),
+                          // onTap: () => navigate(const LiveContentPage()),
+                            onTap: () => navigate(const FeatureNotAvailablePage()),
                         ),
 
                         _QuickAction(

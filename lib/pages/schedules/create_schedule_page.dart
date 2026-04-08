@@ -783,14 +783,15 @@ class _CreateSchedulePageState extends State<CreateSchedulePage> {
     };
 
     if (selectedContentType == ContentType.ad) {
-      // payload["ad_id"]=selectedItemId!;
+      payload["ad_id"]=selectedItemId!;
       payload["content_id"] = selectedItemId!;
     } else {
       payload["content_id"] = selectedItemId!;
     }
 
     try {
-      final response = await ApiService.post("/schedule/add_v2", payload);
+      // final response = await ApiService.post("/schedule/add_v2", payload);
+         final response = await ApiService.post("/schedule/add", payload);
 
       print("STATUS: ${response.statusCode}");
       print("BODY: ${response.body}");

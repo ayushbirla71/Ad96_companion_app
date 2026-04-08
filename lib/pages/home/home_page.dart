@@ -119,7 +119,8 @@ class _HomePageState extends State<HomePage> {
       //   child: const Icon(Icons.add, size: 28, color: Colors.white),
       // ),
       floatingActionButton: GestureDetector(
-        onTap: () => navigate(const AssignLiveContentToGroups()),
+        // onTap: () => navigate(const AssignLiveContentToGroups()),
+          onTap: () => navigate(const FeatureNotAvailablePage()),
         child: Container(
           width: 90,
           height: 90,
