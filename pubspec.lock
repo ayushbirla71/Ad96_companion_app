@@ -744,14 +744,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.2.0"
-  rtmp_streaming:
-    dependency: "direct main"
-    description:
-      name: rtmp_streaming
-      sha256: f54c0c0443df65086d2936b0f3432fbb351fc35bffba69aa2b004ee7ecf45d40
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.0.5"
   shared_preferences:
     dependency: "direct main"
     description:
