@@ -61,9 +61,9 @@ class _DevicesPageState extends State<DevicesPage> {
                     ),
                     items: const [
                       DropdownMenuItem(value: "all", child: Text("All")),
-                      DropdownMenuItem(value: "online", child: Text("Online")),
+                      DropdownMenuItem(value: "active", child: Text("Online")),
                       DropdownMenuItem(value: "offline", child: Text("Offline")),
-                      DropdownMenuItem(value: "active", child: Text("Active")),
+                      // DropdownMenuItem(value: "active", child: Text("Active")),
                     ],
                     onChanged: (v) {
                       setModalState(() {
