@@ -45,10 +45,11 @@ dependencies:
   # rtmp_broadcaster: ^2.3.4
   wakelock_plus: ^1.5.1
   flutter_map_tile_caching: ^9.0.0
-  camera: ^0.12.0+1
-  rtmp_streaming: ^1.0.5
+  # camera: ^0.12.0+1
+  # rtmp_streaming: ^1.0.5
   fl_chart: ^0.68.0
   # rtmp_publisher: ^0.0.4
+  # haishin_kit: ^0.15.0
 
   
 dev_dependencies:

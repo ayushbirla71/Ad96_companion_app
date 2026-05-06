@@ -61,3 +61,8 @@ android {
 flutter {
     source = "../.."
 }
+
+
+dependencies {
+    implementation("com.github.pedroSG94:RootEncoder:2.5.9")
+}
