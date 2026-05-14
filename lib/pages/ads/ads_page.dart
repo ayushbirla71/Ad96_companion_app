@@ -1,3 +1,4 @@
+import 'package:cms_app/utils/feature_access.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/ad_provider.dart';
@@ -40,10 +41,7 @@ class _AdsPageState extends State<AdsPage> {
                 children: [
                   const Text(
                     "Filters",
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 20),
 
@@ -57,11 +55,17 @@ class _AdsPageState extends State<AdsPage> {
                     items: const [
                       DropdownMenuItem(value: "all", child: Text("All")),
                       DropdownMenuItem(
-                          value: "pending", child: Text("Pending")),
+                        value: "pending",
+                        child: Text("Pending"),
+                      ),
                       DropdownMenuItem(
-                          value: "processing", child: Text("Processing")),
+                        value: "processing",
+                        child: Text("Processing"),
+                      ),
                       DropdownMenuItem(
-                          value: "completed", child: Text("Completed")),
+                        value: "completed",
+                        child: Text("Completed"),
+                      ),
                     ],
                     onChanged: (v) {
                       setModalState(() {
@@ -90,7 +94,7 @@ class _AdsPageState extends State<AdsPage> {
                       Expanded(
                         child: ElevatedButton(
                           onPressed: () {
-                            // The provider already updates when onChanged fires, 
+                            // The provider already updates when onChanged fires,
                             // so we just need to close the modal.
                             Navigator.pop(context);
                           },
@@ -98,7 +102,7 @@ class _AdsPageState extends State<AdsPage> {
                         ),
                       ),
                     ],
-                  )
+                  ),
                 ],
               ),
             );
@@ -124,10 +128,24 @@ class _AdsPageState extends State<AdsPage> {
           IconButton(
             icon: const Icon(Icons.add),
             tooltip: "Add Ad",
+            // onPressed: () {
+            //   Navigator.push(
+            //     context,
+            //     MaterialPageRoute(builder: (_) => const AddAdPage()),
+            //   );
+            // },
             onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const AddAdPage()),
+              FeatureAccess.openLimitedAndStorageFeature(
+                context: context,
+
+                limitKey: "MAX_ADS",
+
+                currentCount: adProvider.ads.length,
+
+                // FILE SIZE IN BYTES
+                newFileSizeBytes: 0,
+
+                page: const AddAdPage(),
               );
             },
           ),
@@ -150,9 +168,9 @@ class _AdsPageState extends State<AdsPage> {
                       ),
                     ),
                     onChanged: (v) {
-                       Future.microtask(() {
-                         adProvider.setSearch(v);
-                       });
+                      Future.microtask(() {
+                        adProvider.setSearch(v);
+                      });
                     },
                   ),
                 ),

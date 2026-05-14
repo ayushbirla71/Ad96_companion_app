@@ -4,7 +4,8 @@ import '../services/api_service.dart';
 class ChannelService {
   /// FETCH CHANNELS
   static Future<List<dynamic>> fetchChannels() async {
-    final response = await ApiService.get("/streaming/channel");
+    // final response = await ApiService.get("/streaming/channel");
+    final response = await ApiService.get("/streaming/client-channel");
 
     if (response.statusCode == 200) {
       final body = jsonDecode(response.body);

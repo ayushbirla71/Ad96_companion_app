@@ -34,9 +34,9 @@ class _LoginPageState extends State<LoginPage> {
         MaterialPageRoute(builder: (_) => const HomePage()),
       );
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Invalid credentials")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Invalid credentials")));
     }
   }
 
@@ -73,27 +73,23 @@ class _LoginPageState extends State<LoginPage> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     /// 🔰 LOGO
-                   Container(
-  padding: const EdgeInsets.all(3),
-  decoration: const BoxDecoration(
-    shape: BoxShape.circle,
-    gradient: LinearGradient(
-      colors: [
-        Color(0xFF6A11CB),
-        Color(0xFF2575FC),
-      ],
-    ),
-  ),
-  child: ClipOval(
-    child: Image.asset(
-      "assets/logo.png",
-      height: 70,
-      width: 70,
-      fit: BoxFit.cover,
-    ),
-  ),
-),
-
+                    Container(
+                      padding: const EdgeInsets.all(3),
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          colors: [Color(0xFF6A11CB), Color(0xFF2575FC)],
+                        ),
+                      ),
+                      child: ClipOval(
+                        child: Image.asset(
+                          "assets/logo.png",
+                          height: 70,
+                          width: 70,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    ),
 
                     const SizedBox(height: 16),
 
@@ -175,10 +171,7 @@ class _LoginPageState extends State<LoginPage> {
                         child: Ink(
                           decoration: BoxDecoration(
                             gradient: const LinearGradient(
-                              colors: [
-                                Color(0xFF6A11CB),
-                                Color(0xFF2575FC),
-                              ],
+                              colors: [Color(0xFF6A11CB), Color(0xFF2575FC)],
                             ),
                             borderRadius: BorderRadius.circular(14),
                           ),

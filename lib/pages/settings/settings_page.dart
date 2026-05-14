@@ -1,4 +1,6 @@
 import 'package:cms_app/pages/login/login_page.dart';
+import 'package:cms_app/pages/subscription/subscription_details_page.dart';
+import 'package:cms_app/providers/subscription_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
@@ -65,7 +67,6 @@ class _SettingsPageState extends State<SettingsPage> {
           //     ],
           //   ),
           // ),
-
           const SizedBox(height: 20),
 
           /// 🔹 ACCOUNT SECTION
@@ -74,6 +75,21 @@ class _SettingsPageState extends State<SettingsPage> {
             _tile(Icons.person_outline, "Edit Profile"),
             _divider(),
             _tile(Icons.lock_outline, "Change Password"),
+            _tile(
+              Icons.workspace_premium,
+              "My Subscription",
+
+              onTap: () async {
+                await context.read<SubscriptionProvider>().loadHistory();
+
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const SubscriptionDetailsPage(),
+                  ),
+                );
+              },
+            ),
           ]),
 
           const SizedBox(height: 16),
@@ -110,10 +126,7 @@ class _SettingsPageState extends State<SettingsPage> {
             const ListTile(
               leading: Icon(Icons.info_outline),
               title: Text("App Version"),
-              trailing: Text(
-                "v1.0.0",
-                style: TextStyle(color: Colors.grey),
-              ),
+              trailing: Text("v1.0.0", style: TextStyle(color: Colors.grey)),
             ),
           ]),
 
@@ -149,8 +162,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 if (context.mounted) {
                   Navigator.pushAndRemoveUntil(
                     context,
-                    MaterialPageRoute(
-                        builder: (_) => const LoginPage()),
+                    MaterialPageRoute(builder: (_) => const LoginPage()),
                     (route) => false,
                   );
                 }
@@ -195,10 +207,7 @@ class _SettingsPageState extends State<SettingsPage> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-          ),
+          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10),
         ],
       ),
       child: Column(children: children),
@@ -206,12 +215,24 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   /// 🔹 COMMON TILE
-  Widget _tile(IconData icon, String title) {
+  // Widget _tile(IconData icon, String title) {
+  //   return ListTile(
+  //     leading: Icon(icon, color: Colors.indigo),
+  //     title: Text(title),
+  //     trailing: const Icon(Icons.chevron_right),
+  //     onTap: () {},
+  //   );
+  // }
+
+  Widget _tile(IconData icon, String title, {VoidCallback? onTap}) {
     return ListTile(
       leading: Icon(icon, color: Colors.indigo),
+
       title: Text(title),
+
       trailing: const Icon(Icons.chevron_right),
-      onTap: () {},
+
+      onTap: onTap,
     );
   }
 

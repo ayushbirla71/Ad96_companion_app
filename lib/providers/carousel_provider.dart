@@ -32,6 +32,7 @@
 
 //   }
 // }import 'package:cms_app/services/carousel_services.dart';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:cms_app/services/carousel_services.dart';
@@ -39,7 +40,6 @@ import 'package:flutter/material.dart';
 import '../models/carousel.dart';
 
 class CarouselProvider extends ChangeNotifier {
-
   List<Carousel> _carousels = [];
 
   bool loading = false;
@@ -50,120 +50,77 @@ class CarouselProvider extends ChangeNotifier {
 
   /// FILTERED LIST
   List<Carousel> get filteredCarousels {
-
     return _carousels.where((c) {
+      final matchSearch = c.name.toLowerCase().contains(search.toLowerCase());
 
-      final matchSearch =
-          c.name.toLowerCase().contains(search.toLowerCase());
-
-      final matchStatus =
-          statusFilter == "all" || c.status == statusFilter;
+      final matchStatus = statusFilter == "all" || c.status == statusFilter;
 
       return matchSearch && matchStatus;
-
     }).toList();
   }
 
   /// GET SINGLE CAROUSEL
   Carousel? getCarouselById(String id) {
-
     try {
-
-      return _carousels.firstWhere(
-        (c) => c.carouselId == id,
-      );
-
+      return _carousels.firstWhere((c) => c.carouselId == id);
     } catch (_) {
-
       return null;
-
     }
   }
 
   /// LOAD CAROUSELS
   Future<void> loadCarousels() async {
-
     try {
-
       loading = true;
       notifyListeners();
 
       final data = await CarouselService.fetchCarousels();
 
-      _carousels = data
-          .map<Carousel>((e) => Carousel.fromJson(e))
-          .toList();
-
+      _carousels = data.map<Carousel>((e) => Carousel.fromJson(e)).toList();
     } catch (e) {
-
       debugPrint("Load carousel error: $e");
-
     } finally {
-
       loading = false;
       notifyListeners();
-
     }
   }
 
   /// SEARCH
   void setSearch(String value) {
-
     search = value;
     notifyListeners();
-
   }
 
   /// STATUS FILTER
   void setStatus(String value) {
-
     statusFilter = value;
     notifyListeners();
-
   }
 
   /// DELETE
   Future<void> deleteCarousel(String id) async {
-
     try {
-
       await CarouselService.deleteCarousel(id);
 
-      _carousels.removeWhere(
-        (c) => c.carouselId == id,
-      );
+      _carousels.removeWhere((c) => c.carouselId == id);
 
       notifyListeners();
-
     } catch (e) {
-
       debugPrint("Delete carousel error: $e");
-
     }
-
   }
 
   /// TOGGLE STATUS
   Future<void> toggleStatus(Carousel c) async {
-
     try {
+      final newStatus = c.status == "active" ? "inactive" : "active";
 
-      final newStatus =
-          c.status == "active" ? "inactive" : "active";
-
-      await CarouselService.toggleStatus(
-        c.carouselId,
-        newStatus,
-      );
+      await CarouselService.toggleStatus(c.carouselId, newStatus);
 
       await loadCarousels();
-
     } catch (e) {
-
       debugPrint("Toggle status error: $e");
-
     }
-
   }
 
   /// CREATE
@@ -171,9 +128,7 @@ class CarouselProvider extends ChangeNotifier {
     required String name,
     required List<CarouselItem> items,
   }) async {
-
     try {
-
       loading = true;
       notifyListeners();
 
@@ -182,25 +137,21 @@ class CarouselProvider extends ChangeNotifier {
         "items": items.map((e) => e.toJson()).toList(),
       };
 
+      print(payload);
+
       await CarouselService.createCarousel(payload);
 
       await loadCarousels();
 
       return true;
-
     } catch (e) {
-
       debugPrint("Create carousel error: $e");
 
       return false;
-
     } finally {
-
       loading = false;
       notifyListeners();
-
     }
-
   }
 
   /// UPDATE
@@ -209,9 +160,7 @@ class CarouselProvider extends ChangeNotifier {
     required String name,
     required List<CarouselItem> items,
   }) async {
-
     try {
-
       loading = true;
       notifyListeners();
 
@@ -220,76 +169,80 @@ class CarouselProvider extends ChangeNotifier {
         "items": items.map((e) => e.toJson()).toList(),
       };
 
-      await CarouselService.updateCarousel(
-        carouselId,
-        payload,
-      );
+      await CarouselService.updateCarousel(carouselId, payload);
 
       await loadCarousels();
 
       return true;
-
     } catch (e) {
-
       debugPrint("Update carousel error: $e");
 
       return false;
-
     } finally {
-
       loading = false;
       notifyListeners();
-
     }
-
   }
-
-
 
   /// FETCH ADS FOR DROPDOWN
-Future<List<dynamic>> fetchAds() async {
+  Future<List<dynamic>> fetchAds() async {
+    try {
+      final data = await CarouselService.fetchAds();
 
-  try {
+      return data;
+    } catch (e) {
+      debugPrint("Fetch ads error: $e");
 
-    final data = await CarouselService.fetchAds();
-
-    return data;
-
-  } catch (e) {
-
-    debugPrint("Fetch ads error: $e");
-
-    return [];
-
+      return [];
+    }
   }
 
-}
+  /// UPLOAD AD FILE
+  // Future<String> uploadAdFile(File file) async {
 
-/// UPLOAD AD FILE
-Future<String> uploadAdFile(File file) async {
+  //   try {
 
-  try {
+  //     loading = true;
+  //     notifyListeners();
 
-    loading = true;
-    notifyListeners();
+  //     final url = await CarouselService.uploadAdFile(file);
 
-    final url = await CarouselService.uploadAdFile(file);
+  //     return url;
 
-    return url;
+  //   } catch (e) {
 
-  } catch (e) {
+  //     debugPrint("Upload file error: $e");
 
-    debugPrint("Upload file error: $e");
+  //     rethrow;
 
-    rethrow;
+  //   } finally {
 
-  } finally {
+  //     loading = false;
+  //     notifyListeners();
 
-    loading = false;
-    notifyListeners();
+  //   }
 
+  // }
+
+  /// ---------------- UPLOAD FILE ----------------
+  Future<String> uploadAdFile(
+    File file, {
+    Function(double progress, String status, String? speed, String? timeLeft)?
+    onProgress,
+  }) async {
+    try {
+      loading = true;
+      notifyListeners();
+
+      final url = await CarouselService.uploadAdFile(
+        file,
+        onProgress: onProgress,
+      );
+
+      return url;
+    } finally {
+      loading = false;
+      notifyListeners();
+    }
   }
-
-}
-
 }

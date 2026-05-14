@@ -1,0 +1,221 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../pages/subscription_restriction_page.dart';
+import '../providers/subscription_provider.dart';
+
+class FeatureAccess {
+  /// FEATURE CHECK
+  static Future<void> openFeature({
+    required BuildContext context,
+
+    required String featureKey,
+
+    required Widget page,
+  }) async {
+    final provider = Provider.of<SubscriptionProvider>(context, listen: false);
+
+    // REFRESH SUBSCRIPTION
+    await provider.loadSubscription();
+
+    final hasAccess = provider.hasFeature(featureKey);
+
+    if (hasAccess) {
+      Navigator.push(context, MaterialPageRoute(builder: (_) => page));
+    } else {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => SubscriptionRestrictionPage(
+            type: RestrictionType.feature,
+
+            featureKey: featureKey,
+          ),
+        ),
+      );
+    }
+  }
+
+  /// LIMIT CHECK
+  static Future<void> openLimitedFeature({
+    required BuildContext context,
+
+    required String limitKey,
+
+    required int currentCount,
+
+    required Widget page,
+  }) async {
+    final provider = Provider.of<SubscriptionProvider>(context, listen: false);
+
+    // REFRESH SUBSCRIPTION
+    await provider.loadSubscription();
+
+    final allowed = provider.hasLimitAvailable(limitKey, currentCount);
+
+    final maxLimit = provider.getLimit(limitKey);
+
+    if (allowed) {
+      Navigator.push(context, MaterialPageRoute(builder: (_) => page));
+    } else {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => SubscriptionRestrictionPage(
+            type: RestrictionType.limit,
+
+            featureKey: limitKey,
+
+            currentCount: currentCount,
+
+            maxLimit: maxLimit,
+          ),
+        ),
+      );
+    }
+  }
+
+  /// STORAGE CHECK
+  static Future<void> openStorageLimitedFeature({
+    required BuildContext context,
+
+    required int newFileSizeBytes,
+
+    required Widget page,
+  }) async {
+    final provider = Provider.of<SubscriptionProvider>(context, listen: false);
+
+    // REFRESH SUBSCRIPTION
+    await provider.loadSubscription();
+
+    final allowed = provider.hasStorageAvailable(newFileSizeBytes);
+
+    final usedStorage = provider.getUsedStorage();
+
+    final storageLimit = provider.getLimit("STORAGE_LIMIT");
+
+    if (allowed) {
+      Navigator.push(context, MaterialPageRoute(builder: (_) => page));
+    } else {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => SubscriptionRestrictionPage(
+            type: RestrictionType.storage,
+
+            featureKey: "STORAGE_LIMIT",
+
+            currentCount: usedStorage,
+
+            maxLimit: storageLimit,
+          ),
+        ),
+      );
+    }
+  }
+
+  static Future<bool> hasStorageForUpload({
+    required BuildContext context,
+    required int newFileSizeBytes,
+  }) async {
+    final provider = Provider.of<SubscriptionProvider>(context, listen: false);
+
+    /// REFRESH
+    await provider.loadSubscription();
+
+    final allowed = provider.hasStorageAvailable(newFileSizeBytes);
+
+    if (!allowed) {
+      final usedStorage = provider.getUsedStorage();
+
+      final storageLimit = provider.getLimit("STORAGE_LIMIT");
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => SubscriptionRestrictionPage(
+            type: RestrictionType.storage,
+            featureKey: "STORAGE_LIMIT",
+            currentCount: usedStorage,
+            maxLimit: storageLimit,
+          ),
+        ),
+      );
+
+      return false;
+    }
+
+    return true;
+  }
+
+  /// LIMIT + STORAGE CHECK
+  static Future<void> openLimitedAndStorageFeature({
+    required BuildContext context,
+
+    required String limitKey,
+
+    required int currentCount,
+
+    required int newFileSizeBytes,
+
+    required Widget page,
+  }) async {
+    final provider = Provider.of<SubscriptionProvider>(context, listen: false);
+
+    // REFRESH SUBSCRIPTION
+    await provider.loadSubscription();
+
+    /// LIMIT CHECK
+    final limitAllowed = provider.hasLimitAvailable(limitKey, currentCount);
+
+    final maxLimit = provider.getLimit(limitKey);
+
+    if (!limitAllowed) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => SubscriptionRestrictionPage(
+            type: RestrictionType.limit,
+
+            featureKey: limitKey,
+
+            currentCount: currentCount,
+
+            maxLimit: maxLimit,
+          ),
+        ),
+      );
+
+      return;
+    }
+
+    /// STORAGE CHECK
+    final storageAllowed = provider.hasStorageAvailable(newFileSizeBytes);
+
+    final usedStorage = provider.getUsedStorage();
+
+    final storageLimit = provider.getLimit("STORAGE_LIMIT");
+
+    if (!storageAllowed) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => SubscriptionRestrictionPage(
+            type: RestrictionType.storage,
+
+            featureKey: "STORAGE_LIMIT",
+
+            currentCount: usedStorage,
+
+            maxLimit: storageLimit,
+          ),
+        ),
+      );
+
+      return;
+    }
+
+    /// OPEN PAGE
+    Navigator.push(context, MaterialPageRoute(builder: (_) => page));
+  }
+}

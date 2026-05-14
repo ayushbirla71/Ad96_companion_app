@@ -14,6 +14,7 @@ import '../devices/devices_page.dart';
 import '../deviceGroups/device_groups_page.dart';
 import '../schedules/schedules_page.dart';
 import '../settings/settings_page.dart';
+import '../../utils/feature_access.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -211,18 +212,40 @@ class _DashboardPageState extends State<DashboardPage> {
                           onTap: () => navigate(const CarouselPage()),
                         ),
 
-                        _QuickAction(
-                          icon: Icons.live_tv,
-                          label: "Channels",
-                          onTap: () => navigate(const ChannelListPage()),
-                        ),
+                        // _QuickAction(
+                        //   icon: Icons.live_tv,
+                        //   label: "Channels",
+                        //   onTap: () => navigate(const ChannelListPage()),
+                        // ),
 
+                        // _QuickAction(
+                        //   icon: Icons.live_tv,
+                        //   label: "Channels",
+                        //   onTap: () {
+                        //     FeatureAccess.openFeature(
+                        //       context: context,
+                        //       featureKey: "LIVE_STREAMING",
+                        //       page: const ChannelListPage(),
+                        //     );
+                        //   },
+                        // ),
                         _QuickAction(
                           icon: Icons.stream,
                           label: "Live Content",
                           onTap: () => navigate(const LiveContentPage()),
                         ),
 
+                        // _QuickAction(
+                        //   icon: Icons.stream,
+                        //   label: "Live Content",
+                        //   onTap: () {
+                        //     FeatureAccess.openFeature(
+                        //       context: context,
+                        //       featureKey: "LIVE_IN_LAYOUT",
+                        //       page: const LiveContentPage(),
+                        //     );
+                        //   },
+                        // ),
                         _QuickAction(
                           icon: Icons.settings,
                           label: "Settings",

@@ -148,6 +148,8 @@
 
 import 'dart:convert';
 import 'dart:io';
+import 'package:cms_app/services/storage_service.dart';
+import 'package:cms_app/utils/feature_access.dart';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 
@@ -251,6 +253,18 @@ class _AddAdPageState extends State<AddAdPage> {
     }
 
     try {
+      /// FILE SIZE
+      final fileSize = await _file!.length();
+
+      /// STORAGE CHECK
+      final allowed = await FeatureAccess.hasStorageForUpload(
+        context: context,
+        newFileSizeBytes: fileSize,
+      );
+
+      if (!allowed) {
+        return;
+      }
       // 1️⃣ Upload file
       final uploadedFileName = await AdUploadService.uploadFile(
         file: _file!,
@@ -261,6 +275,9 @@ class _AddAdPageState extends State<AddAdPage> {
           });
         },
       );
+
+      /// INCREMENT STORAGE
+      await StorageService.incrementStorage(fileSize);
 
       // 2️⃣ Prepare request body
       final body = {

@@ -353,23 +353,14 @@
 //   }
 // }
 
-
-
-
-
-
-
-
-
-
-
-
 import 'dart:io';
 import 'package:cms_app/models/carousel.dart';
 import 'package:cms_app/providers/carousel_provider.dart';
+import 'package:cms_app/utils/feature_access.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../services/storage_service.dart';
 
 class CreateCarouselPage extends StatefulWidget {
   const CreateCarouselPage({super.key});
@@ -435,7 +426,7 @@ class _CreateCarouselPageState extends State<CreateCarouselPage> {
         CarouselItem(
           id: DateTime.now().millisecondsSinceEpoch.toString(),
           name: "",
-          duration: 0,
+          duration: 10,
           fileUrl: "",
           displayOrder: items.length + 1,
           isNew: true,
@@ -463,60 +454,137 @@ class _CreateCarouselPageState extends State<CreateCarouselPage> {
   }
 
   /// FILE PICKER
- Future<void> uploadFile(String itemId) async {
-  try {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.any,
-      withData: true, // ✅ important for Android
-    );
+  //  Future<void> uploadFile(String itemId) async {
+  //   try {
+  //     final result = await FilePicker.platform.pickFiles(
+  //       type: FileType.any,
+  //       withData: true, // ✅ important for Android
+  //     );
 
-    if (result == null || result.files.isEmpty) {
-      print("❌ No file selected");
-      return;
-    }
+  //     if (result == null || result.files.isEmpty) {
+  //       print("❌ No file selected");
+  //       return;
+  //     }
 
-    final pickedFile = result.files.single;
+  //     final pickedFile = result.files.single;
 
-    File file;
+  //     File file;
 
-    if (pickedFile.path != null) {
-      /// ✅ Normal case (path available)
-      file = File(pickedFile.path!);
-    } else {
-      /// ✅ Android fix (no path → use bytes)
-      final bytes = pickedFile.bytes;
+  //     if (pickedFile.path != null) {
+  //       /// ✅ Normal case (path available)
+  //       file = File(pickedFile.path!);
+  //     } else {
+  //       /// ✅ Android fix (no path → use bytes)
+  //       final bytes = pickedFile.bytes;
 
-      if (bytes == null) {
-        print("❌ No bytes available");
+  //       if (bytes == null) {
+  //         print("❌ No bytes available");
+  //         return;
+  //       }
+
+  //       final tempDir = Directory.systemTemp;
+  //       final tempFile = File("${tempDir.path}/${pickedFile.name}");
+
+  //       await tempFile.writeAsBytes(bytes);
+  //       file = tempFile;
+  //     }
+
+  //     print("✅ File ready: ${file.path}");
+
+  //     /// UPLOAD
+  //     final provider = context.read<CarouselProvider>();
+  //     final fileUrl = await provider.uploadAdFile(file);
+
+  //     if (fileUrl == null || fileUrl.isEmpty) {
+  //       print("❌ Upload failed");
+  //       return;
+  //     }
+
+  //     print("✅ Uploaded: $fileUrl");
+
+  //     updateItem(itemId, fileUrl: fileUrl);
+
+  //   } catch (e) {
+  //     print("❌ Upload error: $e");
+  //   }
+  // }
+
+  Future<void> uploadFile(String itemId) async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.any,
+        withData: true,
+      );
+
+      if (result == null || result.files.isEmpty) {
         return;
       }
 
-      final tempDir = Directory.systemTemp;
-      final tempFile = File("${tempDir.path}/${pickedFile.name}");
+      final pickedFile = result.files.single;
 
-      await tempFile.writeAsBytes(bytes);
-      file = tempFile;
+      File file;
+
+      if (pickedFile.path != null) {
+        file = File(pickedFile.path!);
+      } else {
+        final bytes = pickedFile.bytes;
+
+        if (bytes == null) {
+          return;
+        }
+
+        final tempDir = Directory.systemTemp;
+
+        final tempFile = File("${tempDir.path}/${pickedFile.name}");
+
+        await tempFile.writeAsBytes(bytes);
+
+        file = tempFile;
+      }
+
+      /// FILE SIZE
+      final fileSize = await file.length();
+
+      /// STORAGE CHECK
+      final allowed = await FeatureAccess.hasStorageForUpload(
+        context: context,
+        newFileSizeBytes: fileSize,
+      );
+
+      if (!allowed) {
+        return;
+      }
+
+      final provider = context.read<CarouselProvider>();
+
+      final fileUrl = await provider.uploadAdFile(
+        file,
+
+        onProgress: (progress, status, speed, timeLeft) {
+          print(progress);
+          print(status);
+          print(speed);
+          print(timeLeft);
+
+          /// OPTIONAL UI UPDATE
+          setState(() {});
+        },
+      );
+
+      try {
+        await StorageService.incrementStorage(fileSize);
+      } catch (e) {
+        print("Storage update failed: $e");
+      }
+
+      /// ✅ UPDATE ITEM HERE
+      updateItem(itemId, fileUrl: fileUrl);
+
+      print("Uploaded URL: $fileUrl");
+    } catch (e) {
+      print("Upload error: $e");
     }
-
-    print("✅ File ready: ${file.path}");
-
-    /// UPLOAD
-    final provider = context.read<CarouselProvider>();
-    final fileUrl = await provider.uploadAdFile(file);
-
-    if (fileUrl == null || fileUrl.isEmpty) {
-      print("❌ Upload failed");
-      return;
-    }
-
-    print("✅ Uploaded: $fileUrl");
-
-    updateItem(itemId, fileUrl: fileUrl);
-
-  } catch (e) {
-    print("❌ Upload error: $e");
   }
-}
 
   int get totalDuration {
     return items.fold(0, (sum, e) => sum + (e.duration ?? 0));
@@ -525,21 +593,23 @@ class _CreateCarouselPageState extends State<CreateCarouselPage> {
   /// CREATE CAROUSEL
   Future<void> create() async {
     if (nameController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Carousel name required")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Carousel name required")));
       return;
     }
 
     if (items.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Add at least one ad")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Add at least one ad")));
       return;
     }
 
     /// ✅ VALIDATION FOR NEW ADS
-    if (items.any((e) => e.isNew && (e.fileUrl == null || e.fileUrl!.isEmpty))) {
+    if (items.any(
+      (e) => e.isNew && (e.fileUrl == null || e.fileUrl!.isEmpty),
+    )) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Please upload all new ads")),
       );
@@ -613,9 +683,7 @@ class _CreateCarouselPageState extends State<CreateCarouselPage> {
   @override
   Widget build(BuildContext context) {
     if (loadingAds) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     return Scaffold(
@@ -751,63 +819,153 @@ class _CreateCarouselPageState extends State<CreateCarouselPage> {
   }
 
   /// NEW AD
- Widget buildNewAdItem(CarouselItem item) {
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Row(
-        children: [
-          const Icon(Icons.drag_handle),
-          const SizedBox(width: 10),
+  // Widget buildNewAdItem(CarouselItem item) {
+  //   return Column(
+  //     crossAxisAlignment: CrossAxisAlignment.start,
+  //     children: [
+  //       Row(
+  //         children: [
+  //           const Icon(Icons.drag_handle),
+  //           const SizedBox(width: 10),
 
-          /// NAME INPUT
-          Expanded(
-            child: TextField(
-              decoration: const InputDecoration(
-                labelText: "Ad Name",
-                border: OutlineInputBorder(),
+  //           /// NAME INPUT
+  //           Expanded(
+  //             child: TextField(
+  //               decoration: const InputDecoration(
+  //                 labelText: "Ad Name",
+  //                 border: OutlineInputBorder(),
+  //               ),
+  //               onChanged: (v) => updateItem(item.id, name: v),
+  //             ),
+  //           ),
+
+  //           const SizedBox(width: 10),
+
+  //           /// ✅ ONLY DELETE ICON
+  //           IconButton(
+  //             icon: const Icon(Icons.delete, color: Colors.red),
+  //             onPressed: () => removeItem(item.id),
+  //           ),
+  //         ],
+  //       ),
+
+  //       const SizedBox(height: 12),
+
+  //       Row(
+  //         children: [
+  //           /// UPLOAD BUTTON
+  //           ElevatedButton.icon(
+  //             onPressed: () => uploadFile(item.id),
+  //             icon: const Icon(Icons.upload),
+  //             label: const Text("Upload File"),
+  //           ),
+
+  //           const SizedBox(width: 10),
+
+  //           /// STATUS
+  //           if (item.fileUrl != null && item.fileUrl!.isNotEmpty)
+  //             const Text("Uploaded", style: TextStyle(color: Colors.green))
+  //           else
+  //             const Text("Not uploaded", style: TextStyle(color: Colors.red)),
+  //         ],
+  //       ),
+  //     ],
+  //   );
+  // }
+  Widget buildNewAdItem(CarouselItem item) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+
+      children: [
+        /// NAME
+        TextField(
+          decoration: const InputDecoration(
+            labelText: "Ad Name",
+            border: OutlineInputBorder(),
+          ),
+
+          onChanged: (v) {
+            updateItem(item.id, name: v);
+          },
+        ),
+
+        const SizedBox(height: 12),
+
+        /// DURATION DROPDOWN
+        DropdownButtonFormField<int>(
+          value: item.duration == 0 ? null : item.duration,
+
+          decoration: const InputDecoration(
+            labelText: "Duration",
+            border: OutlineInputBorder(),
+          ),
+
+          items: const [
+            DropdownMenuItem(value: 10, child: Text("10 Seconds")),
+
+            DropdownMenuItem(value: 15, child: Text("15 Seconds")),
+
+            DropdownMenuItem(value: 20, child: Text("20 Seconds")),
+
+            DropdownMenuItem(value: 25, child: Text("25 Seconds")),
+
+            DropdownMenuItem(value: 30, child: Text("30 Seconds")),
+          ],
+
+          onChanged: (value) {
+            updateItem(item.id, duration: value ?? 0);
+          },
+        ),
+
+        const SizedBox(height: 12),
+
+        /// UPLOAD BUTTON
+        ElevatedButton.icon(
+          onPressed: () {
+            uploadFile(item.id);
+          },
+
+          icon: const Icon(Icons.upload),
+
+          label: const Text("Upload File"),
+        ),
+
+        const SizedBox(height: 10),
+
+        /// STATUS
+        if (item.fileUrl != null && item.fileUrl!.isNotEmpty)
+          const Row(
+            children: [
+              Icon(Icons.check_circle, color: Colors.green, size: 18),
+
+              SizedBox(width: 6),
+
+              Text(
+                "Uploaded",
+                style: TextStyle(
+                  color: Colors.green,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
-              onChanged: (v) => updateItem(item.id, name: v),
-            ),
+            ],
+          )
+        else
+          const Row(
+            children: [
+              Icon(Icons.error, color: Colors.red, size: 18),
+
+              SizedBox(width: 6),
+
+              Text(
+                "Not uploaded",
+                style: TextStyle(
+                  color: Colors.red,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
           ),
-
-          const SizedBox(width: 10),
-
-          /// ✅ ONLY DELETE ICON
-          IconButton(
-            icon: const Icon(Icons.delete, color: Colors.red),
-            onPressed: () => removeItem(item.id),
-          ),
-        ],
-      ),
-
-      const SizedBox(height: 12),
-
-      Row(
-        children: [
-          /// UPLOAD BUTTON
-          ElevatedButton.icon(
-            onPressed: () => uploadFile(item.id),
-            icon: const Icon(Icons.upload),
-            label: const Text("Upload File"),
-          ),
-
-          const SizedBox(width: 10),
-
-          /// STATUS
-          if (item.fileUrl != null && item.fileUrl!.isNotEmpty)
-            const Text(
-              "Uploaded",
-              style: TextStyle(color: Colors.green),
-            )
-          else
-            const Text(
-              "Not uploaded",
-              style: TextStyle(color: Colors.red),
-            ),
-        ],
-      ),
-    ],
-  );
-}
+      ],
+    );
+  }
 }

@@ -9,29 +9,27 @@ import 'providers/device_provider.dart';
 import 'providers/ad_provider.dart';
 import 'providers/schedule_provider.dart';
 import 'providers/group_provider.dart';
+import 'providers/subscription_provider.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 
-
 void main() {
-
   WidgetsFlutterBinding.ensureInitialized();
 
   // ✅ NEW WAY
   // await FMTCStore('mapStore').manage.create();
-
 
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()..checkAuth()),
         ChangeNotifierProvider(create: (_) => DeviceProvider()),
-        ChangeNotifierProvider(create: (_) => AdProvider()), 
+        ChangeNotifierProvider(create: (_) => AdProvider()),
         ChangeNotifierProvider(create: (_) => ScheduleProvider()),
         ChangeNotifierProvider(create: (_) => GroupProvider()),
-         ChangeNotifierProvider(create: (_) => LiveContentProvider()),
-         ChangeNotifierProvider(create: (_) => ChannelProvider()),
-          ChangeNotifierProvider(create: (_) => CarouselProvider()),
-
+        ChangeNotifierProvider(create: (_) => LiveContentProvider()),
+        ChangeNotifierProvider(create: (_) => ChannelProvider()),
+        ChangeNotifierProvider(create: (_) => CarouselProvider()),
+        ChangeNotifierProvider(create: (_) => SubscriptionProvider()),
       ],
       child: const MyApp(),
     ),

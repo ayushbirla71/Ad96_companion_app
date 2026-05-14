@@ -1,3 +1,4 @@
+import 'package:cms_app/utils/feature_access.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/device_provider.dart';
@@ -45,10 +46,7 @@ class _DevicesPageState extends State<DevicesPage> {
                 children: [
                   const Text(
                     "Filters",
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 20),
 
@@ -62,7 +60,10 @@ class _DevicesPageState extends State<DevicesPage> {
                     items: const [
                       DropdownMenuItem(value: "all", child: Text("All")),
                       DropdownMenuItem(value: "online", child: Text("Online")),
-                      DropdownMenuItem(value: "offline", child: Text("Offline")),
+                      DropdownMenuItem(
+                        value: "offline",
+                        child: Text("Offline"),
+                      ),
                       DropdownMenuItem(value: "active", child: Text("Active")),
                     ],
                     onChanged: (v) {
@@ -87,10 +88,8 @@ class _DevicesPageState extends State<DevicesPage> {
                         child: Text("All Groups"),
                       ),
                       ...groupProvider.groups.map(
-                        (g) => DropdownMenuItem(
-                          value: g.id,
-                          child: Text(g.name),
-                        ),
+                        (g) =>
+                            DropdownMenuItem(value: g.id, child: Text(g.name)),
                       ),
                     ],
                     onChanged: (v) {
@@ -127,7 +126,7 @@ class _DevicesPageState extends State<DevicesPage> {
                         ),
                       ),
                     ],
-                  )
+                  ),
                 ],
               ),
             );
@@ -156,12 +155,23 @@ class _DevicesPageState extends State<DevicesPage> {
           IconButton(
             icon: const Icon(Icons.add),
             tooltip: "Add Device",
+            // onPressed: () {
+            //   Navigator.push(
+            //     context,
+            //     MaterialPageRoute(
+            //       builder: (_) => const AddDeviceStep1Page(),
+            //     ),
+            //   );
+            // },
             onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const AddDeviceStep1Page(),
-                ),
+              FeatureAccess.openLimitedFeature(
+                context: context,
+
+                limitKey: "MAX_DEVICES",
+
+                currentCount: deviceProvider.devices.length,
+
+                page: const AddDeviceStep1Page(),
               );
             },
           ),
@@ -184,11 +194,11 @@ class _DevicesPageState extends State<DevicesPage> {
                       ),
                     ),
                     onChanged: (v) {
-                       // 🔥 Using microtask inside onChanged is fine, but not strictly necessary 
-                       // unless you are avoiding a specific textfield stutter. 
-                       Future.microtask(() {
-                         deviceProvider.setSearch(v);
-                       });
+                      // 🔥 Using microtask inside onChanged is fine, but not strictly necessary
+                      // unless you are avoiding a specific textfield stutter.
+                      Future.microtask(() {
+                        deviceProvider.setSearch(v);
+                      });
                     },
                   ),
                 ),
@@ -233,22 +243,16 @@ class _DevicesPageState extends State<DevicesPage> {
                         ),
                         child: ListTile(
                           leading: CircleAvatar(
-                            backgroundColor:
-                                isOnline ? Colors.green : Colors.red,
-                            child: const Icon(
-                              Icons.tv,
-                              color: Colors.white,
-                            ),
+                            backgroundColor: isOnline
+                                ? Colors.green
+                                : Colors.red,
+                            child: const Icon(Icons.tv, color: Colors.white),
                           ),
                           title: Text(
                             d.deviceName,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w600,
-                            ),
+                            style: const TextStyle(fontWeight: FontWeight.w600),
                           ),
-                          subtitle: Text(
-                            "${d.groupName} • ${d.status}",
-                          ),
+                          subtitle: Text("${d.groupName} • ${d.status}"),
                           trailing: const Icon(Icons.chevron_right),
                           onTap: () {
                             Navigator.push(
