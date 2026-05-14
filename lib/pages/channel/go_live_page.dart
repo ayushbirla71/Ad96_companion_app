@@ -398,6 +398,10 @@
 
 
 
+
+// ////////////////////// IOS code //////////////////////////////
+
+
 import 'package:cms_app/pages/home/home_page.dart';
 import 'package:cms_app/providers/live_content_provider.dart';
 import 'package:flutter/material.dart';
@@ -606,341 +610,193 @@ class _GoLivePageState extends State<GoLivePage> with WidgetsBindingObserver {
   /// UI
   ////////////////////////////////////////////////////////////
 
+  // @override
+  // Widget build(BuildContext context) {
+    
+  //   return Scaffold(
+  //     backgroundColor: Colors.black,
+  //     body: Stack(
+  //       children: [
+  //         Positioned.fill(
+  //           child: const UiKitView(viewType: 'camera_preview'),
+  //         ),
+
+  //         // Top Bar
+  //         Positioned(
+  //           top: 50, left: 20, right: 20,
+  //           child: Row(
+  //             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  //             children: [
+  //               Text(widget.channelName, style: const TextStyle(color: Colors.white, fontSize: 18)),
+  //               if (isStreaming)
+  //                 const Text("● LIVE", style: TextStyle(color: Colors.red, fontSize: 18, fontWeight: FontWeight.bold)),
+  //             ],
+  //           ),
+  //         ),
+
+  //         // Status Text
+  //         Positioned(
+  //           top: 100, left: 20, right: 20,
+  //           child: Center(
+  //             child: Text(streamStatus, style: const TextStyle(color: Colors.white, fontSize: 16)),
+  //           ),
+  //         ),
+
+  //         // 🔴 Configuration Buttons (Only show before streaming)
+  //         if (!isStreaming && !isPreparing)
+  //           Positioned(
+  //             right: 20,
+  //             top: MediaQuery.of(context).size.height / 3,
+  //             child: Column(
+  //               children: [
+  //                 FloatingActionButton(
+  //                   heroTag: "cam_flip",
+  //                   backgroundColor: Colors.black54,
+  //                   onPressed: _toggleCamera,
+  //                   child: const Icon(Icons.cameraswitch, color: Colors.white),
+  //                 ),
+  //                 const SizedBox(height: 20),
+  //                 FloatingActionButton(
+  //                   heroTag: "orientation",
+  //                   backgroundColor: Colors.black54,
+  //                   onPressed: _toggleOrientation,
+  //                   child: Icon(
+  //                     isLandscape ? Icons.screen_lock_landscape : Icons.screen_lock_portrait,
+  //                     color: Colors.white
+  //                   ),
+  //                 ),
+  //               ],
+  //             ),
+  //           ),
+
+  //         // Go Live / Stop Button
+  //         Positioned(
+  //           bottom: 40, left: 20, right: 20,
+  //           child: Center(
+  //             child: ElevatedButton(
+  //               style: ElevatedButton.styleFrom(
+  //                 padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+  //                 backgroundColor: isStreaming ? Colors.red : Colors.blue,
+  //               ),
+  //               onPressed: isStreaming
+  //                   ? () async {
+  //                       setState(() => isStopping = true);
+  //                       await _cleanupOnExit();
+  //                       _navToHome();
+  //                     }
+  //                   : startCountdownFlow,
+  //               child: Text(isStreaming ? "STOP STREAM" : "GO LIVE", style: const TextStyle(fontSize: 16, color: Colors.white)),
+  //             ),
+  //           ),
+  //         ),
+
+  //         // Countdown Overlay
+  //         if (isPreparing)
+  //           Center(
+  //             child: Text("$countdown", style: const TextStyle(fontSize: 120, color: Colors.white, fontWeight: FontWeight.bold)),
+  //           ),
+  //       ],
+  //     ),
+  //   );
+  // }
+
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: Stack(
-        children: [
-          Positioned.fill(
-            child: const UiKitView(viewType: 'camera_preview'),
-          ),
-
-          // Top Bar
-          Positioned(
-            top: 50, left: 20, right: 20,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(widget.channelName, style: const TextStyle(color: Colors.white, fontSize: 18)),
-                if (isStreaming)
-                  const Text("● LIVE", style: TextStyle(color: Colors.red, fontSize: 18, fontWeight: FontWeight.bold)),
-              ],
+    // 👇 ADDED WILL POP SCOPE HERE 👇
+    return WillPopScope(
+      onWillPop: () async {
+        // SYSTEM BACK BUTTON LOGIC
+        setState(() => isStopping = true);
+        await _cleanupOnExit(); // <-- This will run stopStream and deleteSchedules
+        _navToHome(); // Go home, not back
+        return false; // Prevent the default back action since we handled it
+      },
+      child: Scaffold(
+        backgroundColor: Colors.black,
+        body: Stack(
+          children: [
+            Positioned.fill(
+              child: const UiKitView(viewType: 'camera_preview'),
             ),
-          ),
 
-          // Status Text
-          Positioned(
-            top: 100, left: 20, right: 20,
-            child: Center(
-              child: Text(streamStatus, style: const TextStyle(color: Colors.white, fontSize: 16)),
-            ),
-          ),
-
-          // 🔴 Configuration Buttons (Only show before streaming)
-          if (!isStreaming && !isPreparing)
+            // Top Bar
             Positioned(
-              right: 20,
-              top: MediaQuery.of(context).size.height / 3,
-              child: Column(
+              top: 50, left: 20, right: 20,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  FloatingActionButton(
-                    heroTag: "cam_flip",
-                    backgroundColor: Colors.black54,
-                    onPressed: _toggleCamera,
-                    child: const Icon(Icons.cameraswitch, color: Colors.white),
-                  ),
-                  const SizedBox(height: 20),
-                  FloatingActionButton(
-                    heroTag: "orientation",
-                    backgroundColor: Colors.black54,
-                    onPressed: _toggleOrientation,
-                    child: Icon(
-                      isLandscape ? Icons.screen_lock_landscape : Icons.screen_lock_portrait,
-                      color: Colors.white
-                    ),
-                  ),
+                  Text(widget.channelName, style: const TextStyle(color: Colors.white, fontSize: 18)),
+                  if (isStreaming)
+                    const Text("● LIVE", style: TextStyle(color: Colors.red, fontSize: 18, fontWeight: FontWeight.bold)),
                 ],
               ),
             ),
 
-          // Go Live / Stop Button
-          Positioned(
-            bottom: 40, left: 20, right: 20,
-            child: Center(
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
-                  backgroundColor: isStreaming ? Colors.red : Colors.blue,
-                ),
-                onPressed: isStreaming
-                    ? () async {
-                        setState(() => isStopping = true);
-                        await _cleanupOnExit();
-                        _navToHome();
-                      }
-                    : startCountdownFlow,
-                child: Text(isStreaming ? "STOP STREAM" : "GO LIVE", style: const TextStyle(fontSize: 16, color: Colors.white)),
+            // Status Text
+            Positioned(
+              top: 100, left: 20, right: 20,
+              child: Center(
+                child: Text(streamStatus, style: const TextStyle(color: Colors.white, fontSize: 16)),
               ),
             ),
-          ),
 
-          // Countdown Overlay
-          if (isPreparing)
-            Center(
-              child: Text("$countdown", style: const TextStyle(fontSize: 120, color: Colors.white, fontWeight: FontWeight.bold)),
+            // Configuration Buttons (Only show before streaming)
+            if (!isStreaming && !isPreparing)
+              Positioned(
+                right: 20,
+                top: MediaQuery.of(context).size.height / 3,
+                child: Column(
+                  children: [
+                    FloatingActionButton(
+                      heroTag: "cam_flip",
+                      backgroundColor: Colors.black54,
+                      onPressed: _toggleCamera,
+                      child: const Icon(Icons.cameraswitch, color: Colors.white),
+                    ),
+                    const SizedBox(height: 20),
+                    FloatingActionButton(
+                      heroTag: "orientation",
+                      backgroundColor: Colors.black54,
+                      onPressed: _toggleOrientation,
+                      child: Icon(
+                        isLandscape ? Icons.screen_lock_landscape : Icons.screen_lock_portrait,
+                        color: Colors.white
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+            // Go Live / Stop Button
+            Positioned(
+              bottom: 40, left: 20, right: 20,
+              child: Center(
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                    backgroundColor: isStreaming ? Colors.red : Colors.blue,
+                  ),
+                  onPressed: isStreaming
+                      ? () async {
+                          setState(() => isStopping = true);
+                          await _cleanupOnExit();
+                          _navToHome();
+                        }
+                      : startCountdownFlow,
+                  child: Text(isStreaming ? "STOP STREAM" : "GO LIVE", style: const TextStyle(fontSize: 16, color: Colors.white)),
+                ),
+              ),
             ),
-        ],
+
+            // Countdown Overlay
+            if (isPreparing)
+              Center(
+                child: Text("$countdown", style: const TextStyle(fontSize: 120, color: Colors.white, fontWeight: FontWeight.bold)),
+              ),
+          ],
+        ),
       ),
     );
   }
 }
-
-
-
-
-
-///////////////////////////////////
-/// IOS Compatible code
-///////////////////////////////////
-
-// import 'package:cms_app/pages/home/home_page.dart';
-// import 'package:cms_app/providers/live_content_provider.dart';
-// import 'package:flutter/material.dart';
-// import 'package:flutter/services.dart';
-// import 'package:provider/provider.dart';
-// import 'package:camera/camera.dart'; // ✅ CHANGED
-// import 'package:wakelock_plus/wakelock_plus.dart';
-
-// import '../../providers/channel_provider.dart';
-
-// class GoLivePage extends StatefulWidget {
-//   final String rtmpUrl;
-//   final String channelName;
-//   final String channelId;
-//   final String contentId;
-
-//   const GoLivePage({
-//     super.key,
-//     required this.rtmpUrl,
-//     required this.channelName,
-//     required this.channelId,
-//     required this.contentId,
-//   });
-
-//   @override
-//   State<GoLivePage> createState() => _GoLivePageState();
-// }
-
-// class _GoLivePageState extends State<GoLivePage> with WidgetsBindingObserver {
-//   CameraController? controller;
-//   List<CameraDescription> cameras = [];
-//   CameraDescription? currentCamera;
-
-//   static const _channel = MethodChannel('streaming_channel'); // ✅ NEW
-
-//   bool isStreaming = false;
-//   bool isLoading = true;
-//   bool _isCleaned = false;
-//   bool isStopping = false;
-//   bool isPreparing = false;
-//   bool isSwitching = false;
-
-//   bool userSelectedLandscape = false;
-//   int countdown = 3;
-//   late LiveContentProvider liveProvider;
-
-//   @override
-//   void initState() {
-//     super.initState();
-//     WidgetsBinding.instance.addObserver(this);
-//     liveProvider = Provider.of<LiveContentProvider>(context, listen: false);
-//     initCamera();
-//   }
-
-//   @override
-//   void didChangeAppLifecycleState(AppLifecycleState state) {
-//     if (state == AppLifecycleState.paused || state == AppLifecycleState.detached) {
-//       _cleanupOnExit();
-//     }
-//   }
-
-//   Future<void> initCamera() async {
-//     try {
-//       cameras = await availableCameras();
-//       if (cameras.isEmpty) throw Exception("No camera found");
-
-//       currentCamera = cameras.first;
-//       await _setupController();
-//     } catch (e) {
-//       debugPrint("Init Camera Error: $e");
-//     } finally {
-//       if (mounted) setState(() => isLoading = false);
-//     }
-//   }
-
-//   Future<void> _setupController() async {
-//     if (controller != null) {
-//       await controller!.dispose();
-//     }
-
-//     final newController = CameraController(
-//       currentCamera!,
-//       ResolutionPreset.medium,
-//       enableAudio: true,
-//     );
-
-//     try {
-//       await newController.initialize();
-//       if (mounted) {
-//         setState(() => controller = newController);
-//       }
-//     } catch (e) {
-//       debugPrint("Setup Controller Error: $e");
-//     }
-//   }
-
-//   /// ✅ START STREAM (Native iOS)
-//   Future<void> startStream() async {
-//     try {
-//       await _channel.invokeMethod('startStream', {
-//         "url": widget.rtmpUrl,
-//         "key": widget.channelId,
-//       });
-
-//       await WakelockPlus.enable();
-
-//       setState(() {
-//         isStreaming = true;
-//         isPreparing = false;
-//       });
-//     } catch (e) {
-//       debugPrint("Start Stream Error: $e");
-//       setState(() => isPreparing = false);
-//     }
-//   }
-
-//   /// ✅ STOP STREAM (Native iOS)
-//   Future<void> stopStream() async {
-//     try {
-//       await _channel.invokeMethod('stopStream');
-//     } catch (e) {
-//       debugPrint("Stop Stream Error: $e");
-//     }
-//   }
-
-//   Future<void> _cleanupOnExit() async {
-//     if (_isCleaned) return;
-//     _isCleaned = true;
-
-//     try {
-//       await stopStream(); // ✅ UPDATED
-
-//       await controller?.dispose();
-//       await WakelockPlus.disable();
-
-//       liveProvider.deleteSchedules(widget.contentId);
-//     } catch (e) {
-//       debugPrint("Cleanup error: $e");
-//     }
-
-//     if (mounted) {
-//       setState(() {
-//         isStreaming = false;
-//         isPreparing = false;
-//         isStopping = false;
-//       });
-//     }
-//   }
-
-//   Future<void> startCountdownFlow() async {
-//     setState(() => isPreparing = true);
-
-//     for (int i = 3; i > 0; i--) {
-//       setState(() => countdown = i);
-//       await Future.delayed(const Duration(seconds: 1));
-//     }
-
-//     await startStream();
-//   }
-
-//   void _navToHome() {
-//     Navigator.of(context).pushAndRemoveUntil(
-//       MaterialPageRoute(builder: (_) => const HomePage()),
-//       (route) => false,
-//     );
-//   }
-
-//   Widget _buildPreview() {
-//     if (controller == null || !controller!.value.isInitialized) {
-//       return const Center(child: CircularProgressIndicator());
-//     }
-
-//     return CameraPreview(controller!);
-//   }
-
-//   @override
-//   void dispose() {
-//     WidgetsBinding.instance.removeObserver(this);
-//     _cleanupOnExit();
-//     super.dispose();
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       backgroundColor: Colors.black,
-//       body: Stack(
-//         children: [
-//           Positioned.fill(child: _buildPreview()),
-
-//           /// TOP BAR
-//           Positioned(
-//             top: 50,
-//             left: 20,
-//             right: 20,
-//             child: Row(
-//               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//               children: [
-//                 Text(widget.channelName, style: const TextStyle(color: Colors.white)),
-//                 if (isStreaming)
-//                   const Text("● LIVE", style: TextStyle(color: Colors.red)),
-//               ],
-//             ),
-//           ),
-
-//           /// BUTTONS
-//           Positioned(
-//             bottom: 40,
-//             left: 20,
-//             right: 20,
-//             child: Center(
-//               child: ElevatedButton(
-//                 onPressed: isStreaming
-//                     ? () async {
-//                         setState(() => isStopping = true);
-//                         await _cleanupOnExit();
-//                         _navToHome();
-//                       }
-//                     : startCountdownFlow,
-//                 child: Text(isStreaming ? "STOP" : "GO LIVE"),
-//               ),
-//             ),
-//           ),
-
-//           /// COUNTDOWN
-//           if (isPreparing)
-//             Center(
-//               child: Text(
-//                 "$countdown",
-//                 style: const TextStyle(
-//                     fontSize: 120,
-//                     color: Colors.white,
-//                     fontWeight: FontWeight.bold),
-//               ),
-//             ),
-//         ],
-//       ),
-//     );
-//   }
-// }
