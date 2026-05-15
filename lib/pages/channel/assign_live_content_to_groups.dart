@@ -381,22 +381,12 @@
 //   }
 // }
 
-
-
-
-
-
-
 ///////////////////////////////////////////////////////////
 ///
 ///
 ///
 ///
 ///
-
-
-
-
 
 // import 'package:flutter/material.dart';
 // import 'package:provider/provider.dart';
@@ -709,19 +699,6 @@
 //   }
 // }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cms_app/services/api_service.dart';
@@ -909,7 +886,7 @@ class _AssignLiveContentToGroupsState extends State<AssignLiveContentToGroups> {
   /// =========================
   Widget buildContentStep() {
     final contentProvider = context.watch<LiveContentProvider>();
-    
+
     // Filtering exactly as you did in your auto-pick logic
     final contents = contentProvider.contents
         .where((e) => e.type.toLowerCase() == "provider")
@@ -935,7 +912,7 @@ class _AssignLiveContentToGroupsState extends State<AssignLiveContentToGroups> {
                   value: content,
                   groupValue: providerContent,
                   // NOTE: Change `content.id` to `content.name` or `content.title` if your model supports it
-                  title: Text("${content.name}"), 
+                  title: Text("${content.name}"),
                   subtitle: Text("Type: ${content.type}"),
                   onChanged: (value) {
                     setState(() {
@@ -1023,71 +1000,56 @@ class _AssignLiveContentToGroupsState extends State<AssignLiveContentToGroups> {
           child: groupProvider.loading
               ? const Center(child: CircularProgressIndicator())
               : groups.isEmpty
-                  ? const Center(child: Text("No groups found"))
-                  : ListView.builder(
-                      itemCount: groups.length,
-                      itemBuilder: (_, i) {
-                        final g = groups[i];
+              ? const Center(child: Text("No groups found"))
+              : ListView.builder(
+                  itemCount: groups.length,
+                  itemBuilder: (_, i) {
+                    final g = groups[i];
 
-                        return Card(
-                          margin: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 6,
-                          ),
-                          child: ListTile(
-                            title: Text(g.name),
-                            subtitle: Text(
-                              "Client: ${g.clientName}\nDevices: ${g.deviceCount}",
-                            ),
-                            isThreeLine: true,
-                            trailing: Checkbox(
-                              value: selectedGroupIds.contains(g.id),
-                              onChanged: (_) => toggleGroup(g.id),
-                            ),
-                            onTap: () => toggleGroup(g.id),
-                          ),
-                        );
-                      },
-                    ),
+                    return Card(
+                      margin: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      child: ListTile(
+                        title: Text(g.name),
+                        subtitle: Text(
+                          "Client: ${g.clientName}\nDevices: ${g.deviceCount}",
+                        ),
+                        isThreeLine: true,
+                        trailing: Checkbox(
+                          value: selectedGroupIds.contains(g.id),
+                          onChanged: (_) => toggleGroup(g.id),
+                        ),
+                        onTap: () => toggleGroup(g.id),
+                      ),
+                    );
+                  },
+                ),
         ),
 
         /// SCHEDULE CARD
         Container(
           padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.grey.shade100,
-            borderRadius: const BorderRadius.vertical(
-              top: Radius.circular(16),
-            ),
-          ),
-          child: Column(
+
+          child: Row(
             children: [
-              Row(
-                children: [
-                  // Expanded(
-                  //   child: InkWell(
-                  //     onTap: pickStartTime,
-                  //     child: _timeBox(
-                  //       startTime == null
-                  //           ? "Start Time"
-                  //           : startTime!.format(context),
-                  //     ),
-                  //   ),
-                  // ),
-                  // const SizedBox(width: 10),
-                  // Expanded(
-                  //   child: InkWell(
-                  //     onTap: pickEndTime,
-                  //     child: _timeBox(
-                  //       endTime == null
-                  //           ? "End Time"
-                  //           : endTime!.format(context),
-                  //     ),
-                  //   ),
-                  // ),
-                ],
-              ),
-              const SizedBox(height: 12),
+              // /// SMALL BACK BUTTON
+              // SizedBox(
+              //   width: 60,
+
+              //   child: OutlinedButton(
+              //     onPressed: () {
+              //       setState(() {
+              //         showGroups = false;
+              //       });
+              //     },
+
+              //     child: const Icon(Icons.arrow_back),
+              //   ),
+              // ),
+
+              // const SizedBox(width: 12),
 
               /// SUBMIT
               SizedBox(

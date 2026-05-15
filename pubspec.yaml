@@ -49,6 +49,7 @@ dependencies:
   # rtmp_streaming: ^1.0.5
   fl_chart: ^0.68.0
   # rtmp_publisher: ^0.0.4
+  url_launcher: ^6.3.0
 
 dev_dependencies:
   flutter_test:

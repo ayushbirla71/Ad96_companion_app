@@ -1,5 +1,7 @@
 import 'package:cms_app/providers/carousel_provider.dart';
 import 'package:cms_app/providers/channel_provider.dart';
+import 'package:cms_app/providers/export_provider.dart';
+
 import 'package:cms_app/providers/live_content_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -10,6 +12,7 @@ import 'providers/ad_provider.dart';
 import 'providers/schedule_provider.dart';
 import 'providers/group_provider.dart';
 import 'providers/subscription_provider.dart';
+
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 
 void main() {
@@ -30,6 +33,7 @@ void main() {
         ChangeNotifierProvider(create: (_) => ChannelProvider()),
         ChangeNotifierProvider(create: (_) => CarouselProvider()),
         ChangeNotifierProvider(create: (_) => SubscriptionProvider()),
+        ChangeNotifierProvider(create: (_) => ExportProvider()),
       ],
       child: const MyApp(),
     ),
