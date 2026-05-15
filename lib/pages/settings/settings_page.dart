@@ -81,6 +81,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
               onTap: () async {
                 await context.read<SubscriptionProvider>().loadHistory();
+                await context.read<SubscriptionProvider>().loadSubscription();
 
                 Navigator.push(
                   context,
