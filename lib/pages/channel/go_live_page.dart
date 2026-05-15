@@ -451,6 +451,8 @@ class _GoLivePageState extends State<GoLivePage> with WidgetsBindingObserver {
     
     // 🔴 1. Start the camera preview immediately when screen opens
     _startPreview();
+
+    WakelockPlus.enable();
   }
 
   @override
@@ -538,7 +540,7 @@ class _GoLivePageState extends State<GoLivePage> with WidgetsBindingObserver {
         "key": streamKey,
       });
 
-      await WakelockPlus.enable();
+      // await WakelockPlus.enable();
 
       setState(() {
         isStreaming = true;
