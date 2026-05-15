@@ -17,6 +17,33 @@ class FeatureAccess {
 
     // REFRESH SUBSCRIPTION
     await provider.loadSubscription();
+    if (provider.subscription == null) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const SubscriptionRestrictionPage(
+            type: RestrictionType.noSubscription,
+            featureKey: "SUBSCRIPTION",
+          ),
+        ),
+      );
+
+      return;
+    }
+
+    if (isSubscriptionExpired(provider.subscription)) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const SubscriptionRestrictionPage(
+            type: RestrictionType.expiredSubscription,
+            featureKey: "SUBSCRIPTION",
+          ),
+        ),
+      );
+
+      return;
+    }
 
     final hasAccess = provider.hasFeature(featureKey);
 
@@ -50,6 +77,34 @@ class FeatureAccess {
 
     // REFRESH SUBSCRIPTION
     await provider.loadSubscription();
+
+    if (provider.subscription == null) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const SubscriptionRestrictionPage(
+            type: RestrictionType.noSubscription,
+            featureKey: "SUBSCRIPTION",
+          ),
+        ),
+      );
+
+      return;
+    }
+
+    if (isSubscriptionExpired(provider.subscription)) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const SubscriptionRestrictionPage(
+            type: RestrictionType.expiredSubscription,
+            featureKey: "SUBSCRIPTION",
+          ),
+        ),
+      );
+
+      return;
+    }
 
     final allowed = provider.hasLimitAvailable(limitKey, currentCount);
 
@@ -88,6 +143,34 @@ class FeatureAccess {
     // REFRESH SUBSCRIPTION
     await provider.loadSubscription();
 
+    if (provider.subscription == null) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const SubscriptionRestrictionPage(
+            type: RestrictionType.noSubscription,
+            featureKey: "SUBSCRIPTION",
+          ),
+        ),
+      );
+
+      return;
+    }
+
+    if (isSubscriptionExpired(provider.subscription)) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const SubscriptionRestrictionPage(
+            type: RestrictionType.expiredSubscription,
+            featureKey: "SUBSCRIPTION",
+          ),
+        ),
+      );
+
+      return;
+    }
+
     final allowed = provider.hasStorageAvailable(newFileSizeBytes);
 
     final usedStorage = provider.getUsedStorage();
@@ -122,6 +205,36 @@ class FeatureAccess {
 
     /// REFRESH
     await provider.loadSubscription();
+
+    /// NO SUBSCRIPTION
+    if (provider.subscription == null) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const SubscriptionRestrictionPage(
+            type: RestrictionType.noSubscription,
+            featureKey: "SUBSCRIPTION",
+          ),
+        ),
+      );
+
+      return false;
+    }
+
+    /// EXPIRED SUBSCRIPTION
+    if (isSubscriptionExpired(provider.subscription)) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const SubscriptionRestrictionPage(
+            type: RestrictionType.expiredSubscription,
+            featureKey: "SUBSCRIPTION",
+          ),
+        ),
+      );
+
+      return false;
+    }
 
     final allowed = provider.hasStorageAvailable(newFileSizeBytes);
 
@@ -164,6 +277,33 @@ class FeatureAccess {
 
     // REFRESH SUBSCRIPTION
     await provider.loadSubscription();
+    if (provider.subscription == null) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const SubscriptionRestrictionPage(
+            type: RestrictionType.noSubscription,
+            featureKey: "SUBSCRIPTION",
+          ),
+        ),
+      );
+
+      return;
+    }
+
+    if (isSubscriptionExpired(provider.subscription)) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const SubscriptionRestrictionPage(
+            type: RestrictionType.expiredSubscription,
+            featureKey: "SUBSCRIPTION",
+          ),
+        ),
+      );
+
+      return;
+    }
 
     /// LIMIT CHECK
     final limitAllowed = provider.hasLimitAvailable(limitKey, currentCount);
@@ -217,5 +357,57 @@ class FeatureAccess {
 
     /// OPEN PAGE
     Navigator.push(context, MaterialPageRoute(builder: (_) => page));
+  }
+
+  static Future<bool> checkSubscription({required BuildContext context}) async {
+    final provider = Provider.of<SubscriptionProvider>(context, listen: false);
+
+    await provider.loadSubscription();
+
+    final hasSubscription = provider.subscription != null;
+
+    if (!hasSubscription) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const SubscriptionRestrictionPage(
+            type: RestrictionType.noSubscription,
+            featureKey: "SUBSCRIPTION",
+          ),
+        ),
+      );
+
+      return false;
+    }
+
+    return true;
+  }
+
+  static bool isSubscriptionExpired(dynamic subscription) {
+    if (subscription == null) {
+      return true;
+    }
+
+    /// STATUS CHECK
+    final status = subscription.status.toString().toLowerCase();
+
+    if (status == "expired") {
+      return true;
+    }
+
+    /// DATE CHECK
+    final expiryDateString = subscription.endDate;
+
+    if (expiryDateString == null || expiryDateString.toString().isEmpty) {
+      return false;
+    }
+
+    final expiryDate = DateTime.tryParse(expiryDateString);
+
+    if (expiryDate == null) {
+      return false;
+    }
+
+    return expiryDate.isBefore(DateTime.now());
   }
 }

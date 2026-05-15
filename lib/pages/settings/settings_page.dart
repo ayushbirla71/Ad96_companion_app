@@ -1,4 +1,6 @@
 import 'package:cms_app/pages/login/login_page.dart';
+import 'package:cms_app/pages/settings/privacy_policy_page.dart';
+import 'package:cms_app/pages/settings/terms_conditions_page.dart';
 import 'package:cms_app/pages/subscription/subscription_details_page.dart';
 import 'package:cms_app/providers/subscription_provider.dart';
 import 'package:flutter/material.dart';
@@ -96,25 +98,24 @@ class _SettingsPageState extends State<SettingsPage> {
           const SizedBox(height: 16),
 
           /// 🔹 PREFERENCES
-          _buildSectionTitle("Preferences"),
-          _buildCard([
-            SwitchListTile(
-              secondary: const Icon(Icons.notifications_active_outlined),
-              title: const Text("Push Notifications"),
-              value: _notificationsEnabled,
-              onChanged: (v) => setState(() => _notificationsEnabled = v),
-            ),
-            _divider(),
-            SwitchListTile(
-              secondary: const Icon(Icons.dark_mode_outlined),
-              title: const Text("Dark Mode"),
-              value: _darkModeEnabled,
-              onChanged: (v) => setState(() => _darkModeEnabled = v),
-            ),
-            _divider(),
-            _tile(Icons.language, "Language"),
-          ]),
-
+          // _buildSectionTitle("Preferences"),
+          // _buildCard([
+          //   SwitchListTile(
+          //     secondary: const Icon(Icons.notifications_active_outlined),
+          //     title: const Text("Push Notifications"),
+          //     value: _notificationsEnabled,
+          //     onChanged: (v) => setState(() => _notificationsEnabled = v),
+          //   ),
+          //   _divider(),
+          //   SwitchListTile(
+          //     secondary: const Icon(Icons.dark_mode_outlined),
+          //     title: const Text("Dark Mode"),
+          //     value: _darkModeEnabled,
+          //     onChanged: (v) => setState(() => _darkModeEnabled = v),
+          //   ),
+          //   _divider(),
+          //   _tile(Icons.language, "Language"),
+          // ]),
           const SizedBox(height: 16),
 
           /// 🔹 SUPPORT
@@ -122,8 +123,35 @@ class _SettingsPageState extends State<SettingsPage> {
           _buildCard([
             _tile(Icons.help_outline, "Help Center"),
             _divider(),
-            _tile(Icons.privacy_tip_outlined, "Privacy Policy"),
+            // _tile(Icons.privacy_tip_outlined, "Privacy Policy"),
+            _tile(
+              Icons.privacy_tip_outlined,
+              "Privacy Policy",
+
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const PrivacyPolicyPage()),
+                );
+              },
+            ),
             _divider(),
+
+            _tile(
+              Icons.description_outlined,
+              "Terms & Conditions",
+
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const TermsConditionsPage(),
+                  ),
+                );
+              },
+            ),
+            _divider(),
+
             const ListTile(
               leading: Icon(Icons.info_outline),
               title: Text("App Version"),

@@ -2,7 +2,13 @@ import 'package:flutter/material.dart';
 
 import 'sales_contact_page.dart';
 
-enum RestrictionType { feature, limit, storage }
+enum RestrictionType {
+  feature,
+  limit,
+  storage,
+  noSubscription,
+  expiredSubscription,
+}
 
 class SubscriptionRestrictionPage extends StatelessWidget {
   final RestrictionType type;
@@ -47,6 +53,12 @@ class SubscriptionRestrictionPage extends StatelessWidget {
 
       case RestrictionType.storage:
         return "Storage Limit Reached";
+
+      case RestrictionType.noSubscription:
+        return "No Active Subscription";
+
+      case RestrictionType.expiredSubscription:
+        return "Subscription Expired";
     }
   }
 
@@ -62,6 +74,12 @@ class SubscriptionRestrictionPage extends StatelessWidget {
 
       case RestrictionType.storage:
         return "Your storage limit has been reached.";
+
+      case RestrictionType.noSubscription:
+        return "You do not have an active subscription plan.";
+
+      case RestrictionType.expiredSubscription:
+        return "Your subscription has expired. Please renew your plan.";
     }
   }
 
@@ -75,6 +93,11 @@ class SubscriptionRestrictionPage extends StatelessWidget {
 
       case RestrictionType.storage:
         return Icons.storage;
+
+      case RestrictionType.noSubscription:
+        return Icons.credit_card_off;
+      case RestrictionType.expiredSubscription:
+        return Icons.event_busy;
     }
   }
 
@@ -88,6 +111,11 @@ class SubscriptionRestrictionPage extends StatelessWidget {
 
       case RestrictionType.storage:
         return Colors.blue;
+
+      case RestrictionType.noSubscription:
+        return Colors.purple;
+      case RestrictionType.expiredSubscription:
+        return Colors.deepOrange;
     }
   }
 

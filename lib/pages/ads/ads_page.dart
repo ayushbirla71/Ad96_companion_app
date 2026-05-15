@@ -128,6 +128,7 @@ class _AdsPageState extends State<AdsPage> {
           IconButton(
             icon: const Icon(Icons.add),
             tooltip: "Add Ad",
+
             // onPressed: () {
             //   Navigator.push(
             //     context,
@@ -135,14 +136,9 @@ class _AdsPageState extends State<AdsPage> {
             //   );
             // },
             onPressed: () {
-              FeatureAccess.openLimitedAndStorageFeature(
+              FeatureAccess.openStorageLimitedFeature(
                 context: context,
 
-                limitKey: "MAX_ADS",
-
-                currentCount: adProvider.ads.length,
-
-                // FILE SIZE IN BYTES
                 newFileSizeBytes: 0,
 
                 page: const AddAdPage(),

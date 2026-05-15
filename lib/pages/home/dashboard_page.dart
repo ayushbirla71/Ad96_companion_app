@@ -1270,6 +1270,7 @@
 // }
 
 import 'dart:convert';
+import 'package:cms_app/pages/layoutpage/layout_access_page.dart';
 import 'package:cms_app/services/api_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -2302,53 +2303,127 @@ class _DashboardPageState extends State<DashboardPage>
 
   // ─── Stat grid ─────────────────────────────────────────────────────────────
 
-  Widget _statGrid(DashboardStats s) => GridView.count(
-    shrinkWrap: true,
-    physics: const NeverScrollableScrollPhysics(),
-    crossAxisCount: 2,
-    crossAxisSpacing: 10,
-    mainAxisSpacing: 10,
-    childAspectRatio: MediaQuery.of(context).size.width < 380 ? 1.05 : 1.22,
-    children: [
-      _StatCard(
-        icon: Icons.campaign_rounded,
-        label: 'Ads Scheduled',
-        value: _fmt(s.adsScheduled),
-        color: _c.accent,
-        bgColor: _c.accentLight,
-        trend: '+12%',
-        positive: true,
-      ),
-      _StatCard(
-        icon: Icons.tv_rounded,
-        label: 'Active Devices',
-        value: s.activeDevices.toString(),
-        color: _c.green,
-        bgColor: _c.greenLight,
-        trend: 'Online',
-        positive: true,
-      ),
-      _StatCard(
-        icon: Icons.bug_report_rounded,
-        label: 'Diagnostic Errors',
-        value: _fmt(s.diagnosticErrors),
-        color: _c.red,
-        bgColor: _c.redLight,
-        trend: 'Critical',
-        positive: false,
-      ),
-      _StatCard(
-        icon: Icons.wifi_rounded,
-        label: 'Network Health',
-        value: '${s.networkHealth.toStringAsFixed(1)}%',
-        color: s.networkHealth < 30 ? _c.red : _c.teal,
-        bgColor: s.networkHealth < 30 ? _c.redLight : _c.tealLight,
-        trend: s.networkHealth < 30 ? 'Low' : 'Good',
-        positive: s.networkHealth >= 30,
-      ),
-    ],
-  );
+  // Widget _statGrid(DashboardStats s) => GridView.count(
+  //   shrinkWrap: true,
+  //   physics: const NeverScrollableScrollPhysics(),
+  //   crossAxisCount: 2,
+  //   crossAxisSpacing: 10,
+  //   mainAxisSpacing: 10,
+  //   childAspectRatio: MediaQuery.of(context).size.width < 380 ? 1.05 : 1.22,
+  //   children: [
+  //     _StatCard(
+  //       icon: Icons.campaign_rounded,
+  //       label: 'Ads Scheduled',
+  //       value: _fmt(s.adsScheduled),
+  //       color: _c.accent,
+  //       bgColor: _c.accentLight,
+  //       trend: '+12%',
+  //       positive: true,
+  //     ),
+  //     _StatCard(
+  //       icon: Icons.tv_rounded,
+  //       label: 'Active Devices',
+  //       value: s.activeDevices.toString(),
+  //       color: _c.green,
+  //       bgColor: _c.greenLight,
+  //       trend: 'Online',
+  //       positive: true,
+  //     ),
+  //     _StatCard(
+  //       icon: Icons.bug_report_rounded,
+  //       label: 'Diagnostic Errors',
+  //       value: _fmt(s.diagnosticErrors),
+  //       color: _c.red,
+  //       bgColor: _c.redLight,
+  //       trend: 'Critical',
+  //       positive: false,
+  //     ),
+  //     _StatCard(
+  //       icon: Icons.wifi_rounded,
+  //       label: 'Network Health',
+  //       value: '${s.networkHealth.toStringAsFixed(1)}%',
+  //       color: s.networkHealth < 30 ? _c.red : _c.teal,
+  //       bgColor: s.networkHealth < 30 ? _c.redLight : _c.tealLight,
+  //       trend: s.networkHealth < 30 ? 'Low' : 'Good',
+  //       positive: s.networkHealth >= 30,
+  //     ),
+  //   ],
+  // );
 
+  Widget _statGrid(DashboardStats s) {
+    final width = MediaQuery.of(context).size.width;
+
+    int crossAxisCount = 2;
+
+    /// TABLET
+    if (width >= 900) {
+      crossAxisCount = 4;
+    }
+    /// SMALL TABLET
+    else if (width >= 600) {
+      crossAxisCount = 3;
+    }
+
+    return GridView.count(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+
+      crossAxisCount: crossAxisCount,
+
+      crossAxisSpacing: 10,
+      mainAxisSpacing: 10,
+
+      childAspectRatio: width >= 900
+          ? 1.6
+          : width >= 600
+          ? 1.35
+          : width < 380
+          ? 1.05
+          : 1.22,
+
+      children: [
+        _StatCard(
+          icon: Icons.campaign_rounded,
+          label: 'Ads Scheduled',
+          value: _fmt(s.adsScheduled),
+          color: _c.accent,
+          bgColor: _c.accentLight,
+          trend: '+12%',
+          positive: true,
+        ),
+
+        _StatCard(
+          icon: Icons.tv_rounded,
+          label: 'Active Devices',
+          value: s.activeDevices.toString(),
+          color: _c.green,
+          bgColor: _c.greenLight,
+          trend: 'Online',
+          positive: true,
+        ),
+
+        _StatCard(
+          icon: Icons.bug_report_rounded,
+          label: 'Diagnostic Errors',
+          value: _fmt(s.diagnosticErrors),
+          color: _c.red,
+          bgColor: _c.redLight,
+          trend: 'Critical',
+          positive: false,
+        ),
+
+        _StatCard(
+          icon: Icons.wifi_rounded,
+          label: 'Network Health',
+          value: '${s.networkHealth.toStringAsFixed(1)}%',
+          color: s.networkHealth < 30 ? _c.red : _c.teal,
+          bgColor: s.networkHealth < 30 ? _c.redLight : _c.tealLight,
+          trend: s.networkHealth < 30 ? 'Low' : 'Good',
+          positive: s.networkHealth >= 30,
+        ),
+      ],
+    );
+  }
   // ─── Quick Actions ─────────────────────────────────────────────────────────
 
   Widget _quickActions() {
@@ -2402,6 +2477,14 @@ class _DashboardPageState extends State<DashboardPage>
         _c.redLight,
         () => _go(const LiveContentPage()),
       ),
+      // NEW LAYOUTS TAB
+      _QAData(
+        Icons.dashboard_customize_rounded,
+        'Layouts',
+        Colors.indigo,
+        Colors.indigo.shade100,
+        () => _go(const LayoutAccessPage()),
+      ),
       _QAData(
         Icons.settings_rounded,
         'Settings',
@@ -2410,6 +2493,10 @@ class _DashboardPageState extends State<DashboardPage>
         () => _go(const SettingsPage()),
       ),
     ];
+
+    final width = MediaQuery.of(context).size.width;
+
+    final isTablet = width >= 700;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -2428,11 +2515,15 @@ class _DashboardPageState extends State<DashboardPage>
       child: GridView.builder(
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 4,
-          childAspectRatio: 0.85,
-          mainAxisSpacing: 12,
-          crossAxisSpacing: 4,
+
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: isTablet ? 5 : 4,
+
+          childAspectRatio: isTablet ? 1.05 : 0.85,
+
+          mainAxisSpacing: isTablet ? 18 : 12,
+
+          crossAxisSpacing: isTablet ? 14 : 4,
         ),
         itemCount: actions.length,
         itemBuilder: (_, i) => _QuickActionTile(data: actions[i]),
