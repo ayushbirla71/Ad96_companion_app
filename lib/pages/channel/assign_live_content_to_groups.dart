@@ -381,13 +381,332 @@
 //   }
 // }
 
+///////////////////////////////////////////////////////////
+///
+///
+///
+///
+///
+
+// import 'package:flutter/material.dart';
+// import 'package:provider/provider.dart';
+
+// import '../../providers/group_provider.dart';
+// import '../../providers/channel_provider.dart';
+
+// import '../../models/group.dart';
+
+// import 'select_method_to_go_live.dart';
+
+// class AssignLiveContentToGroups extends StatefulWidget {
+//   const AssignLiveContentToGroups({super.key});
+
+//   @override
+//   State<AssignLiveContentToGroups> createState() =>
+//       _AssignLiveContentToGroupsState();
+// }
+
+// class _AssignLiveContentToGroupsState extends State<AssignLiveContentToGroups> {
+//   /// GROUPS
+//   Set<String> selectedGroupIds = {};
+
+//   /// CHANNEL
+//   String? selectedChannelId;
+
+//   /// SEARCH
+//   String searchText = "";
+
+//   /// UI
+//   bool loading = true;
+//   bool submitting = false;
+
+//   /// STEP
+//   bool showGroups = false;
+
+//   @override
+//   void initState() {
+//     super.initState();
+//     initData();
+//   }
+
+//   /// LOAD DATA
+//   Future<void> initData() async {
+//     try {
+//       await context.read<GroupProvider>().loadGroups();
+
+//       await context.read<ChannelProvider>().fetchChannels();
+
+//       setState(() {
+//         loading = false;
+//       });
+//     } catch (e) {
+//       setState(() {
+//         loading = false;
+//       });
+
+//       _err("Failed to load data");
+//     }
+//   }
+
+//   /// ERROR
+//   void _err(String msg) {
+//     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+//   }
+
+//   /// GROUP SELECT
+//   void toggleGroup(String id) {
+//     setState(() {
+//       if (selectedGroupIds.contains(id)) {
+//         selectedGroupIds.remove(id);
+//       } else {
+//         selectedGroupIds.add(id);
+//       }
+//     });
+//   }
+
+//   /// SUBMIT
+//   Future<void> submit() async {
+//     if (selectedGroupIds.isEmpty) {
+//       return _err("Select at least one group");
+//     }
+
+//     setState(() {
+//       submitting = true;
+//     });
+
+//     final groupProvider = context.read<GroupProvider>();
+
+//     final selectedGroups = groupProvider.groups
+//         .where((g) => selectedGroupIds.contains(g.id))
+//         .toList();
+
+//     Navigator.push(
+//       context,
+//       MaterialPageRoute(
+//         builder: (_) => SelectMethodToGoLive(
+//           channelId: selectedChannelId!,
+//           contentId: selectedChannelId!,
+//           selectedGroups: selectedGroups,
+//         ),
+//       ),
+//     );
+
+//     setState(() {
+//       submitting = false;
+//     });
+//   }
+
+//   @override
+//   Widget build(BuildContext context) {
+//     if (loading) {
+//       return const Scaffold(body: Center(child: CircularProgressIndicator()));
+//     }
+
+//     return Scaffold(
+//       appBar: AppBar(
+//         title: Text(showGroups ? "Select Groups" : "Select Channel"),
+//       ),
+
+//       body: !showGroups ? buildChannelStep() : buildGroupStep(),
+//     );
+//   }
+
+//   /// =========================
+//   /// CHANNEL STEP
+//   /// =========================
+
+//   Widget buildChannelStep() {
+//     final channelProvider = context.watch<ChannelProvider>();
+
+//     return Column(
+//       children: [
+//         Expanded(
+//           child: ListView.builder(
+//             itemCount: channelProvider.channels.length,
+
+//             itemBuilder: (_, i) {
+//               final channel = channelProvider.channels[i];
+
+//               return Card(
+//                 margin: const EdgeInsets.all(12),
+
+//                 child: RadioListTile<String>(
+//                   value: channel.channelId,
+
+//                   groupValue: selectedChannelId,
+
+//                   title: Text(channel.name),
+
+//                   subtitle: Text(channel.status),
+
+//                   onChanged: (value) {
+//                     setState(() {
+//                       selectedChannelId = value;
+//                     });
+//                   },
+//                 ),
+//               );
+//             },
+//           ),
+//         ),
+
+//         Padding(
+//           padding: const EdgeInsets.all(16),
+
+//           child: SizedBox(
+//             width: double.infinity,
+
+//             child: ElevatedButton(
+//               onPressed: () {
+//                 if (selectedChannelId == null) {
+//                   _err("Please select one channel");
+//                   return;
+//                 }
+
+//                 setState(() {
+//                   showGroups = true;
+//                 });
+//               },
+
+//               child: const Text("Continue"),
+//             ),
+//           ),
+//         ),
+//       ],
+//     );
+//   }
+
+//   /// =========================
+//   /// GROUP STEP
+//   /// =========================
+
+//   Widget buildGroupStep() {
+//     final groupProvider = context.watch<GroupProvider>();
+
+//     final groups = groupProvider.groups
+//         .where((g) => g.name.toLowerCase().contains(searchText.toLowerCase()))
+//         .toList();
+
+//     return Column(
+//       children: [
+//         /// SEARCH
+//         Padding(
+//           padding: const EdgeInsets.all(12),
+
+//           child: TextField(
+//             decoration: InputDecoration(
+//               hintText: "Search group...",
+//               prefixIcon: const Icon(Icons.search),
+
+//               border: OutlineInputBorder(
+//                 borderRadius: BorderRadius.circular(10),
+//               ),
+//             ),
+
+//             onChanged: (v) {
+//               setState(() {
+//                 searchText = v;
+//               });
+//             },
+//           ),
+//         ),
+
+//         /// GROUP LIST
+//         Expanded(
+//           child: groups.isEmpty
+//               ? const Center(child: Text("No groups found"))
+//               : ListView.builder(
+//                   itemCount: groups.length,
+
+//                   itemBuilder: (_, i) {
+//                     final g = groups[i];
+
+//                     return Card(
+//                       margin: const EdgeInsets.symmetric(
+//                         horizontal: 12,
+//                         vertical: 6,
+//                       ),
+
+//                       child: ListTile(
+//                         title: Text(g.name),
+
+//                         subtitle: Text(
+//                           "Client: ${g.clientName}\nDevices: ${g.deviceCount}",
+//                         ),
+
+//                         isThreeLine: true,
+
+//                         trailing: Checkbox(
+//                           value: selectedGroupIds.contains(g.id),
+
+//                           onChanged: (_) {
+//                             toggleGroup(g.id);
+//                           },
+//                         ),
+
+//                         onTap: () {
+//                           toggleGroup(g.id);
+//                         },
+//                       ),
+//                     );
+//                   },
+//                 ),
+//         ),
+
+//         /// BUTTONS
+//         /// BUTTONS
+//         Padding(
+//           padding: const EdgeInsets.all(16),
+
+//           child: Row(
+//             children: [
+//               /// SMALL BACK BUTTON
+//               SizedBox(
+//                 width: 60,
+
+//                 child: OutlinedButton(
+//                   onPressed: () {
+//                     setState(() {
+//                       showGroups = false;
+//                     });
+//                   },
+
+//                   child: const Icon(Icons.arrow_back),
+//                 ),
+//               ),
+
+//               const SizedBox(width: 12),
+
+//               /// BIG CONTINUE BUTTON
+//               Expanded(
+//                 child: ElevatedButton(
+//                   onPressed: submitting ? null : submit,
+
+//                   child: submitting
+//                       ? const SizedBox(
+//                           height: 20,
+//                           width: 20,
+//                           child: CircularProgressIndicator(strokeWidth: 2),
+//                         )
+//                       : const Text("Assign & Continue"),
+//                 ),
+//               ),
+//             ],
+//           ),
+//         ),
+//       ],
+//     );
+//   }
+// }
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:cms_app/services/api_service.dart';
 
+import '../../providers/live_content_provider.dart';
 import '../../providers/group_provider.dart';
-import '../../providers/channel_provider.dart';
-
 import '../../models/group.dart';
+import '../../models/liveContent.dart';
 
 import 'select_method_to_go_live.dart';
 
@@ -400,20 +719,19 @@ class AssignLiveContentToGroups extends StatefulWidget {
 }
 
 class _AssignLiveContentToGroupsState extends State<AssignLiveContentToGroups> {
-  /// GROUPS
   Set<String> selectedGroupIds = {};
-
-  /// CHANNEL
-  String? selectedChannelId;
-
-  /// SEARCH
   String searchText = "";
 
-  /// UI
+  DateTime selectedDate = DateTime.now();
+  TimeOfDay? startTime;
+  TimeOfDay? endTime;
+
+  LiveContent? providerContent;
+
   bool loading = true;
   bool submitting = false;
 
-  /// STEP
+  /// ADDED: Controls which step of the UI to show
   bool showGroups = false;
 
   @override
@@ -422,31 +740,49 @@ class _AssignLiveContentToGroupsState extends State<AssignLiveContentToGroups> {
     initData();
   }
 
-  /// LOAD DATA
+  /// INIT DATA
   Future<void> initData() async {
     try {
-      await context.read<GroupProvider>().loadGroups();
+      final contentProvider = context.read<LiveContentProvider>();
+      final groupProvider = context.read<GroupProvider>();
 
-      await context.read<ChannelProvider>().fetchChannels();
+      await contentProvider.fetchContents();
+      await groupProvider.loadGroups();
 
+      /// REMOVED: Auto-selection of the first provider.
+      /// Now we just load the data and wait for the user to select.
       setState(() {
         loading = false;
       });
     } catch (e) {
-      setState(() {
-        loading = false;
-      });
-
+      setState(() => loading = false);
       _err("Failed to load data");
     }
   }
 
-  /// ERROR
+  /// ERROR SNACKBAR
   void _err(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
 
-  /// GROUP SELECT
+  /// TIME PICKER
+  Future<void> pickStartTime() async {
+    final t = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.now(),
+    );
+    if (t != null) setState(() => startTime = t);
+  }
+
+  Future<void> pickEndTime() async {
+    final t = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.now(),
+    );
+    if (t != null) setState(() => endTime = t);
+  }
+
+  /// SELECT GROUP
   void toggleGroup(String id) {
     setState(() {
       if (selectedGroupIds.contains(id)) {
@@ -457,36 +793,65 @@ class _AssignLiveContentToGroupsState extends State<AssignLiveContentToGroups> {
     });
   }
 
+  void toggleSelectAll(List<Group> groups) {
+    setState(() {
+      if (selectedGroupIds.length == groups.length) {
+        selectedGroupIds.clear();
+      } else {
+        selectedGroupIds = groups.map((g) => g.id).toSet();
+      }
+    });
+  }
+
   /// SUBMIT
   Future<void> submit() async {
+    if (providerContent == null) {
+      return _err("Provider content missing");
+    }
+
     if (selectedGroupIds.isEmpty) {
       return _err("Select at least one group");
     }
 
-    setState(() {
-      submitting = true;
-    });
+    setState(() => submitting = true);
+
+    final start = DateTime(
+      selectedDate.year,
+      selectedDate.month,
+      selectedDate.day,
+      0, // 00:00
+      0,
+    );
+
+    final end = DateTime(
+      selectedDate.year,
+      selectedDate.month,
+      selectedDate.day,
+      23, // 23:59
+      59,
+    );
+
+    print("Start: $start"); // 00:00
+    print("End: $end"); // 23:59
 
     final groupProvider = context.read<GroupProvider>();
-
     final selectedGroups = groupProvider.groups
         .where((g) => selectedGroupIds.contains(g.id))
         .toList();
 
+    /// ✅ NAVIGATE (NO API CALL HERE)
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => SelectMethodToGoLive(
-          channelId: selectedChannelId!,
-          contentId: selectedChannelId!,
+          channelId: providerContent!.channel_id,
+          contentId: providerContent!.id,
           selectedGroups: selectedGroups,
         ),
       ),
     );
 
-    setState(() {
-      submitting = false;
-    });
+    setState(() => submitting = false);
   }
 
   @override
@@ -497,44 +862,61 @@ class _AssignLiveContentToGroupsState extends State<AssignLiveContentToGroups> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(showGroups ? "Select Groups" : "Select Channel"),
+        title: Text(showGroups ? "Assign Channel" : "Select Live Content"),
+        // Back button to return to Content Selection step
+        leading: showGroups
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () {
+                  setState(() {
+                    showGroups = false;
+                  });
+                },
+              )
+            : null,
       ),
 
-      body: !showGroups ? buildChannelStep() : buildGroupStep(),
+      /// Switch between Content Selection Step and Group Selection Step
+      body: showGroups ? buildGroupStep() : buildContentStep(),
     );
   }
 
   /// =========================
-  /// CHANNEL STEP
+  /// STEP 1: CONTENT SELECTION
   /// =========================
+  Widget buildContentStep() {
+    final contentProvider = context.watch<LiveContentProvider>();
 
-  Widget buildChannelStep() {
-    final channelProvider = context.watch<ChannelProvider>();
+    // Filtering exactly as you did in your auto-pick logic
+    final contents = contentProvider.contents
+        .where((e) => e.type.toLowerCase() == "provider")
+        .toList();
+
+    if (contents.isEmpty) {
+      return const Center(child: Text("No provider content available"));
+    }
 
     return Column(
       children: [
         Expanded(
           child: ListView.builder(
-            itemCount: channelProvider.channels.length,
-
+            itemCount: contents.length,
             itemBuilder: (_, i) {
-              final channel = channelProvider.channels[i];
+              final content = contents[i];
+
+              print("content item.... ${content.name}");
 
               return Card(
-                margin: const EdgeInsets.all(12),
-
-                child: RadioListTile<String>(
-                  value: channel.channelId,
-
-                  groupValue: selectedChannelId,
-
-                  title: Text(channel.name),
-
-                  subtitle: Text(channel.status),
-
+                margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                child: RadioListTile<LiveContent>(
+                  value: content,
+                  groupValue: providerContent,
+                  // NOTE: Change `content.id` to `content.name` or `content.title` if your model supports it
+                  title: Text("${content.name}"),
+                  subtitle: Text("Type: ${content.type}"),
                   onChanged: (value) {
                     setState(() {
-                      selectedChannelId = value;
+                      providerContent = value;
                     });
                   },
                 ),
@@ -542,25 +924,20 @@ class _AssignLiveContentToGroupsState extends State<AssignLiveContentToGroups> {
             },
           ),
         ),
-
         Padding(
           padding: const EdgeInsets.all(16),
-
           child: SizedBox(
             width: double.infinity,
-
             child: ElevatedButton(
               onPressed: () {
-                if (selectedChannelId == null) {
-                  _err("Please select one channel");
+                if (providerContent == null) {
+                  _err("Please select a live content");
                   return;
                 }
-
                 setState(() {
                   showGroups = true;
                 });
               },
-
               child: const Text("Continue"),
             ),
           ),
@@ -570,9 +947,8 @@ class _AssignLiveContentToGroupsState extends State<AssignLiveContentToGroups> {
   }
 
   /// =========================
-  /// GROUP STEP
+  /// STEP 2: GROUP SELECTION
   /// =========================
-
   Widget buildGroupStep() {
     final groupProvider = context.watch<GroupProvider>();
 
@@ -585,32 +961,48 @@ class _AssignLiveContentToGroupsState extends State<AssignLiveContentToGroups> {
         /// SEARCH
         Padding(
           padding: const EdgeInsets.all(12),
-
           child: TextField(
             decoration: InputDecoration(
               hintText: "Search group...",
               prefixIcon: const Icon(Icons.search),
-
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
               ),
             ),
+            onChanged: (v) => setState(() => searchText = v),
+          ),
+        ),
 
-            onChanged: (v) {
-              setState(() {
-                searchText = v;
-              });
-            },
+        /// SELECT ALL
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                "Groups",
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              TextButton(
+                onPressed: () => toggleSelectAll(groups),
+                child: Text(
+                  selectedGroupIds.length == groups.length
+                      ? "Unselect All"
+                      : "Select All",
+                ),
+              ),
+            ],
           ),
         ),
 
         /// GROUP LIST
         Expanded(
-          child: groups.isEmpty
+          child: groupProvider.loading
+              ? const Center(child: CircularProgressIndicator())
+              : groups.isEmpty
               ? const Center(child: Text("No groups found"))
               : ListView.builder(
                   itemCount: groups.length,
-
                   itemBuilder: (_, i) {
                     final g = groups[i];
 
@@ -619,36 +1011,25 @@ class _AssignLiveContentToGroupsState extends State<AssignLiveContentToGroups> {
                         horizontal: 12,
                         vertical: 6,
                       ),
-
                       child: ListTile(
                         title: Text(g.name),
-
                         subtitle: Text(
                           "Client: ${g.clientName}\nDevices: ${g.deviceCount}",
                         ),
-
                         isThreeLine: true,
-
                         trailing: Checkbox(
                           value: selectedGroupIds.contains(g.id),
-
-                          onChanged: (_) {
-                            toggleGroup(g.id);
-                          },
+                          onChanged: (_) => toggleGroup(g.id),
                         ),
-
-                        onTap: () {
-                          toggleGroup(g.id);
-                        },
+                        onTap: () => toggleGroup(g.id),
                       ),
                     );
                   },
                 ),
         ),
 
-        /// BUTTONS
-        /// BUTTONS
-        Padding(
+        /// SCHEDULE CARD
+        Container(
           padding: const EdgeInsets.all(16),
 
           child: Row(
@@ -670,11 +1051,11 @@ class _AssignLiveContentToGroupsState extends State<AssignLiveContentToGroups> {
 
               // const SizedBox(width: 12),
 
-              /// BIG CONTINUE BUTTON
-              Expanded(
+              /// SUBMIT
+              SizedBox(
+                width: double.infinity,
                 child: ElevatedButton(
                   onPressed: submitting ? null : submit,
-
                   child: submitting
                       ? const SizedBox(
                           height: 20,
@@ -688,6 +1069,17 @@ class _AssignLiveContentToGroupsState extends State<AssignLiveContentToGroups> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _timeBox(String text) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey.shade300),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(text),
     );
   }
 }
