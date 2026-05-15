@@ -305,6 +305,11 @@ class _AddAdPageState extends State<AddAdPage> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text("Ad added successfully")),
           );
+          try {
+            await StorageService.incrementStorage(fileSize);
+          } catch (e) {
+            print("Storage update failed: $e");
+          }
           Navigator.pop(context);
         } else {
           _showError(data["message"] ?? "Something went wrong");

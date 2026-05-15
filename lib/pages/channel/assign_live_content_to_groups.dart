@@ -653,22 +653,22 @@ class _AssignLiveContentToGroupsState extends State<AssignLiveContentToGroups> {
 
           child: Row(
             children: [
-              /// SMALL BACK BUTTON
-              SizedBox(
-                width: 60,
+              // /// SMALL BACK BUTTON
+              // SizedBox(
+              //   width: 60,
 
-                child: OutlinedButton(
-                  onPressed: () {
-                    setState(() {
-                      showGroups = false;
-                    });
-                  },
+              //   child: OutlinedButton(
+              //     onPressed: () {
+              //       setState(() {
+              //         showGroups = false;
+              //       });
+              //     },
 
-                  child: const Icon(Icons.arrow_back),
-                ),
-              ),
+              //     child: const Icon(Icons.arrow_back),
+              //   ),
+              // ),
 
-              const SizedBox(width: 12),
+              // const SizedBox(width: 12),
 
               /// BIG CONTINUE BUTTON
               Expanded(

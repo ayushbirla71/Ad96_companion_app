@@ -72,18 +72,22 @@ class _SelectMethodToGoLiveState extends State<SelectMethodToGoLive> {
       "priority": 1,
     };
 
+    print("payload.,.,... ${payload}");
+
     try {
       final res = await ApiService.post("/schedule/add_v2", payload);
 
       if (res.statusCode == 200 || res.statusCode == 201) {
         return true;
       } else {
+        print(res.body);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Failed to create schedule")),
         );
         return false;
       }
     } catch (e) {
+      print(e);
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text("Something went wrong")));
@@ -94,97 +98,102 @@ class _SelectMethodToGoLiveState extends State<SelectMethodToGoLive> {
   }
 
   Future<bool> ensureChannelIsLive(Channel channel) async {
-  final provider = context.read<ChannelProvider>();
+    final provider = context.read<ChannelProvider>();
 
-  /// ✅ Already live
-  if (channel.status == "live") return true;
+    /// ✅ Already live
+    if (channel.status == "live") return true;
 
-  final result = await showDialog<bool>(
-    context: context,
-    barrierDismissible: false,
-    builder: (dialogContext) {
-      bool loading = false;
+    final result = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        bool loading = false;
 
-      return StatefulBuilder(
-        builder: (context, setState) {
-          return AlertDialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            title: Row(
-              children: const [
-                Icon(Icons.warning_amber_rounded, color: Colors.orange),
-                SizedBox(width: 8),
-                Text("Channel Not Active"),
-              ],
-            ),
-
-            content: const Text(
-              "This channel is currently stopped.\n\nYou need to start it before going live.",
-              style: TextStyle(height: 1.4),
-            ),
-
-            actionsPadding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-
-            actions: [
-              TextButton(
-                onPressed: loading
-                    ? null
-                    : () => Navigator.pop(dialogContext, false),
-                child: const Text("Cancel"),
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              title: Row(
+                children: const [
+                  Icon(Icons.warning_amber_rounded, color: Colors.orange),
+                  SizedBox(width: 8),
+                  Text("Channel Not Active"),
+                ],
               ),
 
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              content: const Text(
+                "This channel is currently stopped.\n\nYou need to start it before going live.",
+                style: TextStyle(height: 1.4),
+              ),
+
+              actionsPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 8,
+              ),
+
+              actions: [
+                TextButton(
+                  onPressed: loading
+                      ? null
+                      : () => Navigator.pop(dialogContext, false),
+                  child: const Text("Cancel"),
                 ),
-                onPressed: loading
-                    ? null
-                    : () async {
-                        setState(() => loading = true);
 
-                        try {
-                          await provider.startChannel(channel.channelId);
-                          await provider.fetchChannelDetails(
-                              channel.channelId);
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
+                  ),
+                  onPressed: loading
+                      ? null
+                      : () async {
+                          setState(() => loading = true);
 
-                          if (dialogContext.mounted) {
-                            Navigator.pop(dialogContext, true);
+                          try {
+                            await provider.startChannel(channel.channelId);
+                            await provider.fetchChannelDetails(
+                              channel.channelId,
+                            );
+
+                            if (dialogContext.mounted) {
+                              Navigator.pop(dialogContext, true);
+                            }
+                          } catch (e) {
+                            if (dialogContext.mounted) {
+                              Navigator.pop(dialogContext, false);
+                            }
+
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text("Failed to start: $e")),
+                            );
                           }
-                        } catch (e) {
-                          if (dialogContext.mounted) {
-                            Navigator.pop(dialogContext, false);
-                          }
+                        },
 
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text("Failed to start: $e")),
-                          );
-                        }
-                      },
+                  child: loading
+                      ? const SizedBox(
+                          height: 18,
+                          width: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text("Start Channel"),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
 
-                child: loading
-                    ? const SizedBox(
-                        height: 18,
-                        width: 18,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : const Text("Start Channel"),
-              ),
-            ],
-          );
-        },
-      );
-    },
-  );
-
-  return result == true;
-}
+    return result == true;
+  }
 
   @override
   Widget build(BuildContext context) {
