@@ -214,6 +214,23 @@ class _DeviceGroupDetailsPageState extends State<DeviceGroupDetailsPage>
     super.dispose();
   }
 
+   Future<void> _refreshGroup() async {
+    try {
+      setState(() => _loading = true);
+
+      await ApiService.post(
+        "/device/update-schedule/${widget.group.id}",
+        {},
+      );
+
+      //  if (mounted) setState(() => = "Group refresh triggered. Devices will sync shortly.");
+    } catch (e) {
+      if (mounted) setState(() => _error = e.toString());
+    } finally {
+      setState(() => _loading = false);
+    }
+  }
+
   // ─── API ───────────────────────────────────────────────────────────────────
 
   Future<void> _load() async {
@@ -402,62 +419,62 @@ class _DeviceGroupDetailsPageState extends State<DeviceGroupDetailsPage>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: appColors.bg,
-      // appBar: AppBar(
-      //   backgroundColor: appColors.surface,
-      //   surfaceTintColor: Colors.transparent,
-      //   elevation: 0,
-      //   leading: IconButton(
-      //     icon: Container(
-      //       width: 34,
-      //       height: 34,
-      //       decoration: BoxDecoration(
-      //         color: appColors.surfaceHigh,
-      //         shape: BoxShape.circle,
-      //         border: Border.all(color: appColors.border),
-      //       ),
-      //       child: Icon(
-      //         Icons.arrow_back_ios_new_rounded,
-      //         color: appColors.textSecondary,
-      //         size: 15,
-      //       ),
-      //     ),
-      //     onPressed: () => Navigator.pop(context),
-      //   ),
-      //   title: Text(
-      //     'Group Details',
-      //     style: TextStyle(
-      //       color: appColors.textPrimary,
-      //       fontSize: 15,
-      //       fontWeight: FontWeight.w700,
-      //       letterSpacing: -0.3,
-      //     ),
-      //   ),
-      //   actions: [
-      //     IconButton(
-      //       icon: Container(
-      //         width: 34,
-      //         height: 34,
-      //         decoration: BoxDecoration(
-      //           color: appColors.surfaceHigh,
-      //           shape: BoxShape.circle,
-      //           border: Border.all(color: appColors.border),
-      //         ),
-      //         child: Icon(
-      //           Icons.refresh_rounded,
-      //           color: appColors.textSecondary,
-      //           size: 17,
-      //         ),
-      //       ),
-      //       onPressed: _load,
-      //     ),
-      //     const SizedBox(width: 4),
-      //   ],
-      //   bottom: PreferredSize(
-      //     preferredSize: const Size.fromHeight(1),
-      //     child: Container(height: 1, color: appColors.border),
-      //   ),
-      // ),
-      appBar: CustomAppBar(title: "Group Details", onRefresh: _load),
+      appBar: AppBar(
+        backgroundColor: appColors.surface,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              color: appColors.surfaceHigh,
+              shape: BoxShape.circle,
+              border: Border.all(color: appColors.border),
+            ),
+            child: Icon(
+              Icons.arrow_back_ios_new_rounded,
+              color: appColors.textSecondary,
+              size: 15,
+            ),
+          ),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text(
+          'Group Details',
+          style: TextStyle(
+            color: appColors.textPrimary,
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+            letterSpacing: -0.3,
+          ),
+        ),
+        actions: [
+          IconButton(
+            icon: Container(
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(
+                color: appColors.surfaceHigh,
+                shape: BoxShape.circle,
+                border: Border.all(color: appColors.border),
+              ),
+              child: Icon(
+                Icons.refresh_rounded,
+                color: appColors.textSecondary,
+                size: 17,
+              ),
+            ),
+            onPressed: _refreshGroup,
+          ),
+          const SizedBox(width: 4),
+        ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(height: 1, color: appColors.border),
+        ),
+      ),
+      // appBar: CustomAppBar(title: "Group Details", onRefresh: _load),
       body: _loading
           ? _loader()
           : _error != null
