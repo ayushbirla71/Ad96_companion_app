@@ -1,38 +1,40 @@
 import 'dart:convert';
 import 'package:cms_app/pages/ads/preview_popup.dart';
+import 'package:cms_app/theme/custom_app_bar.dart';
 import 'package:flutter/material.dart';
 import '../../models/ad.dart';
 import '../../services/api_service.dart';
+import 'package:cms_app/theme/app_colors.dart';
 
 // ─── Colour palette ───────────────────────────────────────────────────────────
-const _c = _Colors();
+// const _c = _Colors();
 
-class _Colors {
-  const _Colors();
-  Color get accent => const Color(0xFF2563EB);
-  Color get accentLight => const Color(0xFFEFF6FF);
-  Color get green => const Color(0xFF059669);
-  Color get greenLight => const Color(0xFFECFDF5);
-  Color get orange => const Color(0xFFEA580C);
-  Color get orangeLight => const Color(0xFFFFF7ED);
-  Color get yellow => const Color(0xFFD97706);
-  Color get yellowLight => const Color(0xFFFFFBEB);
-  Color get purple => const Color(0xFF7C3AED);
-  Color get purpleLight => const Color(0xFFF5F3FF);
-  Color get red => const Color(0xFFDC2626);
-  Color get redLight => const Color(0xFFFEF2F2);
-  Color get teal => const Color(0xFF0891B2);
-  Color get tealLight => const Color(0xFFECFEFF);
-  Color get bg => const Color(0xFFF1F5F9);
-  Color get surface => const Color(0xFFFFFFFF);
-  Color get surfaceHigh => const Color(0xFFF8FAFC);
-  Color get textPrimary => const Color(0xFF0F172A);
-  Color get textSecondary => const Color(0xFF475569);
-  Color get textMuted => const Color(0xFF94A3B8);
-  Color get border => const Color(0xFFE2E8F0);
-  Color get borderLight => const Color(0xFFF1F5F9);
-  Color get shadow => const Color(0x08000000);
-}
+// class _Colors {
+//   const _Colors();
+//   Color get accent => const Color(0xFF2563EB);
+//   Color get accentLight => const Color(0xFFEFF6FF);
+//   Color get green => const Color(0xFF059669);
+//   Color get greenLight => const Color(0xFFECFDF5);
+//   Color get orange => const Color(0xFFEA580C);
+//   Color get orangeLight => const Color(0xFFFFF7ED);
+//   Color get yellow => const Color(0xFFD97706);
+//   Color get yellowLight => const Color(0xFFFFFBEB);
+//   Color get purple => const Color(0xFF7C3AED);
+//   Color get purpleLight => const Color(0xFFF5F3FF);
+//   Color get red => const Color(0xFFDC2626);
+//   Color get redLight => const Color(0xFFFEF2F2);
+//   Color get teal => const Color(0xFF0891B2);
+//   Color get tealLight => const Color(0xFFECFEFF);
+//   Color get bg => const Color(0xFFF1F5F9);
+//   Color get surface => const Color(0xFFFFFFFF);
+//   Color get surfaceHigh => const Color(0xFFF8FAFC);
+//   Color get textPrimary => const Color(0xFF0F172A);
+//   Color get textSecondary => const Color(0xFF475569);
+//   Color get textMuted => const Color(0xFF94A3B8);
+//   Color get border => const Color(0xFFE2E8F0);
+//   Color get borderLight => const Color(0xFFF1F5F9);
+//   Color get shadow => const Color(0x08000000);
+// }
 
 // ─── Safe parsers ─────────────────────────────────────────────────────────────
 int _parseInt(dynamic v, [int fb = 0]) {
@@ -375,26 +377,26 @@ class _AdDetailsPageState extends State<AdDetailsPage>
   Color _statusColor(String s) {
     switch (s.toLowerCase()) {
       case 'completed':
-        return _c.green;
+        return appColors.green;
       case 'processing':
-        return _c.yellow;
+        return appColors.yellow;
       case 'pending':
-        return _c.orange;
+        return appColors.orange;
       default:
-        return _c.textMuted;
+        return appColors.textMuted;
     }
   }
 
   Color _statusBg(String s) {
     switch (s.toLowerCase()) {
       case 'completed':
-        return _c.greenLight;
+        return appColors.greenLight;
       case 'processing':
-        return _c.yellowLight;
+        return appColors.yellowLight;
       case 'pending':
-        return _c.orangeLight;
+        return appColors.orangeLight;
       default:
-        return _c.surfaceHigh;
+        return appColors.surfaceHigh;
     }
   }
 
@@ -414,64 +416,79 @@ class _AdDetailsPageState extends State<AdDetailsPage>
   // ─── Build ─────────────────────────────────────────────────────────────────
 
   @override
+  // Widget build(BuildContext context) {
+  //   return Scaffold(
+  //     backgroundColor: appColors.bg,
+  //     appBar: AppBar(
+  //       backgroundColor: appColors.surface,
+  //       surfaceTintColor: Colors.transparent,
+  //       elevation: 0,
+  //       leading: IconButton(
+  //         icon: Container(
+  //           width: 34,
+  //           height: 34,
+  //           decoration: BoxDecoration(
+  //             color: appColors.surfaceHigh,
+  //             shape: BoxShape.circle,
+  //             border: Border.all(color: appColors.border),
+  //           ),
+  //           child: Icon(
+  //             Icons.arrow_back_ios_new_rounded,
+  //             color: appColors.textSecondary,
+  //             size: 15,
+  //           ),
+  //         ),
+  //         onPressed: () => Navigator.pop(context),
+  //       ),
+  //       title: Text(
+  //         'Ad Details',
+  //         style: TextStyle(
+  //           color: appColors.textPrimary,
+  //           fontSize: 15,
+  //           fontWeight: FontWeight.w700,
+  //           letterSpacing: -0.3,
+  //         ),
+  //       ),
+  //       actions: [
+  //         IconButton(
+  //           icon: Container(
+  //             width: 34,
+  //             height: 34,
+  //             decoration: BoxDecoration(
+  //               color: appColors.surfaceHigh,
+  //               shape: BoxShape.circle,
+  //               border: Border.all(color: appColors.border),
+  //             ),
+  //             child: Icon(
+  //               Icons.refresh_rounded,
+  //               color: appColors.textSecondary,
+  //               size: 17,
+  //             ),
+  //           ),
+  //           onPressed: _load,
+  //         ),
+  //         const SizedBox(width: 4),
+  //       ],
+  //       bottom: PreferredSize(
+  //         preferredSize: const Size.fromHeight(1),
+  //         child: Container(height: 1, color: appColors.border),
+  //       ),
+  //     ),
+  //     body: _loading
+  //         ? _loader()
+  //         : _error != null
+  //         ? _errorView()
+  //         : _fadeAnim != null
+  //         ? FadeTransition(opacity: _fadeAnim!, child: _body())
+  //         : _body(),
+  //   );
+  // }
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _c.bg,
-      appBar: AppBar(
-        backgroundColor: _c.surface,
-        surfaceTintColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: Container(
-            width: 34,
-            height: 34,
-            decoration: BoxDecoration(
-              color: _c.surfaceHigh,
-              shape: BoxShape.circle,
-              border: Border.all(color: _c.border),
-            ),
-            child: Icon(
-              Icons.arrow_back_ios_new_rounded,
-              color: _c.textSecondary,
-              size: 15,
-            ),
-          ),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Text(
-          'Ad Details',
-          style: TextStyle(
-            color: _c.textPrimary,
-            fontSize: 15,
-            fontWeight: FontWeight.w700,
-            letterSpacing: -0.3,
-          ),
-        ),
-        actions: [
-          IconButton(
-            icon: Container(
-              width: 34,
-              height: 34,
-              decoration: BoxDecoration(
-                color: _c.surfaceHigh,
-                shape: BoxShape.circle,
-                border: Border.all(color: _c.border),
-              ),
-              child: Icon(
-                Icons.refresh_rounded,
-                color: _c.textSecondary,
-                size: 17,
-              ),
-            ),
-            onPressed: _load,
-          ),
-          const SizedBox(width: 4),
-        ],
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Container(height: 1, color: _c.border),
-        ),
-      ),
+      backgroundColor: appColors.bg,
+
+      appBar: CustomAppBar(title: "Ad Details", onRefresh: _load),
+
       body: _loading
           ? _loader()
           : _error != null
@@ -481,14 +498,13 @@ class _AdDetailsPageState extends State<AdDetailsPage>
           : _body(),
     );
   }
-
   // ─── Body ──────────────────────────────────────────────────────────────────
 
   Widget _body() {
     final d = _detail!;
     return RefreshIndicator(
-      color: _c.accent,
-      backgroundColor: _c.surface,
+      color: appColors.accent,
+      backgroundColor: appColors.surface,
       onRefresh: _load,
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
@@ -530,7 +546,7 @@ class _AdDetailsPageState extends State<AdDetailsPage>
             _sectionLabel(
               'Play Logs',
               badge: d.logs.length.toString(),
-              badgeColor: _c.accent,
+              badgeColor: appColors.accent,
             ),
             const SizedBox(height: 10),
             _logsPaginated(d.logs),
@@ -545,14 +561,14 @@ class _AdDetailsPageState extends State<AdDetailsPage>
   Widget _adInfoCard(AdDetail d) => Container(
     decoration: BoxDecoration(
       gradient: LinearGradient(
-        colors: [_c.accent, const Color(0xFF1E40AF)],
+        colors: [appColors.accent, const Color(0xFF1E40AF)],
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
       ),
       borderRadius: BorderRadius.circular(20),
       boxShadow: [
         BoxShadow(
-          color: _c.accent.withOpacity(0.3),
+          color: appColors.accent.withOpacity(0.3),
           blurRadius: 16,
           offset: const Offset(0, 6),
         ),
@@ -818,10 +834,10 @@ class _AdDetailsPageState extends State<AdDetailsPage>
               final offset = box.localToGlobal(Offset.zero);
               final selected = await showMenu<String>(
                 context: context,
-                color: _c.surface,
+                color: appColors.surface,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14),
-                  side: BorderSide(color: _c.border),
+                  side: BorderSide(color: appColors.border),
                 ),
                 position: RelativeRect.fromLTRB(
                   16,
@@ -836,7 +852,7 @@ class _AdDetailsPageState extends State<AdDetailsPage>
                     child: Text(
                       'Date Presets',
                       style: TextStyle(
-                        color: _c.textPrimary,
+                        color: appColors.textPrimary,
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
                       ),
@@ -852,7 +868,7 @@ class _AdDetailsPageState extends State<AdDetailsPage>
                             Icon(
                               Icons.check_rounded,
                               size: 14,
-                              color: _c.accent,
+                              color: appColors.accent,
                             )
                           else
                             const SizedBox(width: 14),
@@ -860,7 +876,9 @@ class _AdDetailsPageState extends State<AdDetailsPage>
                           Text(
                             p,
                             style: TextStyle(
-                              color: _preset == p ? _c.accent : _c.textPrimary,
+                              color: _preset == p
+                                  ? appColors.accent
+                                  : appColors.textPrimary,
                               fontSize: 13,
                               fontWeight: _preset == p
                                   ? FontWeight.w600
@@ -903,10 +921,10 @@ class _AdDetailsPageState extends State<AdDetailsPage>
                 builder: (ctx, child) => Theme(
                   data: Theme.of(ctx).copyWith(
                     colorScheme: ColorScheme.light(
-                      primary: _c.accent,
+                      primary: appColors.accent,
                       onPrimary: Colors.white,
-                      surface: _c.surface,
-                      onSurface: _c.textPrimary,
+                      surface: appColors.surface,
+                      onSurface: appColors.textPrimary,
                     ),
                   ),
                   child: child!,
@@ -939,31 +957,43 @@ class _AdDetailsPageState extends State<AdDetailsPage>
   }) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
     decoration: BoxDecoration(
-      color: active ? _c.accentLight : _c.surface,
+      color: active ? appColors.accentLight : appColors.surface,
       borderRadius: BorderRadius.circular(12),
       border: Border.all(
-        color: active ? _c.accent.withOpacity(0.4) : _c.border,
+        color: active ? appColors.accent.withOpacity(0.4) : appColors.border,
       ),
       boxShadow: [
-        BoxShadow(color: _c.shadow, blurRadius: 6, offset: const Offset(0, 2)),
+        BoxShadow(
+          color: appColors.shadow,
+          blurRadius: 6,
+          offset: const Offset(0, 2),
+        ),
       ],
     ),
     child: Row(
       children: [
-        Icon(icon, color: active ? _c.accent : _c.textMuted, size: 15),
+        Icon(
+          icon,
+          color: active ? appColors.accent : appColors.textMuted,
+          size: 15,
+        ),
         const SizedBox(width: 7),
         Expanded(
           child: Text(
             label,
             style: TextStyle(
-              color: active ? _c.accent : _c.textSecondary,
+              color: active ? appColors.accent : appColors.textSecondary,
               fontSize: 12,
               fontWeight: FontWeight.w600,
             ),
             overflow: TextOverflow.ellipsis,
           ),
         ),
-        Icon(Icons.keyboard_arrow_down_rounded, color: _c.textMuted, size: 16),
+        Icon(
+          Icons.keyboard_arrow_down_rounded,
+          color: appColors.textMuted,
+          size: 16,
+        ),
       ],
     ),
   );
@@ -976,29 +1006,29 @@ class _AdDetailsPageState extends State<AdDetailsPage>
         icon: Icons.play_circle_rounded,
         label: 'Total Plays',
         value: k.totalPlays.toString(),
-        color: _c.accent,
-        bg: _c.accentLight,
+        color: appColors.accent,
+        bg: appColors.accentLight,
       ),
       _KpiItem(
         icon: Icons.visibility_rounded,
         label: 'Impressions',
         value: k.impressions.toString(),
-        color: _c.purple,
-        bg: _c.purpleLight,
+        color: appColors.purple,
+        bg: appColors.purpleLight,
       ),
       _KpiItem(
         icon: Icons.touch_app_rounded,
         label: 'Engagement',
         value: '${k.engagementRate.toStringAsFixed(0)}%',
-        color: _c.green,
-        bg: _c.greenLight,
+        color: appColors.green,
+        bg: appColors.greenLight,
       ),
       _KpiItem(
         icon: Icons.timer_rounded,
         label: 'Avg Watch',
         value: '${k.avgWatchTime}s',
-        color: _c.teal,
-        bg: _c.tealLight,
+        color: appColors.teal,
+        bg: appColors.tealLight,
       ),
     ];
 
@@ -1021,15 +1051,15 @@ class _AdDetailsPageState extends State<AdDetailsPage>
           padding: const EdgeInsets.all(14),
 
           decoration: BoxDecoration(
-            color: _c.surface,
+            color: appColors.surface,
 
             borderRadius: BorderRadius.circular(16),
 
-            border: Border.all(color: _c.border),
+            border: Border.all(color: appColors.border),
 
             boxShadow: [
               BoxShadow(
-                color: _c.shadow,
+                color: appColors.shadow,
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -1069,7 +1099,7 @@ class _AdDetailsPageState extends State<AdDetailsPage>
                     item.value,
 
                     style: TextStyle(
-                      color: _c.textPrimary,
+                      color: appColors.textPrimary,
 
                       fontSize: isSmall ? 24 : 28,
 
@@ -1093,7 +1123,7 @@ class _AdDetailsPageState extends State<AdDetailsPage>
                 overflow: TextOverflow.ellipsis,
 
                 style: TextStyle(
-                  color: _c.textSecondary,
+                  color: appColors.textSecondary,
 
                   fontSize: isSmall ? 11 : 12,
 
@@ -1119,12 +1149,12 @@ class _AdDetailsPageState extends State<AdDetailsPage>
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: _c.surface,
+        color: appColors.surface,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: _c.border),
+        border: Border.all(color: appColors.border),
         boxShadow: [
           BoxShadow(
-            color: _c.shadow,
+            color: appColors.shadow,
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -1134,9 +1164,9 @@ class _AdDetailsPageState extends State<AdDetailsPage>
         children: [
           Row(
             children: [
-              _Legend(color: _c.accent, label: 'Plays'),
+              _Legend(color: appColors.accent, label: 'Plays'),
               const SizedBox(width: 16),
-              _Legend(color: _c.purple, label: 'Impressions'),
+              _Legend(color: appColors.purple, label: 'Impressions'),
             ],
           ),
           const SizedBox(height: 16),
@@ -1161,7 +1191,7 @@ class _AdDetailsPageState extends State<AdDetailsPage>
                           children: [
                             _Bar(
                               height: playH,
-                              color: _c.accent,
+                              color: appColors.accent,
                               radius: const BorderRadius.vertical(
                                 top: Radius.circular(4),
                               ),
@@ -1169,7 +1199,7 @@ class _AdDetailsPageState extends State<AdDetailsPage>
                             const SizedBox(width: 2),
                             _Bar(
                               height: impH,
-                              color: _c.purple,
+                              color: appColors.purple,
                               radius: const BorderRadius.vertical(
                                 top: Radius.circular(4),
                               ),
@@ -1180,7 +1210,7 @@ class _AdDetailsPageState extends State<AdDetailsPage>
                         Text(
                           e.date,
                           style: TextStyle(
-                            color: _c.textMuted,
+                            color: appColors.textMuted,
                             fontSize: 9,
                             fontWeight: FontWeight.w500,
                           ),
@@ -1204,17 +1234,23 @@ class _AdDetailsPageState extends State<AdDetailsPage>
     if (data.isEmpty) return _emptyCard('No device data available');
 
     final total = data.fold<int>(0, (s, e) => s + e.plays);
-    final colors = [_c.accent, _c.purple, _c.teal, _c.orange, _c.green];
+    final colors = [
+      appColors.accent,
+      appColors.purple,
+      appColors.teal,
+      appColors.orange,
+      appColors.green,
+    ];
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: _c.surface,
+        color: appColors.surface,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: _c.border),
+        border: Border.all(color: appColors.border),
         boxShadow: [
           BoxShadow(
-            color: _c.shadow,
+            color: appColors.shadow,
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -1252,7 +1288,7 @@ class _AdDetailsPageState extends State<AdDetailsPage>
                             Text(
                               e.name[0].toUpperCase() + e.name.substring(1),
                               style: TextStyle(
-                                color: _c.textPrimary,
+                                color: appColors.textPrimary,
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -1272,7 +1308,7 @@ class _AdDetailsPageState extends State<AdDetailsPage>
                           borderRadius: BorderRadius.circular(6),
                           child: LinearProgressIndicator(
                             value: pct,
-                            backgroundColor: _c.border,
+                            backgroundColor: appColors.border,
                             valueColor: AlwaysStoppedAnimation<Color>(color),
                             minHeight: 6,
                           ),
@@ -1284,7 +1320,7 @@ class _AdDetailsPageState extends State<AdDetailsPage>
               ),
               if (!isLast) ...[
                 const SizedBox(height: 14),
-                Divider(height: 1, thickness: 1, color: _c.borderLight),
+                Divider(height: 1, thickness: 1, color: appColors.borderLight),
                 const SizedBox(height: 14),
               ],
             ],
@@ -1311,15 +1347,15 @@ class _AdDetailsPageState extends State<AdDetailsPage>
       padding: const EdgeInsets.all(16),
 
       decoration: BoxDecoration(
-        color: _c.surface,
+        color: appColors.surface,
 
         borderRadius: BorderRadius.circular(20),
 
-        border: Border.all(color: _c.border),
+        border: Border.all(color: appColors.border),
 
         boxShadow: [
           BoxShadow(
-            color: _c.shadow,
+            color: appColors.shadow,
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -1361,7 +1397,7 @@ class _AdDetailsPageState extends State<AdDetailsPage>
                               ),
 
                               decoration: BoxDecoration(
-                                color: _c.teal,
+                                color: appColors.teal,
 
                                 borderRadius: BorderRadius.circular(6),
                               ),
@@ -1393,7 +1429,9 @@ class _AdDetailsPageState extends State<AdDetailsPage>
                         height: h.clamp(12, 100),
 
                         decoration: BoxDecoration(
-                          color: isMax ? _c.teal : _c.accent.withOpacity(0.35),
+                          color: isMax
+                              ? appColors.teal
+                              : appColors.accent.withOpacity(0.35),
                         ),
                       ),
                     ),
@@ -1410,7 +1448,7 @@ class _AdDetailsPageState extends State<AdDetailsPage>
                         textAlign: TextAlign.center,
 
                         style: TextStyle(
-                          color: isMax ? _c.teal : _c.textMuted,
+                          color: isMax ? appColors.teal : appColors.textMuted,
 
                           fontSize: 11,
 
@@ -1445,12 +1483,12 @@ class _AdDetailsPageState extends State<AdDetailsPage>
       children: [
         Container(
           decoration: BoxDecoration(
-            color: _c.surface,
+            color: appColors.surface,
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: _c.border),
+            border: Border.all(color: appColors.border),
             boxShadow: [
               BoxShadow(
-                color: _c.shadow,
+                color: appColors.shadow,
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -1477,12 +1515,12 @@ class _AdDetailsPageState extends State<AdDetailsPage>
                           width: 40,
                           height: 40,
                           decoration: BoxDecoration(
-                            color: _c.accentLight,
+                            color: appColors.accentLight,
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Icon(
                             _deviceIcon(log.deviceType),
-                            color: _c.accent,
+                            color: appColors.accent,
                             size: 18,
                           ),
                         ),
@@ -1494,7 +1532,7 @@ class _AdDetailsPageState extends State<AdDetailsPage>
                               Text(
                                 log.device,
                                 style: TextStyle(
-                                  color: _c.textPrimary,
+                                  color: appColors.textPrimary,
                                   fontSize: 13,
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -1507,14 +1545,14 @@ class _AdDetailsPageState extends State<AdDetailsPage>
                                   Icon(
                                     Icons.access_time_rounded,
                                     size: 10,
-                                    color: _c.textMuted,
+                                    color: appColors.textMuted,
                                   ),
                                   const SizedBox(width: 3),
                                   Flexible(
                                     child: Text(
                                       '${_fmtDate(log.playDate)} · ${_fmtTime(log.playDate)}',
                                       style: TextStyle(
-                                        color: _c.textMuted,
+                                        color: appColors.textMuted,
                                         fontSize: 10,
                                       ),
                                       overflow: TextOverflow.ellipsis,
@@ -1528,14 +1566,14 @@ class _AdDetailsPageState extends State<AdDetailsPage>
                                   Icon(
                                     Icons.location_on_rounded,
                                     size: 10,
-                                    color: _c.textMuted,
+                                    color: appColors.textMuted,
                                   ),
                                   const SizedBox(width: 3),
                                   Expanded(
                                     child: Text(
                                       log.location,
                                       style: TextStyle(
-                                        color: _c.textMuted,
+                                        color: appColors.textMuted,
                                         fontSize: 10,
                                       ),
                                       maxLines: 1,
@@ -1575,7 +1613,7 @@ class _AdDetailsPageState extends State<AdDetailsPage>
                             Text(
                               '${log.engagement}% engaged',
                               style: TextStyle(
-                                color: _c.green,
+                                color: appColors.green,
                                 fontSize: 10,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -1583,7 +1621,7 @@ class _AdDetailsPageState extends State<AdDetailsPage>
                             Text(
                               '${log.duration}s',
                               style: TextStyle(
-                                color: _c.textMuted,
+                                color: appColors.textMuted,
                                 fontSize: 10,
                               ),
                             ),
@@ -1596,7 +1634,7 @@ class _AdDetailsPageState extends State<AdDetailsPage>
                     Divider(
                       height: 1,
                       thickness: 1,
-                      color: _c.borderLight,
+                      color: appColors.borderLight,
                       indent: 66,
                     ),
                 ],
@@ -1622,14 +1660,17 @@ class _AdDetailsPageState extends State<AdDetailsPage>
                     Text(
                       'Page ${_logPage + 1} of $totalPages',
                       style: TextStyle(
-                        color: _c.textSecondary,
+                        color: appColors.textSecondary,
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
                     Text(
                       '${logs.length} total logs',
-                      style: TextStyle(color: _c.textMuted, fontSize: 10),
+                      style: TextStyle(
+                        color: appColors.textMuted,
+                        fontSize: 10,
+                      ),
                     ),
                   ],
                 ),
@@ -1654,16 +1695,18 @@ class _AdDetailsPageState extends State<AdDetailsPage>
     required bool enabled,
     required VoidCallback onTap,
   }) {
-    final color = enabled ? _c.accent : _c.textMuted;
+    final color = enabled ? appColors.accent : appColors.textMuted;
     return GestureDetector(
       onTap: enabled ? onTap : null,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: enabled ? _c.accentLight : _c.surfaceHigh,
+          color: enabled ? appColors.accentLight : appColors.surfaceHigh,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: enabled ? _c.accent.withOpacity(0.3) : _c.border,
+            color: enabled
+                ? appColors.accent.withOpacity(0.3)
+                : appColors.border,
           ),
         ),
         child: Row(
@@ -1705,7 +1748,7 @@ class _AdDetailsPageState extends State<AdDetailsPage>
       Text(
         text,
         style: TextStyle(
-          color: _c.textPrimary,
+          color: appColors.textPrimary,
           fontSize: 15,
           fontWeight: FontWeight.w700,
           letterSpacing: -0.2,
@@ -1716,13 +1759,13 @@ class _AdDetailsPageState extends State<AdDetailsPage>
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
           decoration: BoxDecoration(
-            color: (badgeColor ?? _c.accent).withOpacity(0.12),
+            color: (badgeColor ?? appColors.accent).withOpacity(0.12),
             borderRadius: BorderRadius.circular(20),
           ),
           child: Text(
             badge,
             style: TextStyle(
-              color: badgeColor ?? _c.accent,
+              color: badgeColor ?? appColors.accent,
               fontSize: 11,
               fontWeight: FontWeight.w700,
             ),
@@ -1735,12 +1778,15 @@ class _AdDetailsPageState extends State<AdDetailsPage>
   Widget _emptyCard(String msg) => Container(
     padding: const EdgeInsets.all(24),
     decoration: BoxDecoration(
-      color: _c.surface,
+      color: appColors.surface,
       borderRadius: BorderRadius.circular(20),
-      border: Border.all(color: _c.border),
+      border: Border.all(color: appColors.border),
     ),
     child: Center(
-      child: Text(msg, style: TextStyle(color: _c.textMuted, fontSize: 13)),
+      child: Text(
+        msg,
+        style: TextStyle(color: appColors.textMuted, fontSize: 13),
+      ),
     ),
   );
 
@@ -1752,7 +1798,7 @@ class _AdDetailsPageState extends State<AdDetailsPage>
           width: 44,
           height: 44,
           child: CircularProgressIndicator(
-            color: _c.accent,
+            color: appColors.accent,
             strokeWidth: 2.5,
             strokeCap: StrokeCap.round,
           ),
@@ -1760,7 +1806,7 @@ class _AdDetailsPageState extends State<AdDetailsPage>
         const SizedBox(height: 16),
         Text(
           'Loading ad details…',
-          style: TextStyle(color: _c.textMuted, fontSize: 13),
+          style: TextStyle(color: appColors.textMuted, fontSize: 13),
         ),
       ],
     ),
@@ -1775,16 +1821,20 @@ class _AdDetailsPageState extends State<AdDetailsPage>
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: _c.orangeLight,
+              color: appColors.orangeLight,
               shape: BoxShape.circle,
             ),
-            child: Icon(Icons.cloud_off_rounded, color: _c.orange, size: 36),
+            child: Icon(
+              Icons.cloud_off_rounded,
+              color: appColors.orange,
+              size: 36,
+            ),
           ),
           const SizedBox(height: 20),
           Text(
             'Could not load ad details',
             style: TextStyle(
-              color: _c.textPrimary,
+              color: appColors.textPrimary,
               fontSize: 18,
               fontWeight: FontWeight.w700,
             ),
@@ -1792,7 +1842,7 @@ class _AdDetailsPageState extends State<AdDetailsPage>
           const SizedBox(height: 8),
           Text(
             _error ?? 'An unexpected error occurred.',
-            style: TextStyle(color: _c.textSecondary, fontSize: 13),
+            style: TextStyle(color: appColors.textSecondary, fontSize: 13),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 24),
@@ -1801,7 +1851,7 @@ class _AdDetailsPageState extends State<AdDetailsPage>
             icon: const Icon(Icons.refresh_rounded, size: 16),
             label: const Text('Try Again'),
             style: FilledButton.styleFrom(
-              backgroundColor: _c.accent,
+              backgroundColor: appColors.accent,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               shape: RoundedRectangleBorder(
@@ -1848,7 +1898,10 @@ class _Legend extends StatelessWidget {
         ),
       ),
       const SizedBox(width: 5),
-      Text(label, style: TextStyle(color: _c.textSecondary, fontSize: 11)),
+      Text(
+        label,
+        style: TextStyle(color: appColors.textSecondary, fontSize: 11),
+      ),
     ],
   );
 }
