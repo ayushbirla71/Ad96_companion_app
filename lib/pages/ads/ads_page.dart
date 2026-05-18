@@ -406,50 +406,99 @@ class _AdsPageState extends State<AdsPage> {
                   ),
                   const SizedBox(height: 8),
 
-                  // Status options as chips
-                  Wrap(
-                    spacing: 8,
-                    children: ['all', 'pending', 'processing', 'completed'].map(
-                      (s) {
-                        final isSelected = adProvider.statusFilter == s;
-                        return GestureDetector(
-                          onTap: () {
-                            setModalState(() {
-                              adProvider.setStatusFilter(s);
-                            });
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 8,
-                            ),
-                            decoration: BoxDecoration(
-                              color: isSelected
-                                  ? appColors.accent
-                                  : appColors.surfaceHigh,
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                color: isSelected
-                                    ? appColors.accent
-                                    : appColors.border,
+                  // // Status options as chips
+                  // Wrap(
+                  //   spacing: 8,
+                  //   children: ['all', 'pending', 'processing', 'completed'].map(
+                  //     (s) {
+                  //       final isSelected = adProvider.statusFilter == s;
+                  //       return GestureDetector(
+                  //         onTap: () {
+                  //           setModalState(() {
+                  //             adProvider.setStatusFilter(s);
+                  //           });
+                  //         },
+                  //         child: Container(
+                  //           padding: const EdgeInsets.symmetric(
+                  //             horizontal: 14,
+                  //             vertical: 8,
+                  //           ),
+                  //           decoration: BoxDecoration(
+                  //             color: isSelected
+                  //                 ? appColors.accent
+                  //                 : appColors.surfaceHigh,
+                  //             borderRadius: BorderRadius.circular(20),
+                  //             border: Border.all(
+                  //               color: isSelected
+                  //                   ? appColors.accent
+                  //                   : appColors.border,
+                  //             ),
+                  //           ),
+                  //           child: Text(
+                  //             s[0].toUpperCase() + s.substring(1),
+                  //             style: TextStyle(
+                  //               color: isSelected
+                  //                   ? Colors.white
+                  //                   : appColors.textSecondary,
+                  //               fontSize: 13,
+                  //               fontWeight: isSelected
+                  //                   ? FontWeight.w600
+                  //                   : FontWeight.w400,
+                  //             ),
+                  //           ),
+                  //         ),
+                  //       );
+                  //     },
+                  //   ).toList(),
+                  // ),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: ['all', 'pending', 'processing', 'completed']
+                          .map((s) {
+                            final isSelected = adProvider.statusFilter == s;
+
+                            return GestureDetector(
+                              onTap: () {
+                                setModalState(() {
+                                  adProvider.setStatusFilter(s);
+                                });
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                  vertical: 8,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: isSelected
+                                      ? appColors.accent
+                                      : appColors.surfaceHigh,
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: isSelected
+                                        ? appColors.accent
+                                        : appColors.border,
+                                  ),
+                                ),
+                                child: Text(
+                                  s[0].toUpperCase() + s.substring(1),
+                                  style: TextStyle(
+                                    color: isSelected
+                                        ? Colors.white
+                                        : appColors.textSecondary,
+                                    fontSize: 13,
+                                    fontWeight: isSelected
+                                        ? FontWeight.w600
+                                        : FontWeight.w400,
+                                  ),
+                                ),
                               ),
-                            ),
-                            child: Text(
-                              s[0].toUpperCase() + s.substring(1),
-                              style: TextStyle(
-                                color: isSelected
-                                    ? Colors.white
-                                    : appColors.textSecondary,
-                                fontSize: 13,
-                                fontWeight: isSelected
-                                    ? FontWeight.w600
-                                    : FontWeight.w400,
-                              ),
-                            ),
-                          ),
-                        );
-                      },
-                    ).toList(),
+                            );
+                          })
+                          .toList(),
+                    ),
                   ),
                   const SizedBox(height: 24),
 

@@ -1270,6 +1270,7 @@
 // }
 
 import 'dart:convert';
+import 'package:cms_app/pages/home/notifications_page.dart';
 import 'package:cms_app/pages/layoutpage/layout_access_page.dart';
 import 'package:cms_app/services/api_service.dart';
 import 'package:flutter/material.dart';
@@ -1935,7 +1936,7 @@ class _DashboardPageState extends State<DashboardPage>
             _stats?.diagnosticErrors != null && (_stats!.diagnosticErrors) > 0
             ? true
             : false,
-        onTap: () {},
+        onTap: () => _go(const NotificationsPage()),
       ),
       const SizedBox(width: 6),
       _AppBarAction(
@@ -3215,42 +3216,105 @@ class _QuickActionTileState extends State<_QuickActionTile>
     );
   }
 
+  // @override
+  // Widget build(BuildContext context) {
+  //   return GestureDetector(
+  //     onTap: _onTap,
+  //     onTapDown: (_) => _ctrl.forward(),
+  //     onTapCancel: () => _ctrl.reverse(),
+  //     child: ScaleTransition(
+  //       scale: _scale,
+  //       child: Column(
+  //         mainAxisAlignment: MainAxisAlignment.center,
+  //         children: [
+  //           Container(
+  //             width: 48,
+  //             height: 48,
+  //             decoration: BoxDecoration(
+  //               color: widget.data.bgColor,
+  //               borderRadius: BorderRadius.circular(14),
+  //               border: Border.all(color: widget.data.color.withOpacity(0.2)),
+  //               boxShadow: [
+  //                 BoxShadow(
+  //                   color: widget.data.color.withOpacity(0.15),
+  //                   blurRadius: 8,
+  //                   offset: const Offset(0, 4),
+  //                 ),
+  //               ],
+  //             ),
+  //             child: Icon(widget.data.icon, color: widget.data.color, size: 22),
+  //           ),
+  //           const SizedBox(height: 6),
+  //           Text(
+  //             widget.data.label,
+  //             style: TextStyle(
+  //               color: _c.textSecondary,
+  //               fontSize: 10.5,
+  //               fontWeight: FontWeight.w600,
+  //             ),
+  //             textAlign: TextAlign.center,
+  //             maxLines: 1,
+  //             overflow: TextOverflow.ellipsis,
+  //           ),
+  //         ],
+  //       ),
+  //     ),
+  //   );
+  // }
   @override
   Widget build(BuildContext context) {
+    final isTablet = MediaQuery.of(context).size.width >= 700;
+
     return GestureDetector(
       onTap: _onTap,
       onTapDown: (_) => _ctrl.forward(),
       onTapCancel: () => _ctrl.reverse(),
+
       child: ScaleTransition(
         scale: _scale,
+
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
+
           children: [
             Container(
-              width: 48,
-              height: 48,
+              width: isTablet ? 70 : 48,
+              height: isTablet ? 70 : 48,
+
               decoration: BoxDecoration(
                 color: widget.data.bgColor,
-                borderRadius: BorderRadius.circular(14),
+
+                borderRadius: BorderRadius.circular(isTablet ? 20 : 14),
+
                 border: Border.all(color: widget.data.color.withOpacity(0.2)),
+
                 boxShadow: [
                   BoxShadow(
                     color: widget.data.color.withOpacity(0.15),
-                    blurRadius: 8,
+                    blurRadius: isTablet ? 14 : 8,
                     offset: const Offset(0, 4),
                   ),
                 ],
               ),
-              child: Icon(widget.data.icon, color: widget.data.color, size: 22),
+
+              child: Icon(
+                widget.data.icon,
+                color: widget.data.color,
+                size: isTablet ? 32 : 22,
+              ),
             ),
-            const SizedBox(height: 6),
+
+            SizedBox(height: isTablet ? 10 : 6),
+
             Text(
               widget.data.label,
+
               style: TextStyle(
                 color: _c.textSecondary,
-                fontSize: 10.5,
-                fontWeight: FontWeight.w600,
+                fontSize: isTablet ? 15 : 10.5,
+                fontWeight: FontWeight.w700,
               ),
+
               textAlign: TextAlign.center,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
