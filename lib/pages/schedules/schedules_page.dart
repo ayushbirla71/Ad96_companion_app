@@ -656,6 +656,7 @@ class _SchedulesPageState extends State<SchedulesPage> {
                             {'value': 'ads', 'label': 'Ads'},
                             {'value': 'live', 'label': 'Live Content'},
                             {'value': 'carousel', 'label': 'Carousels'},
+                            {'value': 'layout', 'label': 'Layouts'},
                           ].map((item) {
                             final isSelected = contentType == item['value'];
                             return GestureDetector(
@@ -1234,6 +1235,11 @@ class _SchedulesPageState extends State<SchedulesPage> {
         .where((c) => matchDate(c.groups))
         .toList();
 
+    var layouts = provider.layouts
+        .where((l) => matchSearch(l.contentName, l.groups))
+        .where((l) => matchDate(l.groups))
+        .toList();
+
     return Scaffold(
       backgroundColor: appColors.bg,
       // appBar: AppBar(
@@ -1379,7 +1385,8 @@ class _SchedulesPageState extends State<SchedulesPage> {
                   ),
                 ),
                 Text(
-                  '${ads.length + liveContents.length + carousels.length} item${(ads.length + liveContents.length + carousels.length) != 1 ? 's' : ''}',
+                  // '${ads.length + liveContents.length + carousels.length} item${(ads.length + liveContents.length + carousels.length) != 1 ? 's' : ''}',
+                  '${ads.length + liveContents.length + carousels.length + layouts.length} item${(ads.length + liveContents.length + carousels.length + layouts.length) != 1 ? 's' : ''}',
                   style: TextStyle(
                     color: appColors.textMuted,
                     fontSize: 10,
@@ -1625,10 +1632,34 @@ class _SchedulesPageState extends State<SchedulesPage> {
                             ),
                           ),
 
+                        // ── Layouts section ──
+                        if ((contentType == 'all' || contentType == 'layout') &&
+                            layouts.isNotEmpty)
+                          _sectionHeader(
+                            'Layouts',
+                            layouts.length,
+                            appColors.purple,
+                            appColors.purpleLight,
+                          ),
+
+                        if (contentType == 'all' || contentType == 'layout')
+                          ...layouts.map(
+                            (layout) => buildCard(
+                              title: layout.contentName,
+                              duration: 0,
+                              groups: layout.groups,
+                              data: layout,
+                              typeColor: appColors.purple,
+                              typeBg: appColors.purpleLight,
+                              typeIcon: Icons.dashboard_customize_rounded,
+                            ),
+                          ),
+
                         // ── Empty state ──
                         if (ads.isEmpty &&
                             liveContents.isEmpty &&
-                            carousels.isEmpty)
+                            carousels.isEmpty &&
+                            layouts.isEmpty)
                           Padding(
                             padding: const EdgeInsets.only(top: 60),
                             child: Column(

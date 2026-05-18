@@ -24,7 +24,7 @@ class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
       backgroundColor: appColors.surface,
       surfaceTintColor: Colors.transparent,
       elevation: 0,
-      titleSpacing: 8,
+      titleSpacing: 16,
 
       /// BACK BUTTON
       // leading: showBack

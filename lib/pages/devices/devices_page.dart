@@ -709,8 +709,7 @@ class _DevicesPageState extends State<DevicesPage> {
         //   ),
         //   onPressed: () => Navigator.pop(context),
         // ),
-
-        titleSpacing: 4,
+        titleSpacing: 16,
 
         title: Row(
           children: [

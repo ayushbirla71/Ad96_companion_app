@@ -484,7 +484,7 @@ class _ExportDetailsPageState extends State<ExportDetailsPage> {
                   mainAxisSpacing: 12,
 
                   /// FIXED HEIGHT
-                  mainAxisExtent: 300,
+                  mainAxisExtent: 255,
                 ),
 
                 itemBuilder: (context, index) {
@@ -585,39 +585,207 @@ class _ExportDetailsPageState extends State<ExportDetailsPage> {
                         const SizedBox(height: 8),
 
                         /// STATUS PILL — same as _StatusPill in DeviceGroupDetailsPage
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 7,
-                            vertical: 3,
-                          ),
-                          decoration: BoxDecoration(
-                            color: bgColor,
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: color.withOpacity(0.3)),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Container(
-                                width: 5,
-                                height: 5,
-                                decoration: BoxDecoration(
-                                  color: color,
-                                  shape: BoxShape.circle,
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 7,
+                                vertical: 3,
+                              ),
+                              decoration: BoxDecoration(
+                                color: bgColor,
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: color.withOpacity(0.3),
                                 ),
                               ),
-                              const SizedBox(width: 4),
-                              Text(
-                                status.toUpperCase(),
-                                style: TextStyle(
-                                  color: color,
-                                  fontSize: 8.5,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: 0.3,
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Container(
+                                    width: 5,
+                                    height: 5,
+                                    decoration: BoxDecoration(
+                                      color: color,
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    status.toUpperCase(),
+                                    style: TextStyle(
+                                      color: color,
+                                      fontSize: 8.5,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: 0.3,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            /// ERROR INFO BUTTON
+                            if (status == "FAILED" && job.errorMessage != null)
+                              Align(
+                                alignment: Alignment.centerRight,
+                                child: GestureDetector(
+                                  onTap: () {
+                                    showDialog(
+                                      context: context,
+                                      builder: (dialogContext) => Dialog(
+                                        backgroundColor: Colors.transparent,
+                                        child: Container(
+                                          padding: const EdgeInsets.all(20),
+                                          decoration: BoxDecoration(
+                                            color: appColors.surface,
+                                            borderRadius: BorderRadius.circular(
+                                              20,
+                                            ),
+                                            border: Border.all(
+                                              color: appColors.border,
+                                            ),
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: Colors.black.withOpacity(
+                                                  0.08,
+                                                ),
+                                                blurRadius: 20,
+                                                offset: const Offset(0, 8),
+                                              ),
+                                            ],
+                                          ),
+                                          child: Column(
+                                            mainAxisSize: MainAxisSize.min,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              /// HEADER
+                                              Row(
+                                                children: [
+                                                  Container(
+                                                    width: 38,
+                                                    height: 38,
+                                                    decoration: BoxDecoration(
+                                                      color: appColors.redLight,
+                                                      shape: BoxShape.circle,
+                                                    ),
+                                                    child: Icon(
+                                                      Icons
+                                                          .error_outline_rounded,
+                                                      color: appColors.red,
+                                                      size: 20,
+                                                    ),
+                                                  ),
+
+                                                  const SizedBox(width: 12),
+
+                                                  Expanded(
+                                                    child: Text(
+                                                      'Export Error',
+                                                      style: TextStyle(
+                                                        color: appColors
+                                                            .textPrimary,
+                                                        fontSize: 16,
+                                                        fontWeight:
+                                                            FontWeight.w700,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+
+                                              const SizedBox(height: 16),
+
+                                              /// ERROR MESSAGE
+                                              Container(
+                                                width: double.infinity,
+                                                padding: const EdgeInsets.all(
+                                                  14,
+                                                ),
+                                                decoration: BoxDecoration(
+                                                  color: appColors.redLight
+                                                      .withOpacity(0.4),
+                                                  borderRadius:
+                                                      BorderRadius.circular(14),
+                                                  border: Border.all(
+                                                    color: appColors.red
+                                                        .withOpacity(0.15),
+                                                  ),
+                                                ),
+                                                child: Text(
+                                                  job.errorMessage ?? "",
+                                                  style: TextStyle(
+                                                    color:
+                                                        appColors.textSecondary,
+                                                    fontSize: 13,
+                                                    height: 1.5,
+                                                  ),
+                                                ),
+                                              ),
+
+                                              const SizedBox(height: 20),
+
+                                              /// CLOSE BUTTON
+                                              Align(
+                                                alignment:
+                                                    Alignment.centerRight,
+                                                child: FilledButton(
+                                                  onPressed: () =>
+                                                      Navigator.pop(
+                                                        dialogContext,
+                                                      ),
+                                                  style: FilledButton.styleFrom(
+                                                    backgroundColor:
+                                                        appColors.accent,
+                                                    foregroundColor:
+                                                        Colors.white,
+                                                    padding:
+                                                        const EdgeInsets.symmetric(
+                                                          horizontal: 18,
+                                                          vertical: 12,
+                                                        ),
+                                                    shape: RoundedRectangleBorder(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            12,
+                                                          ),
+                                                    ),
+                                                  ),
+                                                  child: const Text(
+                                                    "Close",
+                                                    style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.w700,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                  child: Container(
+                                    width: 30,
+                                    height: 30,
+                                    decoration: BoxDecoration(
+                                      color: appColors.redLight,
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: appColors.red.withOpacity(0.25),
+                                      ),
+                                    ),
+                                    child: Icon(
+                                      Icons.info_outline_rounded,
+                                      color: appColors.red,
+                                      size: 16,
+                                    ),
+                                  ),
                                 ),
                               ),
-                            ],
-                          ),
+                          ],
                         ),
 
                         const SizedBox(height: 8),
@@ -712,48 +880,6 @@ class _ExportDetailsPageState extends State<ExportDetailsPage> {
                                   fontSize: 12,
                                   fontWeight: FontWeight.w700,
                                 ),
-                              ),
-                            ),
-                          ),
-
-                        /// ERROR MESSAGE
-                        if (status == "FAILED" && job.errorMessage != null)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 8),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 8,
-                              ),
-                              decoration: BoxDecoration(
-                                color: appColors.redLight,
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(
-                                  color: appColors.red.withOpacity(0.2),
-                                ),
-                              ),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Icon(
-                                    Icons.warning_amber_rounded,
-                                    color: appColors.red,
-                                    size: 14,
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Expanded(
-                                    child: Text(
-                                      job.errorMessage ?? "",
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(
-                                        color: appColors.red,
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  ),
-                                ],
                               ),
                             ),
                           ),

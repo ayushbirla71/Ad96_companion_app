@@ -610,10 +610,15 @@ class SubscriptionDetailsPage extends StatelessWidget {
                                   'Status',
                                   item["status"],
                                 ),
+                                // _historyDetail(
+                                //   Icons.calendar_month_rounded,
+                                //   'Months',
+                                //   '${item["no_of_months"]}',
+                                // ),
                                 _historyDetail(
-                                  Icons.calendar_month_rounded,
-                                  'Months',
-                                  '${item["no_of_months"]}',
+                                  Icons.timelapse_rounded,
+                                  'Duration',
+                                  '${DateTime.parse(item["end_date"]).difference(DateTime.parse(item["start_date"])).inDays} Days',
                                 ),
                                 _historyDetail(
                                   Icons.sync_rounded,

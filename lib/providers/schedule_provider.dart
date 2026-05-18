@@ -3,12 +3,11 @@ import '../models/schedule.dart';
 import '../services/schedule_service.dart';
 
 class ScheduleProvider extends ChangeNotifier {
-
   /// DATA
   List<ScheduleAd> ads = [];
   List<ScheduleAd> liveContents = [];
   List<ScheduleAd> carousels = [];
- 
+  List<ScheduleAd> layouts = [];
 
   bool loading = false;
   String? error;
@@ -33,11 +32,12 @@ class ScheduleProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-
       final response = await ScheduleService.fetchSchedules(
         fromDate: fromDate,
         toDate: toDate,
       );
+
+      print("response $response");
 
       /// ADS
       ads = (response["ads"] ?? [])
@@ -54,6 +54,11 @@ class ScheduleProvider extends ChangeNotifier {
           .map<ScheduleAd>((e) => ScheduleAd.fromJson(e))
           .toList();
 
+      layouts = (response["layouts"] ?? [])
+          .map<ScheduleAd>((e) => ScheduleAd.fromJson(e))
+          .toList();
+
+      print("layouts raw => ${response["layouts"]}");
     } catch (e) {
       error = e.toString();
     }
@@ -75,5 +80,4 @@ class ScheduleProvider extends ChangeNotifier {
     toDate = defaultToDate;
     loadSchedules();
   }
-
 }
