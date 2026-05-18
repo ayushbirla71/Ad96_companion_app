@@ -4,37 +4,8 @@ import 'package:flutter/material.dart';
 import '../../services/api_service.dart';
 import 'package:cms_app/theme/app_colors.dart';
 
-// ─── Colour palette ───────────────────────────────────────────────────────────
-// const _c = _Colors();
-
-// class _Colors {
-//   const _Colors();
-//   Color get accent => const Color(0xFF2563EB);
-//   Color get accentLight => const Color(0xFFEFF6FF);
-//   Color get green => const Color(0xFF059669);
-//   Color get greenLight => const Color(0xFFECFDF5);
-//   Color get orange => const Color(0xFFEA580C);
-//   Color get orangeLight => const Color(0xFFFFF7ED);
-//   Color get yellow => const Color(0xFFD97706);
-//   Color get yellowLight => const Color(0xFFFFFBEB);
-//   Color get purple => const Color(0xFF7C3AED);
-//   Color get purpleLight => const Color(0xFFF5F3FF);
-//   Color get red => const Color(0xFFDC2626);
-//   Color get redLight => const Color(0xFFFEF2F2);
-//   Color get teal => const Color(0xFF0891B2);
-//   Color get tealLight => const Color(0xFFECFEFF);
-//   Color get bg => const Color(0xFFF1F5F9);
-//   Color get surface => const Color(0xFFFFFFFF);
-//   Color get surfaceHigh => const Color(0xFFF8FAFC);
-//   Color get textPrimary => const Color(0xFF0F172A);
-//   Color get textSecondary => const Color(0xFF475569);
-//   Color get textMuted => const Color(0xFF94A3B8);
-//   Color get border => const Color(0xFFE2E8F0);
-//   Color get borderLight => const Color(0xFFF1F5F9);
-//   Color get shadow => const Color(0x08000000);
-// }
-
 // ─── Safe parsers ─────────────────────────────────────────────────────────────
+
 int _parseInt(dynamic v, [int fb = 0]) {
   if (v == null) return fb;
   if (v is int) return v;
@@ -170,7 +141,7 @@ class GroupDevice {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 class DeviceGroupDetailsPage extends StatefulWidget {
-  final dynamic group; // your DeviceGroup model — needs .id and .name
+  final dynamic group;
   const DeviceGroupDetailsPage({super.key, required this.group});
 
   @override
@@ -182,6 +153,20 @@ class _DeviceGroupDetailsPageState extends State<DeviceGroupDetailsPage>
   bool _loading = true;
   DeviceGroupDetail? _detail;
   String? _error;
+
+  // ─── Edit state ────────────────────────────────────────────────────────────
+  bool _editFeatures = false;
+  bool _editScrollText = false;
+  bool _savingFeatures = false;
+  bool _savingScrollText = false;
+
+  // Editable copies of toggles
+  late bool _rcsEnabled;
+  late bool _placeholderEnabled;
+  late bool _logoEnabled;
+
+  // Scroll text controller
+  final _messageCtrl = TextEditingController();
 
   // ─── Filter state ──────────────────────────────────────────────────────────
   final _searchCtrl = TextEditingController();
@@ -211,24 +196,8 @@ class _DeviceGroupDetailsPageState extends State<DeviceGroupDetailsPage>
   void dispose() {
     _fadeCtrl?.dispose();
     _searchCtrl.dispose();
+    _messageCtrl.dispose();
     super.dispose();
-  }
-
-   Future<void> _refreshGroup() async {
-    try {
-      setState(() => _loading = true);
-
-      await ApiService.post(
-        "/device/update-schedule/${widget.group.id}",
-        {},
-      );
-
-      //  if (mounted) setState(() => = "Group refresh triggered. Devices will sync shortly.");
-    } catch (e) {
-      if (mounted) setState(() => _error = e.toString());
-    } finally {
-      setState(() => _loading = false);
-    }
   }
 
   // ─── API ───────────────────────────────────────────────────────────────────
@@ -245,7 +214,18 @@ class _DeviceGroupDetailsPageState extends State<DeviceGroupDetailsPage>
       if (res.statusCode == 200) {
         final json = jsonDecode(res.body) as Map<String, dynamic>;
         if (mounted) {
-          setState(() => _detail = DeviceGroupDetail.fromJson(json));
+          final detail = DeviceGroupDetail.fromJson(json);
+          setState(() {
+            _detail = detail;
+            // Sync editable state from fresh data
+            _rcsEnabled = detail.rcsEnabled;
+            _placeholderEnabled = detail.placeholderEnabled;
+            _logoEnabled = detail.logoEnabled;
+            _messageCtrl.text = detail.scrollText?.message ?? '';
+            // Reset edit modes on reload
+            _editFeatures = false;
+            _editScrollText = false;
+          });
           _fadeCtrl?.forward(from: 0);
         }
       } else {
@@ -256,6 +236,68 @@ class _DeviceGroupDetailsPageState extends State<DeviceGroupDetailsPage>
     } finally {
       if (mounted) setState(() => _loading = false);
     }
+  }
+
+  Future<void> _refreshGroup() async {
+    try {
+      setState(() => _loading = true);
+      await ApiService.post('/device/update-schedule/${widget.group.id}', {});
+      _snack('Group refresh triggered. Devices will sync shortly.');
+    } catch (e) {
+      if (mounted) setState(() => _error = e.toString());
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _updateFeatures() async {
+    setState(() => _savingFeatures = true);
+    try {
+      final res =
+          await ApiService.put('/device/update-group/${widget.group.id}', {
+            'name': _detail!.name,
+            'rcs_enabled': _rcsEnabled,
+            'placeholder_enabled': _placeholderEnabled,
+            'logo_enabled': _logoEnabled,
+          });
+      if (res.statusCode == 200 || res.statusCode == 201) {
+        await _load();
+        _snack('Group features updated successfully');
+      } else {
+        _snack('Failed to update features (${res.statusCode})');
+      }
+    } catch (e) {
+      _snack('Error: $e');
+    } finally {
+      if (mounted) setState(() => _savingFeatures = false);
+    }
+  }
+
+  Future<void> _updateScrollText() async {
+    setState(() => _savingScrollText = true);
+    try {
+      await ApiService.post('/scroll-text', {
+        'group_id': widget.group.id,
+        'message': _messageCtrl.text.trim(),
+      });
+      setState(() => _editScrollText = false);
+      _snack('Scroll text updated successfully');
+    } catch (e) {
+      _snack('Error: $e');
+    } finally {
+      if (mounted) setState(() => _savingScrollText = false);
+    }
+  }
+
+  void _snack(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        backgroundColor: appColors.green,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+    );
   }
 
   // ─── Filtered devices ──────────────────────────────────────────────────────
@@ -269,28 +311,22 @@ class _DeviceGroupDetailsPageState extends State<DeviceGroupDetailsPage>
           d.deviceName.toLowerCase().contains(q) ||
           d.deviceId.toLowerCase().contains(q) ||
           d.androidId.toLowerCase().contains(q);
-
       final matchStatus =
           _filterStatus == 'All' ||
           d.status.toLowerCase() == _filterStatus.toLowerCase();
-
       final matchReg =
           _filterRegistration == 'All' ||
           d.registrationStatus.toLowerCase() ==
               _filterRegistration.toLowerCase();
-
       final matchType =
           _filterType == 'All' ||
           d.deviceType.toLowerCase() == _filterType.toLowerCase();
-
       final matchOrientation =
           _filterOrientation == 'All' ||
           d.deviceOrientation.toLowerCase() == _filterOrientation.toLowerCase();
-
       final matchStreams =
           _filterStreams == 'All' ||
           d.maxVideoStreams.toString() == _filterStreams;
-
       return matchSearch &&
           matchStatus &&
           matchReg &&
@@ -465,7 +501,7 @@ class _DeviceGroupDetailsPageState extends State<DeviceGroupDetailsPage>
                 size: 17,
               ),
             ),
-            onPressed: _refreshGroup,
+            onPressed: _loading ? null : _refreshGroup,
           ),
           const SizedBox(width: 4),
         ],
@@ -474,7 +510,6 @@ class _DeviceGroupDetailsPageState extends State<DeviceGroupDetailsPage>
           child: Container(height: 1, color: appColors.border),
         ),
       ),
-      // appBar: CustomAppBar(title: "Group Details", onRefresh: _load),
       body: _loading
           ? _loader()
           : _error != null
@@ -499,23 +534,16 @@ class _DeviceGroupDetailsPageState extends State<DeviceGroupDetailsPage>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Hero card ──
             _heroCard(d),
             const SizedBox(height: 16),
 
-            // ── Feature toggles ──
-            _sectionLabel('Features'),
-            const SizedBox(height: 10),
-            _featureToggles(d),
+            // ── Features (editable) ──
+            _featureSection(d),
             const SizedBox(height: 20),
 
-            // ── Scroll text ──
-            if (d.scrollText != null) ...[
-              _sectionLabel('Scroll Text'),
-              const SizedBox(height: 10),
-              _scrollTextCard(d.scrollText!),
-              const SizedBox(height: 20),
-            ],
+            // ── Scroll Text (editable) ──
+            _scrollTextSection(d),
+            const SizedBox(height: 20),
 
             // ── Devices ──
             _sectionLabel(
@@ -534,6 +562,382 @@ class _DeviceGroupDetailsPageState extends State<DeviceGroupDetailsPage>
       ),
     );
   }
+
+  // ─── Features Section ──────────────────────────────────────────────────────
+
+  Widget _featureSection(DeviceGroupDetail d) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Section header with Edit/Cancel
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            _sectionLabel('Group Features'),
+            _editToggleBtn(
+              editing: _editFeatures,
+              onTap: () {
+                setState(() {
+                  if (_editFeatures) {
+                    // Cancel — revert to loaded values
+                    _rcsEnabled = d.rcsEnabled;
+                    _placeholderEnabled = d.placeholderEnabled;
+                    _logoEnabled = d.logoEnabled;
+                  }
+                  _editFeatures = !_editFeatures;
+                });
+              },
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+
+        // Toggles card
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: appColors.surface,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: _editFeatures
+                  ? appColors.accent.withOpacity(0.35)
+                  : appColors.border,
+              width: _editFeatures ? 1.5 : 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: appColors.shadow,
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              _ToggleRow(
+                icon: Icons.smart_display_rounded,
+                iconColor: appColors.accent,
+                iconBg: appColors.accentLight,
+                label: 'RCS Enabled',
+                subtitle: 'Rich Communication Services',
+                value: _rcsEnabled,
+                enabled: _editFeatures,
+                onChanged: (v) => setState(() => _rcsEnabled = v),
+              ),
+              _featureDivider(),
+              _ToggleRow(
+                icon: Icons.image_rounded,
+                iconColor: appColors.purple,
+                iconBg: appColors.purpleLight,
+                label: 'Placeholder Enabled',
+                subtitle: 'Show placeholder content',
+                value: _placeholderEnabled,
+                enabled: _editFeatures,
+                onChanged: (v) => setState(() => _placeholderEnabled = v),
+              ),
+              _featureDivider(),
+              _ToggleRow(
+                icon: Icons.verified_rounded,
+                iconColor: appColors.teal,
+                iconBg: appColors.tealLight,
+                label: 'Logo Enabled',
+                subtitle: 'Display group logo',
+                value: _logoEnabled,
+                enabled: _editFeatures,
+                onChanged: (v) => setState(() => _logoEnabled = v),
+              ),
+            ],
+          ),
+        ),
+
+        // Save button — only when editing
+        AnimatedSize(
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOut,
+          child: _editFeatures
+              ? Padding(
+                  padding: const EdgeInsets.only(top: 10),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.icon(
+                      onPressed: _savingFeatures ? null : _updateFeatures,
+                      icon: _savingFeatures
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : const Icon(Icons.save_rounded, size: 16),
+                      label: Text(
+                        _savingFeatures ? 'Saving…' : 'Update Features',
+                      ),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: appColors.accent,
+                        foregroundColor: Colors.white,
+                        disabledBackgroundColor: appColors.accent.withOpacity(
+                          0.6,
+                        ),
+                        disabledForegroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 13),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        textStyle: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                )
+              : const SizedBox.shrink(),
+        ),
+      ],
+    );
+  }
+
+  Widget _featureDivider() => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 4),
+    child: Divider(height: 16, thickness: 1, color: appColors.borderLight),
+  );
+
+  // ─── Scroll Text Section ───────────────────────────────────────────────────
+
+  Widget _scrollTextSection(DeviceGroupDetail d) {
+    // Always show the section (even if scrollText is null — user may want to add one)
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            _sectionLabel('Scroll Text'),
+            _editToggleBtn(
+              editing: _editScrollText,
+              onTap: () {
+                setState(() {
+                  if (_editScrollText) {
+                    // Cancel — revert
+                    _messageCtrl.text = d.scrollText?.message ?? '';
+                  }
+                  _editScrollText = !_editScrollText;
+                });
+              },
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: appColors.surface,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: _editScrollText
+                  ? appColors.accent.withOpacity(0.35)
+                  : appColors.border,
+              width: _editScrollText ? 1.5 : 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: appColors.shadow,
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: _editScrollText
+              ? TextField(
+                  controller: _messageCtrl,
+                  maxLines: 3,
+                  style: TextStyle(
+                    color: appColors.textPrimary,
+                    fontSize: 13,
+                    height: 1.5,
+                  ),
+                  decoration: InputDecoration(
+                    hintText: 'Enter scroll text message…',
+                    hintStyle: TextStyle(
+                      color: appColors.textMuted,
+                      fontSize: 13,
+                    ),
+                    prefixIcon: Padding(
+                      padding: const EdgeInsets.only(
+                        left: 0,
+                        right: 10,
+                        top: 10,
+                        bottom: 10,
+                      ),
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: appColors.tealLight,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Icon(
+                          Icons.text_fields_rounded,
+                          color: appColors.teal,
+                          size: 18,
+                        ),
+                      ),
+                    ),
+                    prefixIconConstraints: const BoxConstraints(
+                      minWidth: 0,
+                      minHeight: 0,
+                    ),
+                    filled: true,
+                    fillColor: appColors.surfaceHigh,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 13,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: appColors.border),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: appColors.border),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(
+                        color: appColors.accent,
+                        width: 1.5,
+                      ),
+                    ),
+                  ),
+                )
+              : Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: appColors.tealLight,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(
+                        Icons.text_fields_rounded,
+                        color: appColors.teal,
+                        size: 18,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child:
+                          d.scrollText != null &&
+                              d.scrollText!.message.isNotEmpty
+                          ? Text(
+                              d.scrollText!.message,
+                              style: TextStyle(
+                                color: appColors.textSecondary,
+                                fontSize: 13,
+                                height: 1.5,
+                              ),
+                            )
+                          : Text(
+                              'No scroll text set. Tap Edit to add one.',
+                              style: TextStyle(
+                                color: appColors.textMuted,
+                                fontSize: 13,
+                                fontStyle: FontStyle.italic,
+                              ),
+                            ),
+                    ),
+                  ],
+                ),
+        ),
+
+        AnimatedSize(
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOut,
+          child: _editScrollText
+              ? Padding(
+                  padding: const EdgeInsets.only(top: 10),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.icon(
+                      onPressed: _savingScrollText ? null : _updateScrollText,
+                      icon: _savingScrollText
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : const Icon(Icons.message_rounded, size: 16),
+                      label: Text(
+                        _savingScrollText ? 'Saving…' : 'Update Message',
+                      ),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: appColors.teal,
+                        foregroundColor: Colors.white,
+                        disabledBackgroundColor: appColors.teal.withOpacity(
+                          0.6,
+                        ),
+                        disabledForegroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 13),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        textStyle: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                )
+              : const SizedBox.shrink(),
+        ),
+      ],
+    );
+  }
+
+  // ─── Edit Toggle Button ────────────────────────────────────────────────────
+
+  Widget _editToggleBtn({required bool editing, required VoidCallback onTap}) =>
+      GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: editing ? appColors.redLight : appColors.accentLight,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: editing
+                  ? appColors.red.withOpacity(0.3)
+                  : appColors.accent.withOpacity(0.3),
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                editing ? Icons.close_rounded : Icons.edit_rounded,
+                size: 13,
+                color: editing ? appColors.red : appColors.accent,
+              ),
+              const SizedBox(width: 5),
+              Text(
+                editing ? 'Cancel' : 'Edit',
+                style: TextStyle(
+                  color: editing ? appColors.red : appColors.accent,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
 
   // ─── Hero Card ─────────────────────────────────────────────────────────────
 
@@ -584,7 +988,6 @@ class _DeviceGroupDetailsPageState extends State<DeviceGroupDetailsPage>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Top row: orientation badge + reg code
               Row(
                 children: [
                   Container(
@@ -651,7 +1054,6 @@ class _DeviceGroupDetailsPageState extends State<DeviceGroupDetailsPage>
                 ],
               ),
               const SizedBox(height: 10),
-              // Group name
               Text(
                 d.name,
                 style: const TextStyle(
@@ -663,7 +1065,6 @@ class _DeviceGroupDetailsPageState extends State<DeviceGroupDetailsPage>
                 ),
               ),
               const SizedBox(height: 12),
-              // Stats row
               Row(
                 children: [
                   _HeroBadge(
@@ -684,7 +1085,6 @@ class _DeviceGroupDetailsPageState extends State<DeviceGroupDetailsPage>
                 ],
               ),
               const SizedBox(height: 10),
-              // Created
               Text(
                 'Created ${_fmtDate(d.createdAt)}',
                 style: TextStyle(
@@ -693,104 +1093,6 @@ class _DeviceGroupDetailsPageState extends State<DeviceGroupDetailsPage>
                 ),
               ),
             ],
-          ),
-        ),
-      ],
-    ),
-  );
-
-  // ─── Feature Toggles ───────────────────────────────────────────────────────
-
-  Widget _featureToggles(DeviceGroupDetail d) => Container(
-    padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(
-      color: appColors.surface,
-      borderRadius: BorderRadius.circular(20),
-      border: Border.all(color: appColors.border),
-      boxShadow: [
-        BoxShadow(
-          color: appColors.shadow,
-          blurRadius: 8,
-          offset: const Offset(0, 2),
-        ),
-      ],
-    ),
-    child: Row(
-      children: [
-        Expanded(
-          child: _FeatureTile(
-            icon: Icons.smart_display_rounded,
-            label: 'RCS',
-            enabled: d.rcsEnabled,
-          ),
-        ),
-        _vDivider(),
-        Expanded(
-          child: _FeatureTile(
-            icon: Icons.image_rounded,
-            label: 'Placeholder',
-            enabled: d.placeholderEnabled,
-          ),
-        ),
-        _vDivider(),
-        Expanded(
-          child: _FeatureTile(
-            icon: Icons.verified_rounded,
-            label: 'Logo',
-            enabled: d.logoEnabled,
-          ),
-        ),
-      ],
-    ),
-  );
-
-  Widget _vDivider() => Container(
-    width: 1,
-    height: 48,
-    color: appColors.border,
-    margin: const EdgeInsets.symmetric(horizontal: 8),
-  );
-
-  // ─── Scroll Text Card ──────────────────────────────────────────────────────
-
-  Widget _scrollTextCard(ScrollTextInfo st) => Container(
-    padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(
-      color: appColors.surface,
-      borderRadius: BorderRadius.circular(20),
-      border: Border.all(color: appColors.border),
-      boxShadow: [
-        BoxShadow(
-          color: appColors.shadow,
-          blurRadius: 8,
-          offset: const Offset(0, 2),
-        ),
-      ],
-    ),
-    child: Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: appColors.tealLight,
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Icon(
-            Icons.text_fields_rounded,
-            color: appColors.teal,
-            size: 18,
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Text(
-            st.message,
-            style: TextStyle(
-              color: appColors.textSecondary,
-              fontSize: 12,
-              height: 1.5,
-            ),
           ),
         ),
       ],
@@ -849,7 +1151,6 @@ class _DeviceGroupDetailsPageState extends State<DeviceGroupDetailsPage>
   // ─── Filter Chips Row ──────────────────────────────────────────────────────
 
   Widget _filterChipsRow(DeviceGroupDetail d) {
-    // Build unique option sets from actual data
     final statuses = [
       'All',
       ...{...d.devices.map((e) => _capitalize(e.status))},
@@ -951,7 +1252,6 @@ class _DeviceGroupDetailsPageState extends State<DeviceGroupDetailsPage>
             ],
           ),
         ),
-        // Results count
         if (_search.isNotEmpty || _hasActiveFilters) ...[
           const SizedBox(height: 8),
           Text(
@@ -974,7 +1274,6 @@ class _DeviceGroupDetailsPageState extends State<DeviceGroupDetailsPage>
 
   Widget _devicesList() {
     final devices = _filtered;
-
     if (devices.isEmpty) {
       return Container(
         padding: const EdgeInsets.all(32),
@@ -1047,7 +1346,7 @@ class _DeviceGroupDetailsPageState extends State<DeviceGroupDetailsPage>
     );
   }
 
-  // ─── Section label ─────────────────────────────────────────────────────────
+  // ─── Section Label ─────────────────────────────────────────────────────────
 
   Widget _sectionLabel(String text, {String? badge, Color? badgeColor}) => Row(
     children: [
@@ -1158,6 +1457,75 @@ class _DeviceGroupDetailsPageState extends State<DeviceGroupDetailsPage>
   );
 }
 
+// ─── Toggle Row ───────────────────────────────────────────────────────────────
+
+class _ToggleRow extends StatelessWidget {
+  final IconData icon;
+  final Color iconColor, iconBg;
+  final String label, subtitle;
+  final bool value, enabled;
+  final ValueChanged<bool> onChanged;
+
+  const _ToggleRow({
+    required this.icon,
+    required this.iconColor,
+    required this.iconBg,
+    required this.label,
+    required this.subtitle,
+    required this.value,
+    required this.enabled,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: iconBg,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: iconColor, size: 17),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: appColors.textPrimary,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                Text(
+                  subtitle,
+                  style: TextStyle(color: appColors.textMuted, fontSize: 11),
+                ),
+              ],
+            ),
+          ),
+          Switch(
+            value: value,
+            onChanged: enabled ? onChanged : null,
+            activeColor: iconColor,
+            activeTrackColor: iconColor.withOpacity(0.2),
+            inactiveThumbColor: appColors.textMuted,
+            inactiveTrackColor: appColors.borderLight,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 // ─── Hero Badge ───────────────────────────────────────────────────────────────
 
 class _HeroBadge extends StatelessWidget {
@@ -1190,71 +1558,10 @@ class _HeroBadge extends StatelessWidget {
   );
 }
 
-// ─── Feature Tile ─────────────────────────────────────────────────────────────
-
-class _FeatureTile extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final bool enabled;
-  const _FeatureTile({
-    required this.icon,
-    required this.label,
-    required this.enabled,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final color = enabled ? appColors.green : appColors.textMuted;
-    final bg = enabled ? appColors.greenLight : appColors.surfaceHigh;
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: bg,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(icon, color: color, size: 18),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          label,
-          style: TextStyle(
-            color: appColors.textSecondary,
-            fontSize: 11,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(height: 3),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-          decoration: BoxDecoration(
-            color: enabled
-                ? appColors.green.withOpacity(0.1)
-                : appColors.textMuted.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Text(
-            enabled ? 'ON' : 'OFF',
-            style: TextStyle(
-              color: color,
-              fontSize: 9,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.5,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
 // ─── Filter Drop Chip ─────────────────────────────────────────────────────────
 
 class _FilterDropChip extends StatelessWidget {
-  final String label;
-  final String selected;
+  final String label, selected;
   final List<String> options;
   final ValueChanged<String> onSelected;
   const _FilterDropChip({
@@ -1394,15 +1701,12 @@ class _DeviceTileState extends State<_DeviceTile> {
     final d = widget.device;
     return Column(
       children: [
-        // ── Main row ──
         InkWell(
           onTap: () => setState(() => _expanded = !_expanded),
-          borderRadius: BorderRadius.circular(0),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
             child: Row(
               children: [
-                // Icon
                 Container(
                   width: 42,
                   height: 42,
@@ -1417,7 +1721,6 @@ class _DeviceTileState extends State<_DeviceTile> {
                   ),
                 ),
                 const SizedBox(width: 12),
-                // Info
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -1462,7 +1765,6 @@ class _DeviceTileState extends State<_DeviceTile> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                // Right: synced + expand
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
@@ -1489,7 +1791,6 @@ class _DeviceTileState extends State<_DeviceTile> {
             ),
           ),
         ),
-        // ── Expanded details ──
         AnimatedSize(
           duration: const Duration(milliseconds: 250),
           curve: Curves.easeOut,
@@ -1556,9 +1857,8 @@ class _DeviceTileState extends State<_DeviceTile> {
                         icon: Icons.calendar_today_rounded,
                         label: 'Registered',
                         value: widget.fmtDate(d.createdAt),
-                        isLast: true,
+                        isLast: d.tags.isEmpty,
                       ),
-                      // Tags
                       if (d.tags.isNotEmpty) ...[
                         const SizedBox(height: 10),
                         Row(
