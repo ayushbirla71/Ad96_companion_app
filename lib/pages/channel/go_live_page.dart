@@ -602,10 +602,13 @@ class _GoLivePageState extends State<GoLivePage> with WidgetsBindingObserver {
   }
 
   void _navToHome() {
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const HomePage()),
-      (route) => false,
-    );
+    if(!mounted)return;
+    // Navigator.of(context).pushAndRemoveUntil(
+    //   MaterialPageRoute(builder: (_) => const HomePage()),
+    //   (route) => false,
+    // );
+
+    Navigator.of(context).popUntil((route) => route.isFirst);
   }
 
   ////////////////////////////////////////////////////////////

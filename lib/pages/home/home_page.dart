@@ -110,73 +110,89 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: IndexedStack(index: index, children: pages),
+    // 👇 Wrap Scaffold in WillPopScope to handle the system back button
+    return WillPopScope(
+      onWillPop: () async {
+        // If we are NOT on the Dashboard tab
+        if (index != 0) {
+          // Change the tab back to Dashboard
+          setState(() {
+            index = 0;
+          });
+          // Return false to prevent the app from closing/popping
+          return false; 
+        }
+        // If we ARE on the Dashboard, return true to allow the app to close normally
+        return true; 
+      },
+      child: Scaffold(
+        body: IndexedStack(index: index, children: pages),
 
-      // floatingActionButton: FloatingActionButton(
-      //   onPressed: onPlusPressed,
-      //   backgroundColor: Colors.indigo,
-      //   child: const Icon(Icons.add, size: 28, color: Colors.white),
-      // ),
-      floatingActionButton: GestureDetector(
-        onTap: () => navigate(const AssignLiveContentToGroups()),
-        child: Container(
-          width: 90,
-          height: 90,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: const LinearGradient(
-              colors: [Color(0xFF3F7BD9), Color(0xFF1A4FB5)],
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.blue.withOpacity(0.5),
-                blurRadius: 12,
-                offset: const Offset(0, 6),
+        // floatingActionButton: FloatingActionButton(
+        //   onPressed: onPlusPressed,
+        //   backgroundColor: Colors.indigo,
+        //   child: const Icon(Icons.add, size: 28, color: Colors.white),
+        // ),
+        floatingActionButton: GestureDetector(
+          onTap: () => navigate(const AssignLiveContentToGroups()),
+          child: Container(
+            width: 90,
+            height: 90,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: const LinearGradient(
+                colors: [Color(0xFF3F7BD9), Color(0xFF1A4FB5)],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
               ),
-            ],
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: const [
-              Icon(Icons.wifi_tethering, color: Colors.white, size: 34),
-              SizedBox(height: 2),
-              Text(
-                "GO LIVE",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.blue.withOpacity(0.5),
+                  blurRadius: 12,
+                  offset: const Offset(0, 6),
                 ),
-              ),
-            ],
+              ],
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: const [
+                Icon(Icons.wifi_tethering, color: Colors.white, size: 34),
+                SizedBox(height: 2),
+                Text(
+                  "GO LIVE",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
-      ),
 
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+        floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
 
-      bottomNavigationBar: BottomAppBar(
-        shape: const CircularNotchedRectangle(),
-        notchMargin: 6,
-        child: SizedBox(
-          height: 65,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              /// Left items
-              _navItem(Icons.dashboard, "Dashboard", 0),
-              _navItem(Icons.campaign, "Ads", 1),
+        bottomNavigationBar: BottomAppBar(
+          shape: const CircularNotchedRectangle(),
+          notchMargin: 6,
+          child: SizedBox(
+            height: 65,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                /// Left items
+                _navItem(Icons.dashboard, "Dashboard", 0),
+                _navItem(Icons.campaign, "Ads", 1),
 
-              const SizedBox(width: 40),
+                const SizedBox(width: 40),
 
-              /// Right items
-              _navItem(Icons.tv, "Devices", 2),
-              _navItem(Icons.group, "Groups", 3),
-            ],
+                /// Right items
+                _navItem(Icons.tv, "Devices", 2),
+                _navItem(Icons.group, "Groups", 3),
+              ],
+            ),
           ),
         ),
       ),

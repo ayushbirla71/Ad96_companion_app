@@ -551,23 +551,23 @@ class _AdsPageState extends State<AdsPage> {
         surfaceTintColor: Colors.transparent,
         elevation: 0,
 
-        leading: IconButton(
-          icon: Container(
-            width: 34,
-            height: 34,
-            decoration: BoxDecoration(
-              color: appColors.surfaceHigh,
-              shape: BoxShape.circle,
-              border: Border.all(color: appColors.border),
-            ),
-            child: Icon(
-              Icons.arrow_back_ios_new_rounded,
-              color: appColors.textSecondary,
-              size: 15,
-            ),
-          ),
-          onPressed: () => Navigator.pop(context),
-        ),
+        // leading: IconButton(
+        //   icon: Container(
+        //     width: 34,
+        //     height: 34,
+        //     decoration: BoxDecoration(
+        //       color: appColors.surfaceHigh,
+        //       shape: BoxShape.circle,
+        //       border: Border.all(color: appColors.border),
+        //     ),
+        //     child: Icon(
+        //       Icons.arrow_back_ios_new_rounded,
+        //       color: appColors.textSecondary,
+        //       size: 15,
+        //     ),
+        //   ),
+        //   onPressed: () => Navigator.pop(context),
+        // ),
 
         titleSpacing: 16,
 

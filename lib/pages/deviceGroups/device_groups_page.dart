@@ -245,7 +245,7 @@ class _GroupsPageState extends State<GroupsPage> {
       //   ),
       // ),
       appBar: DashboardAppBar(
-        title: "Device Groups",
+        title: "Device Groups 1",
         subtitle:
             '${filteredGroups.length} group${filteredGroups.length != 1 ? 's' : ''}',
         icon: Icons.group_work_rounded,

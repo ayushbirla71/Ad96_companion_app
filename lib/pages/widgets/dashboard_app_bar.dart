@@ -27,25 +27,25 @@ class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
       titleSpacing: 8,
 
       /// BACK BUTTON
-      leading: showBack
-          ? IconButton(
-              icon: Container(
-                width: 34,
-                height: 34,
-                decoration: BoxDecoration(
-                  color: appColors.surfaceHigh,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: appColors.border),
-                ),
-                child: Icon(
-                  Icons.arrow_back_ios_new_rounded,
-                  color: appColors.textSecondary,
-                  size: 15,
-                ),
-              ),
-              onPressed: () => Navigator.pop(context),
-            )
-          : null,
+      // leading: showBack
+      //     ? IconButton(
+      //         icon: Container(
+      //           width: 34,
+      //           height: 34,
+      //           decoration: BoxDecoration(
+      //             color: appColors.surfaceHigh,
+      //             shape: BoxShape.circle,
+      //             border: Border.all(color: appColors.border),
+      //           ),
+      //           child: Icon(
+      //             Icons.arrow_back_ios_new_rounded,
+      //             color: appColors.textSecondary,
+      //             size: 15,
+      //           ),
+      //         ),
+      //         onPressed: () => Navigator.pop(context),
+      //       )
+      //     : null,
 
       /// TITLE AREA
       title: Row(
