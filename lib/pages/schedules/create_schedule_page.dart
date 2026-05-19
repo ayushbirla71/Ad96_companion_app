@@ -2449,7 +2449,8 @@ class _CreateSchedulePageState extends State<CreateSchedulePage> {
             ),
           ),
         );
-        Navigator.pop(context);
+        // Navigator.pop(context);
+        Navigator.pop(context, true);
       } else {
         _err('Failed to create schedule');
       }

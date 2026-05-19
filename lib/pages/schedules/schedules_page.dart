@@ -1019,13 +1019,26 @@ class _SchedulesPageState extends State<SchedulesPage> {
                 const SizedBox(width: 4),
                 // Delete button
                 GestureDetector(
-                  onTap: () {
-                    Navigator.push(
+                  // onTap: () {
+                  //   Navigator.push(
+                  //     context,
+                  //     MaterialPageRoute(
+                  //       builder: (_) => DeleteSchedulePage(schedule: data),
+                  //     ),
+                  //   );
+                  // },
+                  onTap: () async {
+                    final deleted = await Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (_) => DeleteSchedulePage(schedule: data),
                       ),
                     );
+
+                    /// refresh schedules after delete
+                    if (deleted == true && mounted) {
+                      context.read<ScheduleProvider>().loadSchedules();
+                    }
                   },
                   child: Container(
                     width: 30,
@@ -1399,6 +1412,27 @@ class _SchedulesPageState extends State<SchedulesPage> {
         ),
 
         actions: [
+          /// REFRESH
+          IconButton(
+            tooltip: 'Refresh',
+            onPressed: () {
+              context.read<ScheduleProvider>().loadSchedules();
+            },
+            icon: Container(
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(
+                color: appColors.surfaceHigh,
+                shape: BoxShape.circle,
+                border: Border.all(color: appColors.border),
+              ),
+              child: Icon(
+                Icons.refresh_rounded,
+                color: appColors.textSecondary,
+                size: 17,
+              ),
+            ),
+          ),
           IconButton(
             icon: Container(
               width: 34,
@@ -1410,11 +1444,22 @@ class _SchedulesPageState extends State<SchedulesPage> {
               ),
               child: Icon(Icons.add_rounded, color: appColors.accent, size: 18),
             ),
-            onPressed: () {
-              Navigator.push(
+            // onPressed: () {
+            //   Navigator.push(
+            //     context,
+            //     MaterialPageRoute(builder: (_) => const CreateSchedulePage()),
+            //   );
+            // },
+            onPressed: () async {
+              final created = await Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const CreateSchedulePage()),
               );
+
+              /// reload schedules after successful create
+              if (created == true && mounted) {
+                context.read<ScheduleProvider>().loadSchedules();
+              }
             },
           ),
           const SizedBox(width: 4),
