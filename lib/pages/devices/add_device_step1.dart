@@ -284,9 +284,8 @@
 
 
 
-
-
 import 'dart:convert';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cms_app/services/api_service.dart';
@@ -310,6 +309,9 @@ class _AddDeviceStep1PageState extends State<AddDeviceStep1Page> {
   bool loading = false;
   bool _isLoading = false;
   Map<String, dynamic>? deviceInfo;
+  
+  // NEW: State for the orientation override checkbox
+  bool overrideOrientation = false; 
 
   @override
   void initState() {
@@ -327,27 +329,51 @@ class _AddDeviceStep1PageState extends State<AddDeviceStep1Page> {
     super.dispose();
   }
 
-  /// ✅ Premium Bottom Sheet matching Quick Actions & Device Details Card style
-  /// ✅ Premium Bottom Sheet with Live Search
+  /// ✅ Premium Bottom Sheet with Live Search & Orientation Filtering
   void showGroupBottomSheet(GroupProvider groupProvider) {
-    // Local variable to track the search query
     String searchQuery = "";
 
     showModalBottomSheet(
       context: context,
-      isScrollControlled: true, // Needed for the keyboard to push the sheet up
+      isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setModalState) {
             
-            // Filter the groups dynamically based on what the user types
+            // 1. Get the device orientation
+            final deviceOri = deviceInfo?['orientation']?.toString().toLowerCase();
+
+            print("device oriantation ${deviceOri}");
+
+            // 2. Filter groups by search query AND orientation
             final filteredGroups = groupProvider.groups.where((g) {
-              return g.name.toLowerCase().contains(searchQuery.toLowerCase());
+              
+              // Check Search
+              final matchesSearch = g.name.toLowerCase().contains(searchQuery.toLowerCase());
+              
+              // Check Orientation
+              bool matchesOrientation = true;
+              
+              // If override is NOT checked, and we know the device orientation, enforce the rule
+              if (!overrideOrientation && deviceOri != null && deviceOri.isNotEmpty) {
+                try {
+                  // 👉 NOTE: Change 'g.orientation' if your Group model uses a different property name
+                  final groupOri = (g as dynamic).orientation?.toString().toLowerCase(); 
+                  print("group Detaisl..... ${g}");
+                  if (groupOri != null && groupOri.isNotEmpty) {
+                    matchesOrientation = (groupOri == deviceOri);
+                  }
+                } catch (e) {
+                  // Failsafe if the property doesn't exist on the group model
+                  debugPrint("Group orientation property not found: $e");
+                }
+              }
+
+              return matchesSearch && matchesOrientation;
             }).toList();
 
             return Padding(
-              // 👇 This ensures the bottom sheet rises above the keyboard when typing
               padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
               child: Container(
                 decoration: BoxDecoration(
@@ -358,7 +384,6 @@ class _AddDeviceStep1PageState extends State<AddDeviceStep1Page> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Drag Handle
                     Container(
                       width: 40,
                       height: 4,
@@ -379,7 +404,7 @@ class _AddDeviceStep1PageState extends State<AddDeviceStep1Page> {
                     ),
                     const SizedBox(height: 16),
 
-                    // ─── SEARCH INPUT ───
+                    // SEARCH INPUT
                     TextField(
                       style: TextStyle(color: appColors.textPrimary, fontSize: 14),
                       decoration: InputDecoration(
@@ -399,15 +424,12 @@ class _AddDeviceStep1PageState extends State<AddDeviceStep1Page> {
                         ),
                       ),
                       onChanged: (value) {
-                        // Updates the list inside the bottom sheet
-                        setModalState(() {
-                          searchQuery = value;
-                        });
+                        setModalState(() => searchQuery = value);
                       },
                     ),
                     const SizedBox(height: 16),
 
-                    // ─── GROUP LIST ───
+                    // GROUP LIST
                     Container(
                       constraints: BoxConstraints(
                         maxHeight: MediaQuery.of(context).size.height * 0.4,
@@ -418,17 +440,18 @@ class _AddDeviceStep1PageState extends State<AddDeviceStep1Page> {
                         border: Border.all(color: appColors.border),
                       ),
                       child: filteredGroups.isEmpty
-                          // Empty State if no groups match the search
                           ? Padding(
                               padding: const EdgeInsets.all(24),
                               child: Center(
                                 child: Text(
-                                  "No groups found.",
-                                  style: TextStyle(color: appColors.textMuted, fontSize: 13),
+                                  overrideOrientation 
+                                    ? "No groups match your search." 
+                                    : "No groups match this device's orientation.\nTry overriding the restriction.",
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(color: appColors.textMuted, fontSize: 13, height: 1.5),
                                 ),
                               ),
                             )
-                          // Populated List
                           : ListView.separated(
                               shrinkWrap: true,
                               padding: const EdgeInsets.symmetric(vertical: 8),
@@ -469,10 +492,7 @@ class _AddDeviceStep1PageState extends State<AddDeviceStep1Page> {
                                       ? Icon(Icons.check_circle_rounded, color: appColors.accent, size: 18) 
                                       : null,
                                   onTap: () {
-                                    // Update the main page state and close sheet
-                                    setState(() {
-                                      selectedGroup = g.id;
-                                    });
+                                    setState(() => selectedGroup = g.id);
                                     Navigator.pop(context);
                                   },
                                 );
@@ -506,10 +526,16 @@ class _AddDeviceStep1PageState extends State<AddDeviceStep1Page> {
           "location": body['location'],
           "status": body['status'],
           "registrationStatus": body['registration_status'],
+          // NEW: Capture orientation from API (checking standard keys)
+          "orientation": body['orientation'] ?? body['device_orientation'] ?? "unknown",
         };
 
         nameController.text = body['device_name'] ?? '';
         tagsController.text = (body['tags'] as List?)?.join(', ') ?? '';
+        
+        // Reset override and selection when new device is fetched
+        overrideOrientation = false;
+        selectedGroup = null; 
       } else {
         deviceInfo = null;
         _showSnackBar("Invalid pairing code", isError: true);
@@ -557,6 +583,7 @@ class _AddDeviceStep1PageState extends State<AddDeviceStep1Page> {
                 "pairingCode": pairingController.text,
                 "deviceName": nameController.text.trim(),
                 "group_id": selectedGroup,
+                "overrideOrientation":overrideOrientation,
                 "tags": body["tags"],
                 ...deviceInfo!,
               },
@@ -698,6 +725,12 @@ class _AddDeviceStep1PageState extends State<AddDeviceStep1Page> {
                     _infoRow("Device Type", deviceInfo!["deviceType"] ?? "Unknown"),
                     const SizedBox(height: 8),
                     _infoRow("Hardware ID", deviceInfo!["androidId"] ?? "N/A"),
+                    const SizedBox(height: 8),
+                    // NEW: Display the detected orientation
+                    _infoRow(
+                      "Orientation", 
+                      (deviceInfo!["orientation"] ?? "Unknown").toString().toUpperCase()
+                    ),
                   ],
                 ),
               ),
@@ -716,15 +749,61 @@ class _AddDeviceStep1PageState extends State<AddDeviceStep1Page> {
 
             const SizedBox(height: 16),
 
-            /// ─── GROUP PICKER CONTAINER ───
+            /// ─── OVERRIDE CHECKBOX & GROUP PICKER ───
+            if (deviceInfo != null) ...[
+              // Checkbox row
+              GestureDetector(
+                onTap: () {
+                  setState(() {
+                    overrideOrientation = !overrideOrientation;
+                    // Reset group selection if they toggle this, to force re-selection
+                    selectedGroup = null; 
+                  });
+                },
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: Checkbox(
+                        value: overrideOrientation,
+                        onChanged: (val) {
+                          setState(() {
+                            overrideOrientation = val ?? false;
+                            selectedGroup = null;
+                          });
+                        },
+                        activeColor: appColors.accent,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        "Show all groups (Override Orientation)",
+                        style: TextStyle(color: appColors.textSecondary, fontSize: 13, fontWeight: FontWeight.w500),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 10),
+            ],
+
             groupProvider.loading
                 ? Center(child: CircularProgressIndicator(color: appColors.accent))
                 : GestureDetector(
-                    onTap: () => showGroupBottomSheet(groupProvider),
+                    onTap: () {
+                      if (deviceInfo == null) {
+                        _showSnackBar("Please enter a pairing code first.", isError: true);
+                        return;
+                      }
+                      showGroupBottomSheet(groupProvider);
+                    },
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
                       decoration: BoxDecoration(
-                        color: appColors.surface,
+                        color: deviceInfo == null ? appColors.surfaceHigh : appColors.surface,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: appColors.border),
                       ),

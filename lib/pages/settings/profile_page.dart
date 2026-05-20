@@ -1815,7 +1815,7 @@ class _EditAccountDialogState extends State<_EditAccountDialog> {
         'phone_number': _phoneCtrl.text.trim(),
       };
 
-      final res = await ApiService.post('/user/update', body);
+      final res = await ApiService.put('/user/update', body);
 
       if (res.statusCode == 200) {
         if (mounted) {

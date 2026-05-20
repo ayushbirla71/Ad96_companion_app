@@ -9,6 +9,7 @@ class Group {
   final String regCode;
   final int deviceCount;
   final String message;
+  final String orientation;
 
   final String clientId;
   final String clientName;
@@ -24,6 +25,7 @@ class Group {
     required this.message,
     required this.clientId,
     required this.clientName,
+    required this.orientation,
   });
 
   factory Group.fromJson(Map<String, dynamic> json) {
@@ -43,6 +45,7 @@ class Group {
 
       clientId: json["Client"]?["client_id"] ?? "",
       clientName: json["Client"]?["name"] ?? "",
+      orientation: json["orientation"] ?? "",
     );
   }
 }
