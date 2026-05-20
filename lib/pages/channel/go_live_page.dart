@@ -402,579 +402,579 @@
 ///
 
 
-// import 'dart:ui';
-// import 'package:cms_app/pages/home/home_page.dart';
-// import 'package:cms_app/providers/live_content_provider.dart';
-// import 'package:cms_app/theme/app_colors.dart'; // Make sure this path is correct
-// import 'package:flutter/material.dart';
-// import 'package:flutter/services.dart';
-// import 'package:provider/provider.dart';
-// import 'package:rtmp_streaming/camera.dart'; 
-// import 'package:wakelock_plus/wakelock_plus.dart';
+import 'dart:ui';
+import 'package:cms_app/pages/home/home_page.dart';
+import 'package:cms_app/providers/live_content_provider.dart';
+import 'package:cms_app/theme/app_colors.dart'; // Make sure this path is correct
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
+import 'package:rtmp_streaming/camera.dart'; 
+import 'package:wakelock_plus/wakelock_plus.dart';
 
-// import '../../providers/channel_provider.dart';
+import '../../providers/channel_provider.dart';
 
-// class GoLivePage extends StatefulWidget {
-//   final String rtmpUrl;
-//   final String channelName;
-//   final String channelId;
-//   final String contentId;
+class GoLivePage extends StatefulWidget {
+  final String rtmpUrl;
+  final String channelName;
+  final String channelId;
+  final String contentId;
 
-//   const GoLivePage({
-//     super.key,
-//     required this.rtmpUrl,
-//     required this.channelName,
-//     required this.channelId,
-//     required this.contentId,
-//   });
+  const GoLivePage({
+    super.key,
+    required this.rtmpUrl,
+    required this.channelName,
+    required this.channelId,
+    required this.contentId,
+  });
 
-//   @override
-//   State<GoLivePage> createState() => _GoLivePageState();
-// }
+  @override
+  State<GoLivePage> createState() => _GoLivePageState();
+}
 
-// class _GoLivePageState extends State<GoLivePage> with WidgetsBindingObserver {
-//   CameraController? controller;
-//   List<CameraDescription> cameras = [];
-//   CameraDescription? currentCamera;
+class _GoLivePageState extends State<GoLivePage> with WidgetsBindingObserver {
+  CameraController? controller;
+  List<CameraDescription> cameras = [];
+  CameraDescription? currentCamera;
 
-//   bool isStreaming = false;
-//   bool isLoading = true;
-//   bool _isCleaned = false;
-//   bool isStopping = false;
-//   bool isPreparing = false;
-//   bool isSwitching = false;
+  bool isStreaming = false;
+  bool isLoading = true;
+  bool _isCleaned = false;
+  bool isStopping = false;
+  bool isPreparing = false;
+  bool isSwitching = false;
   
-//   bool userSelectedLandscape = false;
-//   int countdown = 3;
-//   String streamStatus = "Ready to stream";
-//   late LiveContentProvider liveProvider;
+  bool userSelectedLandscape = false;
+  int countdown = 3;
+  String streamStatus = "Ready to stream";
+  late LiveContentProvider liveProvider;
 
-//   @override
-//   void initState() {
-//     super.initState();
-//     WidgetsBinding.instance.addObserver(this);
-//     liveProvider = Provider.of<LiveContentProvider>(context, listen: false);
-//     initCamera();
-//   }
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    liveProvider = Provider.of<LiveContentProvider>(context, listen: false);
+    initCamera();
+  }
 
-//   @override
-//   void didChangeAppLifecycleState(AppLifecycleState state) {
-//     if (state == AppLifecycleState.paused || state == AppLifecycleState.detached) {
-//       _cleanupOnExit();
-//     }
-//   }
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused || state == AppLifecycleState.detached) {
+      _cleanupOnExit();
+    }
+  }
 
-//   // ─── NATIVE SETUP CONTROLS ──────────────────────────────────────────────────
+  // ─── NATIVE SETUP CONTROLS ──────────────────────────────────────────────────
 
-//   Future<void> initCamera() async {
-//     try {
-//       cameras = await availableCameras();
-//       if (cameras.isEmpty) throw Exception("No camera found");
-//       if (_isCleaned || !mounted) return;
+  Future<void> initCamera() async {
+    try {
+      cameras = await availableCameras();
+      if (cameras.isEmpty) throw Exception("No camera found");
+      if (_isCleaned || !mounted) return;
 
-//       currentCamera = cameras.first;
-//       await _setupController();
-//     } catch (e) {
-//       debugPrint("Init Camera Error: $e");
-//     } finally {
-//       if (mounted && !_isCleaned) {
-//         setState(() => isLoading = false);
-//       }
-//     }
-//   }
+      currentCamera = cameras.first;
+      await _setupController();
+    } catch (e) {
+      debugPrint("Init Camera Error: $e");
+    } finally {
+      if (mounted && !_isCleaned) {
+        setState(() => isLoading = false);
+      }
+    }
+  }
 
-//   Future<void> _setupController() async {
-//     if (controller != null) {
-//       final oldController = controller;
-//       controller = null; 
-//       if (mounted) setState(() {}); 
-//       await oldController!.dispose();
-//     }
+  Future<void> _setupController() async {
+    if (controller != null) {
+      final oldController = controller;
+      controller = null; 
+      if (mounted) setState(() {}); 
+      await oldController!.dispose();
+    }
 
-//     if (_isCleaned || !mounted) return;
+    if (_isCleaned || !mounted) return;
 
-//     final newController = CameraController(
-//       ResolutionPreset.medium, // or veryHigh / ultraHigh
-//       enableAudio: true,
-//       androidUseOpenGL: true,
-//     );
+    final newController = CameraController(
+      ResolutionPreset.medium, // or veryHigh / ultraHigh
+      enableAudio: true,
+      androidUseOpenGL: true,
+    );
 
-//     try {
-//       await newController.initialize(currentCamera!);
-//       if (mounted && !_isCleaned) {
-//         setState(() {
-//           controller = newController;
-//         });
-//       }
-//     } catch (e) {
-//       debugPrint("Setup Controller Error: $e");
-//       await Future.delayed(const Duration(milliseconds: 500));
-//       if (mounted && !_isCleaned) initCamera();
-//     }
-//   }
+    try {
+      await newController.initialize(currentCamera!);
+      if (mounted && !_isCleaned) {
+        setState(() {
+          controller = newController;
+        });
+      }
+    } catch (e) {
+      debugPrint("Setup Controller Error: $e");
+      await Future.delayed(const Duration(milliseconds: 500));
+      if (mounted && !_isCleaned) initCamera();
+    }
+  }
 
-//   Future<void> _toggleOrientation() async {
-//     if (isStreaming || isPreparing || isSwitching) return;
+  Future<void> _toggleOrientation() async {
+    if (isStreaming || isPreparing || isSwitching) return;
 
-//     setState(() {
-//       isSwitching = true;
-//       userSelectedLandscape = !userSelectedLandscape;
-//     });
+    setState(() {
+      isSwitching = true;
+      userSelectedLandscape = !userSelectedLandscape;
+    });
 
-//     try {
-//       if (userSelectedLandscape) {
-//         await SystemChrome.setPreferredOrientations([DeviceOrientation.landscapeLeft]);
-//       } else {
-//         await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
-//       }
+    try {
+      if (userSelectedLandscape) {
+        await SystemChrome.setPreferredOrientations([DeviceOrientation.landscapeLeft]);
+      } else {
+        await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+      }
       
-//       // Gives the OS memory time to allocate the flipped high-res buffer
-//       await Future.delayed(const Duration(milliseconds: 600)); 
-//       await _setupController();
-//     } finally {
-//       if (mounted) setState(() => isSwitching = false);
-//     }
-//   }
+      // Gives the OS memory time to allocate the flipped high-res buffer
+      await Future.delayed(const Duration(milliseconds: 600)); 
+      await _setupController();
+    } finally {
+      if (mounted) setState(() => isSwitching = false);
+    }
+  }
 
-//   Future<void> switchCamera() async {
-//     if (isStreaming || isPreparing || isSwitching || controller == null) return; 
+  Future<void> switchCamera() async {
+    if (isStreaming || isPreparing || isSwitching || controller == null) return; 
     
-//     setState(() => isSwitching = true);
+    setState(() => isSwitching = true);
     
-//     try {
-//       final newCamera = cameras.firstWhere(
-//         (c) => c.name != currentCamera!.name,
-//         orElse: () => cameras.first,
-//       );
-//       currentCamera = newCamera;
+    try {
+      final newCamera = cameras.firstWhere(
+        (c) => c.name != currentCamera!.name,
+        orElse: () => cameras.first,
+      );
+      currentCamera = newCamera;
 
-//       await Future.delayed(const Duration(milliseconds: 400));
-//       await _setupController();
-//     } catch (e) {
-//       debugPrint("Switch error: $e");
-//     } finally {
-//       await Future.delayed(const Duration(milliseconds: 600));
-//       if (mounted) setState(() => isSwitching = false);
-//     }
-//   }
+      await Future.delayed(const Duration(milliseconds: 400));
+      await _setupController();
+    } catch (e) {
+      debugPrint("Switch error: $e");
+    } finally {
+      await Future.delayed(const Duration(milliseconds: 600));
+      if (mounted) setState(() => isSwitching = false);
+    }
+  }
 
-//   // ─── START & STOP STREAM ────────────────────────────────────────────────────
+  // ─── START & STOP STREAM ────────────────────────────────────────────────────
 
-//   void _navToHome() {
-//     if (!mounted) return;
-//     Navigator.of(context).pushAndRemoveUntil(
-//       MaterialPageRoute(builder: (_) => const HomePage()),
-//       (route) => false,
-//     );
-//   }
+  void _navToHome() {
+    if (!mounted) return;
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const HomePage()),
+      (route) => false,
+    );
+  }
 
-//   Future<void> _cleanupOnExit() async {
-//     if (_isCleaned) return;
-//     _isCleaned = true; 
+  Future<void> _cleanupOnExit() async {
+    if (_isCleaned) return;
+    _isCleaned = true; 
 
-//     await SystemChrome.setPreferredOrientations([
-//       DeviceOrientation.portraitUp,
-//       DeviceOrientation.landscapeLeft,
-//       DeviceOrientation.landscapeRight,
-//     ]);
+    await SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
 
-//     try {
-//       if (controller != null) {
-//         if (isStreaming) {
-//           await controller!.stopVideoStreaming();
-//         }
-//         await controller!.dispose();
-//         controller = null; 
-//       }
-//       await WakelockPlus.disable();
-//       liveProvider.deleteSchedules(widget.contentId);
-//     } catch (e) {
-//       debugPrint("Cleanup error: $e");
-//     } finally {
-//       if (mounted) {
-//         setState(() {
-//           isStreaming = false;
-//           isPreparing = false;
-//           isStopping = false;
-//           streamStatus = "Stopped";
-//         });
-//       }
-//     }
-//   }
+    try {
+      if (controller != null) {
+        if (isStreaming) {
+          await controller!.stopVideoStreaming();
+        }
+        await controller!.dispose();
+        controller = null; 
+      }
+      await WakelockPlus.disable();
+      liveProvider.deleteSchedules(widget.contentId);
+    } catch (e) {
+      debugPrint("Cleanup error: $e");
+    } finally {
+      if (mounted) {
+        setState(() {
+          isStreaming = false;
+          isPreparing = false;
+          isStopping = false;
+          streamStatus = "Stopped";
+        });
+      }
+    }
+  }
 
-//   Future<void> startCountdownFlow() async {
-//     final bool isReady = controller?.value.isInitialized ?? false;
-//     if (_isCleaned || !mounted || !isReady) return;
+  Future<void> startCountdownFlow() async {
+    final bool isReady = controller?.value.isInitialized ?? false;
+    if (_isCleaned || !mounted || !isReady) return;
 
-//     final provider = context.read<ChannelProvider>();
-//     try {
-//       setState(() {
-//         isPreparing = true;
-//         streamStatus = "Starting...";
-//       });
+    final provider = context.read<ChannelProvider>();
+    try {
+      setState(() {
+        isPreparing = true;
+        streamStatus = "Starting...";
+      });
       
-//       final channel = provider.selectedChannel;
-//       if (channel != null && channel.status != "live") {
-//         await provider.startChannel(channel.channelId);
-//       }
+      final channel = provider.selectedChannel;
+      if (channel != null && channel.status != "live") {
+        await provider.startChannel(channel.channelId);
+      }
 
-//       for (int i = 3; i > 0; i--) {
-//         if (!mounted || _isCleaned || !isPreparing) return; 
-//         setState(() => countdown = i);
-//         await Future.delayed(const Duration(seconds: 1));
-//       }
+      for (int i = 3; i > 0; i--) {
+        if (!mounted || _isCleaned || !isPreparing) return; 
+        setState(() => countdown = i);
+        await Future.delayed(const Duration(seconds: 1));
+      }
 
-//       if (mounted && !_isCleaned && isPreparing) {
-//         await startStream();
-//       }
-//     } catch (e) {
-//       if (mounted) {
-//         setState(() {
-//           isPreparing = false;
-//           streamStatus = "Failed to start";
-//         });
-//       }
-//     }
-//   }
+      if (mounted && !_isCleaned && isPreparing) {
+        await startStream();
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          isPreparing = false;
+          streamStatus = "Failed to start";
+        });
+      }
+    }
+  }
 
-//   Future<void> startStream() async {
-//     final bool isReady = controller?.value.isInitialized ?? false;
-//     if (!isReady || _isCleaned || controller == null) return;
+  Future<void> startStream() async {
+    final bool isReady = controller?.value.isInitialized ?? false;
+    if (!isReady || _isCleaned || controller == null) return;
 
-//     try {
-//       setState(() => streamStatus = "Connecting...");
-//       await controller!.startVideoStreaming(widget.rtmpUrl);
-//       await WakelockPlus.enable();
+    try {
+      setState(() => streamStatus = "Connecting...");
+      await controller!.startVideoStreaming(widget.rtmpUrl);
+      await WakelockPlus.enable();
       
-//       if (mounted) {
-//         setState(() {
-//           isStreaming = true;
-//           isPreparing = false; 
-//           streamStatus = "LIVE";
-//         });
-//       }
-//     } catch (e) {
-//       if (mounted) {
-//         setState(() {
-//           isPreparing = false;
-//           streamStatus = "Stream Failed";
-//         });
-//       }
-//     }
-//   }
+      if (mounted) {
+        setState(() {
+          isStreaming = true;
+          isPreparing = false; 
+          streamStatus = "LIVE";
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          isPreparing = false;
+          streamStatus = "Stream Failed";
+        });
+      }
+    }
+  }
 
-//   @override
-//   void dispose() {
-//     WidgetsBinding.instance.removeObserver(this);
-//     super.dispose();
-//   }
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
 
-//   // ─── UI COMPONENTS ──────────────────────────────────────────────────────────
+  // ─── UI COMPONENTS ──────────────────────────────────────────────────────────
 
-//   Widget _buildPreview() {
-//     final bool isReady = controller?.value.isInitialized ?? false;
-//     if (!isReady || controller == null || isSwitching) {
-//         return Container(
-//             color: Colors.black,
-//             child: const Center(
-//               child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)
-//             )
-//         );
-//     }
+  Widget _buildPreview() {
+    final bool isReady = controller?.value.isInitialized ?? false;
+    if (!isReady || controller == null || isSwitching) {
+        return Container(
+            color: Colors.black,
+            child: const Center(
+              child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)
+            )
+        );
+    }
 
-//     return Center(
-//         key: ValueKey("preview_${currentCamera!.name}_$userSelectedLandscape"),
-//         child: CameraPreview(controller!),
-//     );
-//   }
+    return Center(
+        key: ValueKey("preview_${currentCamera!.name}_$userSelectedLandscape"),
+        child: CameraPreview(controller!),
+    );
+  }
 
-//   Widget _glassContainer({required Widget child, EdgeInsetsGeometry? padding, double borderRadius = 20}) {
-//     return ClipRRect(
-//       borderRadius: BorderRadius.circular(borderRadius),
-//       child: BackdropFilter(
-//         filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-//         child: Container(
-//           padding: padding,
-//           decoration: BoxDecoration(
-//             color: Colors.black.withOpacity(0.35),
-//             borderRadius: BorderRadius.circular(borderRadius),
-//             border: Border.all(color: Colors.white.withOpacity(0.15)),
-//           ),
-//           child: child,
-//         ),
-//       ),
-//     );
-//   }
+  Widget _glassContainer({required Widget child, EdgeInsetsGeometry? padding, double borderRadius = 20}) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(borderRadius),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          padding: padding,
+          decoration: BoxDecoration(
+            color: Colors.black.withOpacity(0.35),
+            borderRadius: BorderRadius.circular(borderRadius),
+            border: Border.all(color: Colors.white.withOpacity(0.15)),
+          ),
+          child: child,
+        ),
+      ),
+    );
+  }
 
-//   Widget _controlButton({required Widget icon, required VoidCallback? onTap, bool disabled = false}) {
-//     return GestureDetector(
-//       onTap: disabled ? null : onTap,
-//       child: Opacity(
-//         opacity: disabled ? 0.5 : 1.0,
-//         child: _glassContainer(
-//           borderRadius: 30,
-//           padding: const EdgeInsets.all(12),
-//           child: icon,
-//         ),
-//       ),
-//     );
-//   }
+  Widget _controlButton({required Widget icon, required VoidCallback? onTap, bool disabled = false}) {
+    return GestureDetector(
+      onTap: disabled ? null : onTap,
+      child: Opacity(
+        opacity: disabled ? 0.5 : 1.0,
+        child: _glassContainer(
+          borderRadius: 30,
+          padding: const EdgeInsets.all(12),
+          child: icon,
+        ),
+      ),
+    );
+  }
 
-//   @override
-//   Widget build(BuildContext context) {
-//     final bool isReady = controller?.value.isInitialized ?? false;
-//     final bool lockControls = isStreaming || isPreparing || isSwitching || !isReady;
+  @override
+  Widget build(BuildContext context) {
+    final bool isReady = controller?.value.isInitialized ?? false;
+    final bool lockControls = isStreaming || isPreparing || isSwitching || !isReady;
 
-//     return PopScope(
-//       canPop: false,
-//       onPopInvoked: (didPop) async {
-//         if (didPop) return;
-//         setState(() => isStopping = true);
-//         await _cleanupOnExit();
-//         _navToHome();
-//       },
-//       child: Scaffold(
-//         backgroundColor: Colors.black,
-//         body: Stack(
-//           children: [
-//             // Camera Background
-//             Positioned.fill(child: _buildPreview()),
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (didPop) async {
+        if (didPop) return;
+        setState(() => isStopping = true);
+        await _cleanupOnExit();
+        _navToHome();
+      },
+      child: Scaffold(
+        backgroundColor: Colors.black,
+        body: Stack(
+          children: [
+            // Camera Background
+            Positioned.fill(child: _buildPreview()),
 
-//             if (isLoading)
-//               Container(
-//                 color: Colors.black87,
-//                 child: const Center(
-//                   child: CircularProgressIndicator(color: Colors.white),
-//                 ),
-//               ),
+            if (isLoading)
+              Container(
+                color: Colors.black87,
+                child: const Center(
+                  child: CircularProgressIndicator(color: Colors.white),
+                ),
+              ),
 
-//             // Top Gradient Overlay (for text readability)
-//             Positioned(
-//               top: 0, left: 0, right: 0,
-//               height: 140,
-//               child: Container(
-//                 decoration: BoxDecoration(
-//                   gradient: LinearGradient(
-//                     begin: Alignment.topCenter,
-//                     end: Alignment.bottomCenter,
-//                     colors: [Colors.black.withOpacity(0.6), Colors.transparent],
-//                   ),
-//                 ),
-//               ),
-//             ),
+            // Top Gradient Overlay (for text readability)
+            Positioned(
+              top: 0, left: 0, right: 0,
+              height: 140,
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [Colors.black.withOpacity(0.6), Colors.transparent],
+                  ),
+                ),
+              ),
+            ),
 
-//             SafeArea(
-//               child: Stack(
-//                 children: [
-//                   // Top Bar
-//                   Positioned(
-//                     top: 16, left: 20, right: 20,
-//                     child: Row(
-//                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//                       children: [
-//                         // Close Button & Channel Name
-//                         _glassContainer(
-//                           borderRadius: 30,
-//                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-//                           child: Row(
-//                             children: [
-//                               GestureDetector(
-//                                 onTap: () async {
-//                                   setState(() => isStopping = true);
-//                                   await _cleanupOnExit();
-//                                   _navToHome();
-//                                 },
-//                                 child: const Icon(Icons.close_rounded, color: Colors.white, size: 20),
-//                               ),
-//                               const SizedBox(width: 10),
-//                               Container(width: 1, height: 16, color: Colors.white30),
-//                               const SizedBox(width: 10),
-//                               Text(
-//                                 widget.channelName,
-//                                 style: const TextStyle(
-//                                   color: Colors.white,
-//                                   fontSize: 14,
-//                                   fontWeight: FontWeight.w700,
-//                                 ),
-//                               ),
-//                             ],
-//                           ),
-//                         ),
+            SafeArea(
+              child: Stack(
+                children: [
+                  // Top Bar
+                  Positioned(
+                    top: 16, left: 20, right: 20,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        // Close Button & Channel Name
+                        _glassContainer(
+                          borderRadius: 30,
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                          child: Row(
+                            children: [
+                              GestureDetector(
+                                onTap: () async {
+                                  setState(() => isStopping = true);
+                                  await _cleanupOnExit();
+                                  _navToHome();
+                                },
+                                child: const Icon(Icons.close_rounded, color: Colors.white, size: 20),
+                              ),
+                              const SizedBox(width: 10),
+                              Container(width: 1, height: 16, color: Colors.white30),
+                              const SizedBox(width: 10),
+                              Text(
+                                widget.channelName,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
 
-//                         // LIVE Badge
-//                         if (isStreaming)
-//                           Container(
-//                             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-//                             decoration: BoxDecoration(
-//                               color: appColors.red.withOpacity(0.9),
-//                               borderRadius: BorderRadius.circular(30),
-//                               boxShadow: [
-//                                 BoxShadow(
-//                                   color: appColors.red.withOpacity(0.4),
-//                                   blurRadius: 8,
-//                                   spreadRadius: 2,
-//                                 )
-//                               ]
-//                             ),
-//                             child: Row(
-//                               children: [
-//                                 Container(
-//                                   width: 8, height: 8,
-//                                   decoration: const BoxDecoration(
-//                                     color: Colors.white,
-//                                     shape: BoxShape.circle,
-//                                   ),
-//                                 ),
-//                                 const SizedBox(width: 6),
-//                                 const Text(
-//                                   "LIVE",
-//                                   style: TextStyle(
-//                                     color: Colors.white,
-//                                     fontSize: 13,
-//                                     fontWeight: FontWeight.w800,
-//                                     letterSpacing: 0.5,
-//                                   ),
-//                                 ),
-//                               ],
-//                             ),
-//                           ),
-//                       ],
-//                     ),
-//                   ),
+                        // LIVE Badge
+                        if (isStreaming)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: appColors.red.withOpacity(0.9),
+                              borderRadius: BorderRadius.circular(30),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: appColors.red.withOpacity(0.4),
+                                  blurRadius: 8,
+                                  spreadRadius: 2,
+                                )
+                              ]
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 8, height: 8,
+                                  decoration: const BoxDecoration(
+                                    color: Colors.white,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                const Text(
+                                  "LIVE",
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
 
-//                   // Status Text
-//                   Positioned(
-//                     top: 70, left: 0, right: 0,
-//                     child: Center(
-//                       child: _glassContainer(
-//                         borderRadius: 20,
-//                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-//                         child: Text(
-//                           streamStatus,
-//                           style: const TextStyle(
-//                             color: Colors.white70,
-//                             fontSize: 12,
-//                             fontWeight: FontWeight.w600,
-//                           ),
-//                         ),
-//                       ),
-//                     ),
-//                   ),
+                  // Status Text
+                  Positioned(
+                    top: 70, left: 0, right: 0,
+                    child: Center(
+                      child: _glassContainer(
+                        borderRadius: 20,
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                        child: Text(
+                          streamStatus,
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
 
-//                   // Camera Controls (Moved to right side to match iOS layout)
-//                   if (!isStreaming && !isPreparing)
-//                     Positioned(
-//                       right: 20,
-//                       top: MediaQuery.of(context).size.height * 0.35,
-//                       child: Column(
-//                         children: [
-//                           _controlButton(
-//                             icon: Icon(
-//                               currentCamera?.lensDirection == CameraLensDirection.front 
-//                                   ? Icons.camera_front_rounded 
-//                                   : Icons.camera_rear_rounded,
-//                               color: Colors.white,
-//                               size: 26,
-//                             ),
-//                             disabled: lockControls,
-//                             onTap: switchCamera,
-//                           ),
-//                           const SizedBox(height: 20),
-//                           _controlButton(
-//                             icon: Icon(
-//                               userSelectedLandscape ? Icons.screen_lock_landscape_rounded : Icons.screen_lock_portrait_rounded,
-//                               color: Colors.white,
-//                               size: 26,
-//                             ),
-//                             disabled: lockControls,
-//                             onTap: _toggleOrientation,
-//                           ),
-//                         ],
-//                       ),
-//                     ),
+                  // Camera Controls (Moved to right side to match iOS layout)
+                  if (!isStreaming && !isPreparing)
+                    Positioned(
+                      right: 20,
+                      top: MediaQuery.of(context).size.height * 0.35,
+                      child: Column(
+                        children: [
+                          _controlButton(
+                            icon: Icon(
+                              currentCamera?.lensDirection == CameraLensDirection.front 
+                                  ? Icons.camera_front_rounded 
+                                  : Icons.camera_rear_rounded,
+                              color: Colors.white,
+                              size: 26,
+                            ),
+                            disabled: lockControls,
+                            onTap: switchCamera,
+                          ),
+                          const SizedBox(height: 20),
+                          _controlButton(
+                            icon: Icon(
+                              userSelectedLandscape ? Icons.screen_lock_landscape_rounded : Icons.screen_lock_portrait_rounded,
+                              color: Colors.white,
+                              size: 26,
+                            ),
+                            disabled: lockControls,
+                            onTap: _toggleOrientation,
+                          ),
+                        ],
+                      ),
+                    ),
 
-//                   // Main Action Button (Go Live / Stop)
-//                   Positioned(
-//                     bottom: 40, left: 24, right: 24,
-//                     child: GestureDetector(
-//                       onTap: (isStopping || isSwitching || !isReady)
-//                           ? null
-//                           : () async {
-//                               if (!isStreaming) {
-//                                 _isCleaned = false; 
-//                                 await startCountdownFlow();
-//                               } else {
-//                                 setState(() => isStopping = true);
-//                                 await _cleanupOnExit();
-//                                 _navToHome();
-//                               }
-//                             },
-//                       child: AnimatedContainer(
-//                         duration: const Duration(milliseconds: 300),
-//                         height: 64,
-//                         decoration: BoxDecoration(
-//                           borderRadius: BorderRadius.circular(32),
-//                           gradient: LinearGradient(
-//                             colors: isStreaming 
-//                                 ? [appColors.red, const Color(0xFF991B1B)]
-//                                 : [appColors.accent, const Color(0xFF1E40AF)],
-//                             begin: Alignment.topLeft,
-//                             end: Alignment.bottomRight,
-//                           ),
-//                           boxShadow: [
-//                             BoxShadow(
-//                               color: (isStreaming ? appColors.red : appColors.accent).withOpacity(0.4),
-//                               blurRadius: 16,
-//                               offset: const Offset(0, 6),
-//                             )
-//                           ]
-//                         ),
-//                         child: Center(
-//                           child: isStopping
-//                               ? const SizedBox(
-//                                   height: 24, width: 24, 
-//                                   child: CircularProgressIndicator(strokeWidth: 3, color: Colors.white)
-//                                 )
-//                               : Text(
-//                                   isStreaming ? "STOP STREAM" : "GO LIVE",
-//                                   style: const TextStyle(
-//                                     color: Colors.white,
-//                                     fontSize: 16,
-//                                     fontWeight: FontWeight.w800,
-//                                     letterSpacing: 1.2,
-//                                   ),
-//                                 ),
-//                         ),
-//                       ),
-//                     ),
-//                   ),
+                  // Main Action Button (Go Live / Stop)
+                  Positioned(
+                    bottom: 40, left: 24, right: 24,
+                    child: GestureDetector(
+                      onTap: (isStopping || isSwitching || !isReady)
+                          ? null
+                          : () async {
+                              if (!isStreaming) {
+                                _isCleaned = false; 
+                                await startCountdownFlow();
+                              } else {
+                                setState(() => isStopping = true);
+                                await _cleanupOnExit();
+                                _navToHome();
+                              }
+                            },
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 300),
+                        height: 64,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(32),
+                          gradient: LinearGradient(
+                            colors: isStreaming 
+                                ? [appColors.red, const Color(0xFF991B1B)]
+                                : [appColors.accent, const Color(0xFF1E40AF)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: (isStreaming ? appColors.red : appColors.accent).withOpacity(0.4),
+                              blurRadius: 16,
+                              offset: const Offset(0, 6),
+                            )
+                          ]
+                        ),
+                        child: Center(
+                          child: isStopping
+                              ? const SizedBox(
+                                  height: 24, width: 24, 
+                                  child: CircularProgressIndicator(strokeWidth: 3, color: Colors.white)
+                                )
+                              : Text(
+                                  isStreaming ? "STOP STREAM" : "GO LIVE",
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 1.2,
+                                  ),
+                                ),
+                        ),
+                      ),
+                    ),
+                  ),
 
-//                   // Countdown Overlay
-//                   if (isPreparing)
-//                     Positioned.fill(
-//                       child: Container(
-//                         color: Colors.black.withOpacity(0.5), // Dims background slightly to make countdown pop
-//                         child: Center(
-//                           child: Text(
-//                             "$countdown",
-//                             style: const TextStyle(
-//                               fontSize: 120,
-//                               color: Colors.white,
-//                               fontWeight: FontWeight.w800,
-//                             ),
-//                           ),
-//                         ),
-//                       ),
-//                     ),
-//                 ],
-//               ),
-//             ),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-// }
+                  // Countdown Overlay
+                  if (isPreparing)
+                    Positioned.fill(
+                      child: Container(
+                        color: Colors.black.withOpacity(0.5), // Dims background slightly to make countdown pop
+                        child: Center(
+                          child: Text(
+                            "$countdown",
+                            style: const TextStyle(
+                              fontSize: 120,
+                              color: Colors.white,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 
 
@@ -1393,447 +1393,447 @@
 ///
 
 
-import 'dart:ui';
-import 'package:cms_app/pages/home/home_page.dart';
-import 'package:cms_app/providers/live_content_provider.dart';
-import 'package:cms_app/theme/app_colors.dart'; // Make sure this path is correct
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
-import 'package:wakelock_plus/wakelock_plus.dart';
+// import 'dart:ui';
+// import 'package:cms_app/pages/home/home_page.dart';
+// import 'package:cms_app/providers/live_content_provider.dart';
+// import 'package:cms_app/theme/app_colors.dart'; // Make sure this path is correct
+// import 'package:flutter/material.dart';
+// import 'package:flutter/services.dart';
+// import 'package:provider/provider.dart';
+// import 'package:wakelock_plus/wakelock_plus.dart';
 
-class GoLivePage extends StatefulWidget {
-  final String rtmpUrl;
-  final String channelName;
-  final String channelId;
-  final String contentId;
+// class GoLivePage extends StatefulWidget {
+//   final String rtmpUrl;
+//   final String channelName;
+//   final String channelId;
+//   final String contentId;
 
-  const GoLivePage({
-    super.key,
-    required this.rtmpUrl,
-    required this.channelName,
-    required this.channelId,
-    required this.contentId,
-  });
+//   const GoLivePage({
+//     super.key,
+//     required this.rtmpUrl,
+//     required this.channelName,
+//     required this.channelId,
+//     required this.contentId,
+//   });
 
-  @override
-  State<GoLivePage> createState() => _GoLivePageState();
-}
+//   @override
+//   State<GoLivePage> createState() => _GoLivePageState();
+// }
 
-class _GoLivePageState extends State<GoLivePage> with WidgetsBindingObserver {
-  static const MethodChannel _channel = MethodChannel('streaming_channel');
+// class _GoLivePageState extends State<GoLivePage> with WidgetsBindingObserver {
+//   static const MethodChannel _channel = MethodChannel('streaming_channel');
 
-  bool isStreaming = false;
-  bool isPreparing = false;
-  bool isStopping = false;
-  bool _isCleaned = false;
+//   bool isStreaming = false;
+//   bool isPreparing = false;
+//   bool isStopping = false;
+//   bool _isCleaned = false;
   
-  bool isFrontCamera = false;
-  bool isLandscape = false;
+//   bool isFrontCamera = false;
+//   bool isLandscape = false;
 
-  int countdown = 3;
-  late LiveContentProvider liveProvider;
-  String streamStatus = "Ready to stream";
+//   int countdown = 3;
+//   late LiveContentProvider liveProvider;
+//   String streamStatus = "Ready to stream";
 
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addObserver(this);
-    liveProvider = Provider.of<LiveContentProvider>(context, listen: false);
-    _startPreview();
-    WakelockPlus.enable();
-  }
+//   @override
+//   void initState() {
+//     super.initState();
+//     WidgetsBinding.instance.addObserver(this);
+//     liveProvider = Provider.of<LiveContentProvider>(context, listen: false);
+//     _startPreview();
+//     WakelockPlus.enable();
+//   }
 
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    _cleanupOnExit();
-    SystemChrome.setPreferredOrientations(DeviceOrientation.values);
-    super.dispose();
-  }
+//   @override
+//   void dispose() {
+//     WidgetsBinding.instance.removeObserver(this);
+//     _cleanupOnExit();
+//     SystemChrome.setPreferredOrientations(DeviceOrientation.values);
+//     super.dispose();
+//   }
 
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.paused ||
-        state == AppLifecycleState.detached) {
-      _cleanupOnExit();
-    }
-  }
+//   @override
+//   void didChangeAppLifecycleState(AppLifecycleState state) {
+//     if (state == AppLifecycleState.paused ||
+//         state == AppLifecycleState.detached) {
+//       _cleanupOnExit();
+//     }
+//   }
 
-  // ─── NATIVE SETUP CONTROLS ──────────────────────────────────────────────────
+//   // ─── NATIVE SETUP CONTROLS ──────────────────────────────────────────────────
 
-  Future<void> _startPreview() async {
-    try {
-      SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
-      await _channel.invokeMethod('startPreview', {
-        'isFront': isFrontCamera,
-        'isLandscape': isLandscape,
-      });
-    } catch (e) {
-      debugPrint("Preview Error: $e");
-    }
-  }
+//   Future<void> _startPreview() async {
+//     try {
+//       SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+//       await _channel.invokeMethod('startPreview', {
+//         'isFront': isFrontCamera,
+//         'isLandscape': isLandscape,
+//       });
+//     } catch (e) {
+//       debugPrint("Preview Error: $e");
+//     }
+//   }
 
-  Future<void> _toggleCamera() async {
-    setState(() => isFrontCamera = !isFrontCamera);
-    try {
-      await _channel.invokeMethod('switchCamera', {'isFront': isFrontCamera});
-    } catch (e) {
-      debugPrint("Camera Switch Error: $e");
-    }
-  }
+//   Future<void> _toggleCamera() async {
+//     setState(() => isFrontCamera = !isFrontCamera);
+//     try {
+//       await _channel.invokeMethod('switchCamera', {'isFront': isFrontCamera});
+//     } catch (e) {
+//       debugPrint("Camera Switch Error: $e");
+//     }
+//   }
 
-  Future<void> _toggleOrientation() async {
-    setState(() => isLandscape = !isLandscape);
+//   Future<void> _toggleOrientation() async {
+//     setState(() => isLandscape = !isLandscape);
     
-    if (isLandscape) {
-      SystemChrome.setPreferredOrientations([
-        DeviceOrientation.landscapeRight, 
-        DeviceOrientation.landscapeLeft
-      ]);
-    } else {
-      SystemChrome.setPreferredOrientations([
-        DeviceOrientation.portraitUp
-      ]);
-    }
+//     if (isLandscape) {
+//       SystemChrome.setPreferredOrientations([
+//         DeviceOrientation.landscapeRight, 
+//         DeviceOrientation.landscapeLeft
+//       ]);
+//     } else {
+//       SystemChrome.setPreferredOrientations([
+//         DeviceOrientation.portraitUp
+//       ]);
+//     }
 
-    try {
-      await _channel.invokeMethod('setOrientation', {'isLandscape': isLandscape});
-    } catch (e) {
-      debugPrint("Orientation Switch Error: $e");
-    }
-  }
+//     try {
+//       await _channel.invokeMethod('setOrientation', {'isLandscape': isLandscape});
+//     } catch (e) {
+//       debugPrint("Orientation Switch Error: $e");
+//     }
+//   }
 
-  // ─── START & STOP STREAM ────────────────────────────────────────────────────
+//   // ─── START & STOP STREAM ────────────────────────────────────────────────────
 
-  Future<void> startStream() async {
-    try {
-      setState(() => streamStatus = "Connecting...");
+//   Future<void> startStream() async {
+//     try {
+//       setState(() => streamStatus = "Connecting...");
 
-      final uri = Uri.parse(widget.rtmpUrl);
-      final segments = uri.pathSegments;
-      final streamKey = segments.last;
-      final basePath = segments.sublist(0, segments.length - 1).join('/');
-      final rtmpBaseUrl = "${uri.scheme}://${uri.host}/$basePath";
+//       final uri = Uri.parse(widget.rtmpUrl);
+//       final segments = uri.pathSegments;
+//       final streamKey = segments.last;
+//       final basePath = segments.sublist(0, segments.length - 1).join('/');
+//       final rtmpBaseUrl = "${uri.scheme}://${uri.host}/$basePath";
 
-      await _channel.invokeMethod('startStream', {
-        "url": rtmpBaseUrl,
-        "key": streamKey,
-      });
+//       await _channel.invokeMethod('startStream', {
+//         "url": rtmpBaseUrl,
+//         "key": streamKey,
+//       });
 
-      setState(() {
-        isStreaming = true;
-        isPreparing = false;
-        streamStatus = "LIVE";
-      });
-    } catch (e) {
-      setState(() {
-        isPreparing = false;
-        isStreaming = false;
-        streamStatus = "Stream Failed";
-      });
-    }
-  }
+//       setState(() {
+//         isStreaming = true;
+//         isPreparing = false;
+//         streamStatus = "LIVE";
+//       });
+//     } catch (e) {
+//       setState(() {
+//         isPreparing = false;
+//         isStreaming = false;
+//         streamStatus = "Stream Failed";
+//       });
+//     }
+//   }
 
-  Future<void> stopStream() async {
-    try {
-      setState(() => streamStatus = "Stopping...");
-      await _channel.invokeMethod('stopStream');
-    } catch (e) {
-      debugPrint("Stop Stream Error => $e");
-    }
-  }
+//   Future<void> stopStream() async {
+//     try {
+//       setState(() => streamStatus = "Stopping...");
+//       await _channel.invokeMethod('stopStream');
+//     } catch (e) {
+//       debugPrint("Stop Stream Error => $e");
+//     }
+//   }
 
-  Future<void> _cleanupOnExit() async {
-    if (_isCleaned) return;
-    _isCleaned = true;
-    try {
-      await stopStream();
-      await WakelockPlus.disable();
-      liveProvider.deleteSchedules(widget.contentId);
-    } catch (e) {
-      debugPrint("Cleanup Error => $e");
-    }
-    if (mounted) {
-      setState(() {
-        isStreaming = false;
-        isPreparing = false;
-        isStopping = false;
-        streamStatus = "Stopped";
-      });
-    }
-  }
+//   Future<void> _cleanupOnExit() async {
+//     if (_isCleaned) return;
+//     _isCleaned = true;
+//     try {
+//       await stopStream();
+//       await WakelockPlus.disable();
+//       liveProvider.deleteSchedules(widget.contentId);
+//     } catch (e) {
+//       debugPrint("Cleanup Error => $e");
+//     }
+//     if (mounted) {
+//       setState(() {
+//         isStreaming = false;
+//         isPreparing = false;
+//         isStopping = false;
+//         streamStatus = "Stopped";
+//       });
+//     }
+//   }
 
-  Future<void> startCountdownFlow() async {
-    setState(() {
-      isPreparing = true;
-      streamStatus = "Starting...";
-    });
-    for (int i = 3; i > 0; i--) {
-      setState(() => countdown = i);
-      await Future.delayed(const Duration(seconds: 1));
-    }
-    await startStream();
-  }
+//   Future<void> startCountdownFlow() async {
+//     setState(() {
+//       isPreparing = true;
+//       streamStatus = "Starting...";
+//     });
+//     for (int i = 3; i > 0; i--) {
+//       setState(() => countdown = i);
+//       await Future.delayed(const Duration(seconds: 1));
+//     }
+//     await startStream();
+//   }
 
-  void _navToHome() {
-    if(!mounted) return;
-    Navigator.of(context).popUntil((route) => route.isFirst);
-  }
+//   void _navToHome() {
+//     if(!mounted) return;
+//     Navigator.of(context).popUntil((route) => route.isFirst);
+//   }
 
-  // ─── UI COMPONENTS ──────────────────────────────────────────────────────────
+//   // ─── UI COMPONENTS ──────────────────────────────────────────────────────────
 
-  Widget _glassContainer({required Widget child, EdgeInsetsGeometry? padding, double borderRadius = 20}) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(borderRadius),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          padding: padding,
-          decoration: BoxDecoration(
-            color: Colors.black.withOpacity(0.35),
-            borderRadius: BorderRadius.circular(borderRadius),
-            border: Border.all(color: Colors.white.withOpacity(0.15)),
-          ),
-          child: child,
-        ),
-      ),
-    );
-  }
+//   Widget _glassContainer({required Widget child, EdgeInsetsGeometry? padding, double borderRadius = 20}) {
+//     return ClipRRect(
+//       borderRadius: BorderRadius.circular(borderRadius),
+//       child: BackdropFilter(
+//         filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+//         child: Container(
+//           padding: padding,
+//           decoration: BoxDecoration(
+//             color: Colors.black.withOpacity(0.35),
+//             borderRadius: BorderRadius.circular(borderRadius),
+//             border: Border.all(color: Colors.white.withOpacity(0.15)),
+//           ),
+//           child: child,
+//         ),
+//       ),
+//     );
+//   }
 
-  Widget _controlButton({required IconData icon, required VoidCallback onTap}) {
-    return GestureDetector(
-      onTap: onTap,
-      child: _glassContainer(
-        borderRadius: 30,
-        padding: const EdgeInsets.all(12),
-        child: Icon(icon, color: Colors.white, size: 26),
-      ),
-    );
-  }
+//   Widget _controlButton({required IconData icon, required VoidCallback onTap}) {
+//     return GestureDetector(
+//       onTap: onTap,
+//       child: _glassContainer(
+//         borderRadius: 30,
+//         padding: const EdgeInsets.all(12),
+//         child: Icon(icon, color: Colors.white, size: 26),
+//       ),
+//     );
+//   }
 
-  @override
-  Widget build(BuildContext context) {
-    // 👇 Updated to PopScope
-    return PopScope(
-      canPop: false,
-      onPopInvoked: (didPop) async {
-        if (didPop) return;
-        setState(() => isStopping = true);
-        await _cleanupOnExit();
-        _navToHome();
-      },
-      child: Scaffold(
-        backgroundColor: Colors.black,
-        body: Stack(
-          children: [
-            // Camera Background
-            Positioned.fill(
-              child: const UiKitView(viewType: 'camera_preview'),
-            ),
+//   @override
+//   Widget build(BuildContext context) {
+//     // 👇 Updated to PopScope
+//     return PopScope(
+//       canPop: false,
+//       onPopInvoked: (didPop) async {
+//         if (didPop) return;
+//         setState(() => isStopping = true);
+//         await _cleanupOnExit();
+//         _navToHome();
+//       },
+//       child: Scaffold(
+//         backgroundColor: Colors.black,
+//         body: Stack(
+//           children: [
+//             // Camera Background
+//             Positioned.fill(
+//               child: const UiKitView(viewType: 'camera_preview'),
+//             ),
 
-            // Top Gradient Overlay (for text readability)
-            Positioned(
-              top: 0, left: 0, right: 0,
-              height: 140,
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [Colors.black.withOpacity(0.6), Colors.transparent],
-                  ),
-                ),
-              ),
-            ),
+//             // Top Gradient Overlay (for text readability)
+//             Positioned(
+//               top: 0, left: 0, right: 0,
+//               height: 140,
+//               child: Container(
+//                 decoration: BoxDecoration(
+//                   gradient: LinearGradient(
+//                     begin: Alignment.topCenter,
+//                     end: Alignment.bottomCenter,
+//                     colors: [Colors.black.withOpacity(0.6), Colors.transparent],
+//                   ),
+//                 ),
+//               ),
+//             ),
 
-            SafeArea(
-              child: Stack(
-                children: [
-                  // Top Bar
-                  Positioned(
-                    top: 16, left: 20, right: 20,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        // Close Button & Channel Name
-                        _glassContainer(
-                          borderRadius: 30,
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                          child: Row(
-                            children: [
-                              GestureDetector(
-                                onTap: () async {
-                                  setState(() => isStopping = true);
-                                  await _cleanupOnExit();
-                                  _navToHome();
-                                },
-                                child: const Icon(Icons.close_rounded, color: Colors.white, size: 20),
-                              ),
-                              const SizedBox(width: 10),
-                              Container(width: 1, height: 16, color: Colors.white30),
-                              const SizedBox(width: 10),
-                              Text(
-                                widget.channelName,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+//             SafeArea(
+//               child: Stack(
+//                 children: [
+//                   // Top Bar
+//                   Positioned(
+//                     top: 16, left: 20, right: 20,
+//                     child: Row(
+//                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+//                       children: [
+//                         // Close Button & Channel Name
+//                         _glassContainer(
+//                           borderRadius: 30,
+//                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+//                           child: Row(
+//                             children: [
+//                               GestureDetector(
+//                                 onTap: () async {
+//                                   setState(() => isStopping = true);
+//                                   await _cleanupOnExit();
+//                                   _navToHome();
+//                                 },
+//                                 child: const Icon(Icons.close_rounded, color: Colors.white, size: 20),
+//                               ),
+//                               const SizedBox(width: 10),
+//                               Container(width: 1, height: 16, color: Colors.white30),
+//                               const SizedBox(width: 10),
+//                               Text(
+//                                 widget.channelName,
+//                                 style: const TextStyle(
+//                                   color: Colors.white,
+//                                   fontSize: 14,
+//                                   fontWeight: FontWeight.w700,
+//                                 ),
+//                               ),
+//                             ],
+//                           ),
+//                         ),
 
-                        // LIVE Badge
-                        if (isStreaming)
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                            decoration: BoxDecoration(
-                              color: appColors.red.withOpacity(0.9),
-                              borderRadius: BorderRadius.circular(30),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: appColors.red.withOpacity(0.4),
-                                  blurRadius: 8,
-                                  spreadRadius: 2,
-                                )
-                              ]
-                            ),
-                            child: Row(
-                              children: [
-                                Container(
-                                  width: 8, height: 8,
-                                  decoration: const BoxDecoration(
-                                    color: Colors.white,
-                                    shape: BoxShape.circle,
-                                  ),
-                                ),
-                                const SizedBox(width: 6),
-                                const Text(
-                                  "LIVE",
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w800,
-                                    letterSpacing: 0.5,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
+//                         // LIVE Badge
+//                         if (isStreaming)
+//                           Container(
+//                             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+//                             decoration: BoxDecoration(
+//                               color: appColors.red.withOpacity(0.9),
+//                               borderRadius: BorderRadius.circular(30),
+//                               boxShadow: [
+//                                 BoxShadow(
+//                                   color: appColors.red.withOpacity(0.4),
+//                                   blurRadius: 8,
+//                                   spreadRadius: 2,
+//                                 )
+//                               ]
+//                             ),
+//                             child: Row(
+//                               children: [
+//                                 Container(
+//                                   width: 8, height: 8,
+//                                   decoration: const BoxDecoration(
+//                                     color: Colors.white,
+//                                     shape: BoxShape.circle,
+//                                   ),
+//                                 ),
+//                                 const SizedBox(width: 6),
+//                                 const Text(
+//                                   "LIVE",
+//                                   style: TextStyle(
+//                                     color: Colors.white,
+//                                     fontSize: 13,
+//                                     fontWeight: FontWeight.w800,
+//                                     letterSpacing: 0.5,
+//                                   ),
+//                                 ),
+//                               ],
+//                             ),
+//                           ),
+//                       ],
+//                     ),
+//                   ),
 
-                  // Status Text
-                  Positioned(
-                    top: 70, left: 0, right: 0,
-                    child: Center(
-                      child: _glassContainer(
-                        borderRadius: 20,
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                        child: Text(
-                          streamStatus,
-                          style: const TextStyle(
-                            color: Colors.white70,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
+//                   // Status Text
+//                   Positioned(
+//                     top: 70, left: 0, right: 0,
+//                     child: Center(
+//                       child: _glassContainer(
+//                         borderRadius: 20,
+//                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+//                         child: Text(
+//                           streamStatus,
+//                           style: const TextStyle(
+//                             color: Colors.white70,
+//                             fontSize: 12,
+//                             fontWeight: FontWeight.w600,
+//                           ),
+//                         ),
+//                       ),
+//                     ),
+//                   ),
 
-                  // Camera Controls
-                  if (!isStreaming && !isPreparing)
-                    Positioned(
-                      right: 20,
-                      top: MediaQuery.of(context).size.height * 0.35,
-                      child: Column(
-                        children: [
-                          _controlButton(
-                            icon: Icons.cameraswitch_rounded,
-                            onTap: _toggleCamera,
-                          ),
-                          const SizedBox(height: 20),
-                          _controlButton(
-                            icon: isLandscape ? Icons.screen_lock_landscape_rounded : Icons.screen_lock_portrait_rounded,
-                            onTap: _toggleOrientation,
-                          ),
-                        ],
-                      ),
-                    ),
+//                   // Camera Controls
+//                   if (!isStreaming && !isPreparing)
+//                     Positioned(
+//                       right: 20,
+//                       top: MediaQuery.of(context).size.height * 0.35,
+//                       child: Column(
+//                         children: [
+//                           _controlButton(
+//                             icon: Icons.cameraswitch_rounded,
+//                             onTap: _toggleCamera,
+//                           ),
+//                           const SizedBox(height: 20),
+//                           _controlButton(
+//                             icon: isLandscape ? Icons.screen_lock_landscape_rounded : Icons.screen_lock_portrait_rounded,
+//                             onTap: _toggleOrientation,
+//                           ),
+//                         ],
+//                       ),
+//                     ),
 
-                  // Main Action Button (Go Live / Stop)
-                  Positioned(
-                    bottom: 40, left: 24, right: 24,
-                    child: GestureDetector(
-                      onTap: isStreaming 
-                        ? () async {
-                            setState(() => isStopping = true);
-                            await _cleanupOnExit();
-                            _navToHome();
-                          }
-                        : startCountdownFlow,
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 300),
-                        height: 64,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(32),
-                          gradient: LinearGradient(
-                            colors: isStreaming 
-                                ? [appColors.red, const Color(0xFF991B1B)]
-                                : [appColors.accent, const Color(0xFF1E40AF)],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: (isStreaming ? appColors.red : appColors.accent).withOpacity(0.4),
-                              blurRadius: 16,
-                              offset: const Offset(0, 6),
-                            )
-                          ]
-                        ),
-                        child: Center(
-                          child: Text(
-                            isStreaming ? "STOP STREAM" : "GO LIVE",
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: 1.2,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
+//                   // Main Action Button (Go Live / Stop)
+//                   Positioned(
+//                     bottom: 40, left: 24, right: 24,
+//                     child: GestureDetector(
+//                       onTap: isStreaming 
+//                         ? () async {
+//                             setState(() => isStopping = true);
+//                             await _cleanupOnExit();
+//                             _navToHome();
+//                           }
+//                         : startCountdownFlow,
+//                       child: AnimatedContainer(
+//                         duration: const Duration(milliseconds: 300),
+//                         height: 64,
+//                         decoration: BoxDecoration(
+//                           borderRadius: BorderRadius.circular(32),
+//                           gradient: LinearGradient(
+//                             colors: isStreaming 
+//                                 ? [appColors.red, const Color(0xFF991B1B)]
+//                                 : [appColors.accent, const Color(0xFF1E40AF)],
+//                             begin: Alignment.topLeft,
+//                             end: Alignment.bottomRight,
+//                           ),
+//                           boxShadow: [
+//                             BoxShadow(
+//                               color: (isStreaming ? appColors.red : appColors.accent).withOpacity(0.4),
+//                               blurRadius: 16,
+//                               offset: const Offset(0, 6),
+//                             )
+//                           ]
+//                         ),
+//                         child: Center(
+//                           child: Text(
+//                             isStreaming ? "STOP STREAM" : "GO LIVE",
+//                             style: const TextStyle(
+//                               color: Colors.white,
+//                               fontSize: 16,
+//                               fontWeight: FontWeight.w800,
+//                               letterSpacing: 1.2,
+//                             ),
+//                           ),
+//                         ),
+//                       ),
+//                     ),
+//                   ),
 
-                  // Countdown Overlay
-                  if (isPreparing)
-                    Positioned.fill(
-                      child: Container(
-                        color: Colors.black.withOpacity(0.5), // Dims background slightly to make countdown pop
-                        child: Center(
-                          child: Text(
-                            "$countdown",
-                            style: const TextStyle(
-                              fontSize: 120,
-                              color: Colors.white,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
+//                   // Countdown Overlay
+//                   if (isPreparing)
+//                     Positioned.fill(
+//                       child: Container(
+//                         color: Colors.black.withOpacity(0.5), // Dims background slightly to make countdown pop
+//                         child: Center(
+//                           child: Text(
+//                             "$countdown",
+//                             style: const TextStyle(
+//                               fontSize: 120,
+//                               color: Colors.white,
+//                               fontWeight: FontWeight.w800,
+//                             ),
+//                           ),
+//                         ),
+//                       ),
+//                     ),
+//                 ],
+//               ),
+//             ),
+//           ],
+//         ),
+//       ),
+//     );
+//   }
+// }
