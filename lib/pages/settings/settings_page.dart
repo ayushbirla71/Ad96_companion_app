@@ -482,7 +482,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     ),
                   ),
                   Text(
-                    'v1.0.0',
+                    'v1.0.13',
                     style: TextStyle(
                       color: appColors.textMuted,
                       fontSize: 12,

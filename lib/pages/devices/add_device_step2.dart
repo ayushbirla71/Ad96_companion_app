@@ -29,7 +29,7 @@ class _AddDeviceStep2PageState extends State<AddDeviceStep2Page> {
     try {
       final payload = {
         "group_id": widget.deviceData["group_id"],
-        "overrideOrientation":widget.deviceData["overrideOrientation"],
+        "overwrite_group_orientation":widget.deviceData["overrideOrientation"],
         "location": {
           "lat": selectedLocation!.latitude,
           "lng": selectedLocation!.longitude,

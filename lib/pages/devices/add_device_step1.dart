@@ -344,7 +344,7 @@ class _AddDeviceStep1PageState extends State<AddDeviceStep1Page> {
             // 1. Get the device orientation
             final deviceOri = deviceInfo?['orientation']?.toString().toLowerCase();
 
-            print("device oriantation ${deviceOri}");
+            // print("device oriantation ${deviceOri}");
 
             // 2. Filter groups by search query AND orientation
             final filteredGroups = groupProvider.groups.where((g) {
@@ -360,7 +360,7 @@ class _AddDeviceStep1PageState extends State<AddDeviceStep1Page> {
                 try {
                   // 👉 NOTE: Change 'g.orientation' if your Group model uses a different property name
                   final groupOri = (g as dynamic).orientation?.toString().toLowerCase(); 
-                  print("group Detaisl..... ${g}");
+                  // print("group Detaisl..... ${g}");
                   if (groupOri != null && groupOri.isNotEmpty) {
                     matchesOrientation = (groupOri == deviceOri);
                   }

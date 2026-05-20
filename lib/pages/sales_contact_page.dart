@@ -170,7 +170,7 @@ class SalesContactPage extends StatelessWidget {
                     iconColor: appColors.accent,
                     iconBg: appColors.accentLight,
                     label: 'Email',
-                    value: 'sales@yourcompany.com',
+                    value: 'contactus@demokrito.com',
                   ),
                   Divider(
                     height: 1,
@@ -183,7 +183,7 @@ class SalesContactPage extends StatelessWidget {
                     iconColor: appColors.green,
                     iconBg: appColors.greenLight,
                     label: 'Phone',
-                    value: '+91 9876543210',
+                    value: '+91 92769 69696',
                   ),
                   Divider(
                     height: 1,
@@ -196,7 +196,7 @@ class SalesContactPage extends StatelessWidget {
                     iconColor: appColors.purple,
                     iconBg: appColors.purpleLight,
                     label: 'Website',
-                    value: 'www.yourcompany.com',
+                    value: 'www.demokrito.com',
                     isLast: true,
                   ),
                 ],
