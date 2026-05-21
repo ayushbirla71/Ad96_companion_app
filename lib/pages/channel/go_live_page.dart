@@ -1393,14 +1393,487 @@
 ///
 
 
+// import 'dart:ui';
+// import 'package:cms_app/pages/home/home_page.dart';
+// import 'package:cms_app/providers/live_content_provider.dart';
+// import 'package:cms_app/theme/app_colors.dart'; // Make sure this path is correct
+// import 'package:flutter/material.dart';
+// import 'package:flutter/services.dart';
+// import 'package:provider/provider.dart';
+// import 'package:wakelock_plus/wakelock_plus.dart';
+
+// class GoLivePage extends StatefulWidget {
+//   final String rtmpUrl;
+//   final String channelName;
+//   final String channelId;
+//   final String contentId;
+
+//   const GoLivePage({
+//     super.key,
+//     required this.rtmpUrl,
+//     required this.channelName,
+//     required this.channelId,
+//     required this.contentId,
+//   });
+
+//   @override
+//   State<GoLivePage> createState() => _GoLivePageState();
+// }
+
+// class _GoLivePageState extends State<GoLivePage> with WidgetsBindingObserver {
+//   static const MethodChannel _channel = MethodChannel('streaming_channel');
+
+//   bool isStreaming = false;
+//   bool isPreparing = false;
+//   bool isStopping = false;
+//   bool _isCleaned = false;
+  
+//   bool isFrontCamera = false;
+//   bool isLandscape = false;
+
+//   int countdown = 3;
+//   late LiveContentProvider liveProvider;
+//   String streamStatus = "Ready to stream";
+
+//   @override
+//   void initState() {
+//     super.initState();
+//     WidgetsBinding.instance.addObserver(this);
+//     liveProvider = Provider.of<LiveContentProvider>(context, listen: false);
+//     _startPreview();
+//     WakelockPlus.enable();
+//   }
+
+//   @override
+//   void dispose() {
+//     WidgetsBinding.instance.removeObserver(this);
+//     _cleanupOnExit();
+//     SystemChrome.setPreferredOrientations(DeviceOrientation.values);
+//     super.dispose();
+//   }
+
+//   @override
+//   void didChangeAppLifecycleState(AppLifecycleState state) {
+//     if (state == AppLifecycleState.paused ||
+//         state == AppLifecycleState.detached) {
+//       _cleanupOnExit();
+//     }
+//   }
+
+//   // ─── NATIVE SETUP CONTROLS ──────────────────────────────────────────────────
+
+//   Future<void> _startPreview() async {
+//     try {
+//       SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+//       await _channel.invokeMethod('startPreview', {
+//         'isFront': isFrontCamera,
+//         'isLandscape': isLandscape,
+//       });
+//     } catch (e) {
+//       debugPrint("Preview Error: $e");
+//     }
+//   }
+
+//   Future<void> _toggleCamera() async {
+//     setState(() => isFrontCamera = !isFrontCamera);
+//     try {
+//       await _channel.invokeMethod('switchCamera', {'isFront': isFrontCamera});
+//     } catch (e) {
+//       debugPrint("Camera Switch Error: $e");
+//     }
+//   }
+
+//   Future<void> _toggleOrientation() async {
+//     setState(() => isLandscape = !isLandscape);
+    
+//     if (isLandscape) {
+//       SystemChrome.setPreferredOrientations([
+//         DeviceOrientation.landscapeRight, 
+//         DeviceOrientation.landscapeLeft
+//       ]);
+//     } else {
+//       SystemChrome.setPreferredOrientations([
+//         DeviceOrientation.portraitUp
+//       ]);
+//     }
+
+//     try {
+//       await _channel.invokeMethod('setOrientation', {'isLandscape': isLandscape});
+//     } catch (e) {
+//       debugPrint("Orientation Switch Error: $e");
+//     }
+//   }
+
+//   // ─── START & STOP STREAM ────────────────────────────────────────────────────
+
+//   Future<void> startStream() async {
+//     try {
+//       setState(() => streamStatus = "Connecting...");
+
+//       final uri = Uri.parse(widget.rtmpUrl);
+//       final segments = uri.pathSegments;
+//       final streamKey = segments.last;
+//       final basePath = segments.sublist(0, segments.length - 1).join('/');
+//       final rtmpBaseUrl = "${uri.scheme}://${uri.host}/$basePath";
+
+//       await _channel.invokeMethod('startStream', {
+//         "url": rtmpBaseUrl,
+//         "key": streamKey,
+//       });
+
+//       setState(() {
+//         isStreaming = true;
+//         isPreparing = false;
+//         streamStatus = "LIVE";
+//       });
+//     } catch (e) {
+//       setState(() {
+//         isPreparing = false;
+//         isStreaming = false;
+//         streamStatus = "Stream Failed";
+//       });
+//     }
+//   }
+
+//   Future<void> stopStream() async {
+//     try {
+//       setState(() => streamStatus = "Stopping...");
+//       await _channel.invokeMethod('stopStream');
+//     } catch (e) {
+//       debugPrint("Stop Stream Error => $e");
+//     }
+//   }
+
+//   Future<void> _cleanupOnExit() async {
+//     if (_isCleaned) return;
+//     _isCleaned = true;
+//     try {
+//       await stopStream();
+//       await WakelockPlus.disable();
+//       liveProvider.deleteSchedules(widget.contentId);
+//     } catch (e) {
+//       debugPrint("Cleanup Error => $e");
+//     }
+//     if (mounted) {
+//       setState(() {
+//         isStreaming = false;
+//         isPreparing = false;
+//         isStopping = false;
+//         streamStatus = "Stopped";
+//       });
+//     }
+//   }
+
+//   Future<void> startCountdownFlow() async {
+//     setState(() {
+//       isPreparing = true;
+//       streamStatus = "Starting...";
+//     });
+//     for (int i = 3; i > 0; i--) {
+//       setState(() => countdown = i);
+//       await Future.delayed(const Duration(seconds: 1));
+//     }
+//     await startStream();
+//   }
+
+//   void _navToHome() {
+//     if(!mounted) return;
+//     Navigator.of(context).popUntil((route) => route.isFirst);
+//   }
+
+//   // ─── UI COMPONENTS ──────────────────────────────────────────────────────────
+
+//   Widget _glassContainer({required Widget child, EdgeInsetsGeometry? padding, double borderRadius = 20}) {
+//     return ClipRRect(
+//       borderRadius: BorderRadius.circular(borderRadius),
+//       child: BackdropFilter(
+//         filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+//         child: Container(
+//           padding: padding,
+//           decoration: BoxDecoration(
+//             color: Colors.black.withOpacity(0.35),
+//             borderRadius: BorderRadius.circular(borderRadius),
+//             border: Border.all(color: Colors.white.withOpacity(0.15)),
+//           ),
+//           child: child,
+//         ),
+//       ),
+//     );
+//   }
+
+//   Widget _controlButton({required IconData icon, required VoidCallback onTap}) {
+//     return GestureDetector(
+//       onTap: onTap,
+//       child: _glassContainer(
+//         borderRadius: 30,
+//         padding: const EdgeInsets.all(12),
+//         child: Icon(icon, color: Colors.white, size: 26),
+//       ),
+//     );
+//   }
+
+//   @override
+//   Widget build(BuildContext context) {
+//     // 👇 Updated to PopScope
+//     return PopScope(
+//       canPop: false,
+//       onPopInvoked: (didPop) async {
+//         if (didPop) return;
+//         setState(() => isStopping = true);
+//         await _cleanupOnExit();
+//         _navToHome();
+//       },
+//       child: Scaffold(
+//         backgroundColor: Colors.black,
+//         body: Stack(
+//           children: [
+//             // Camera Background
+//             Positioned.fill(
+//               child: const UiKitView(viewType: 'camera_preview'),
+//             ),
+
+//             // Top Gradient Overlay (for text readability)
+//             Positioned(
+//               top: 0, left: 0, right: 0,
+//               height: 140,
+//               child: Container(
+//                 decoration: BoxDecoration(
+//                   gradient: LinearGradient(
+//                     begin: Alignment.topCenter,
+//                     end: Alignment.bottomCenter,
+//                     colors: [Colors.black.withOpacity(0.6), Colors.transparent],
+//                   ),
+//                 ),
+//               ),
+//             ),
+
+//             SafeArea(
+//               child: Stack(
+//                 children: [
+//                   // Top Bar
+//                   Positioned(
+//                     top: 16, left: 20, right: 20,
+//                     child: Row(
+//                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+//                       children: [
+//                         // Close Button & Channel Name
+//                         _glassContainer(
+//                           borderRadius: 30,
+//                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+//                           child: Row(
+//                             children: [
+//                               GestureDetector(
+//                                 onTap: () async {
+//                                   setState(() => isStopping = true);
+//                                   await _cleanupOnExit();
+//                                   _navToHome();
+//                                 },
+//                                 child: const Icon(Icons.close_rounded, color: Colors.white, size: 20),
+//                               ),
+//                               const SizedBox(width: 10),
+//                               Container(width: 1, height: 16, color: Colors.white30),
+//                               const SizedBox(width: 10),
+//                               Text(
+//                                 widget.channelName,
+//                                 style: const TextStyle(
+//                                   color: Colors.white,
+//                                   fontSize: 14,
+//                                   fontWeight: FontWeight.w700,
+//                                 ),
+//                               ),
+//                             ],
+//                           ),
+//                         ),
+
+//                         // LIVE Badge
+//                         if (isStreaming)
+//                           Container(
+//                             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+//                             decoration: BoxDecoration(
+//                               color: appColors.red.withOpacity(0.9),
+//                               borderRadius: BorderRadius.circular(30),
+//                               boxShadow: [
+//                                 BoxShadow(
+//                                   color: appColors.red.withOpacity(0.4),
+//                                   blurRadius: 8,
+//                                   spreadRadius: 2,
+//                                 )
+//                               ]
+//                             ),
+//                             child: Row(
+//                               children: [
+//                                 Container(
+//                                   width: 8, height: 8,
+//                                   decoration: const BoxDecoration(
+//                                     color: Colors.white,
+//                                     shape: BoxShape.circle,
+//                                   ),
+//                                 ),
+//                                 const SizedBox(width: 6),
+//                                 const Text(
+//                                   "LIVE",
+//                                   style: TextStyle(
+//                                     color: Colors.white,
+//                                     fontSize: 13,
+//                                     fontWeight: FontWeight.w800,
+//                                     letterSpacing: 0.5,
+//                                   ),
+//                                 ),
+//                               ],
+//                             ),
+//                           ),
+//                       ],
+//                     ),
+//                   ),
+
+//                   // Status Text
+//                   Positioned(
+//                     top: 70, left: 0, right: 0,
+//                     child: Center(
+//                       child: _glassContainer(
+//                         borderRadius: 20,
+//                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+//                         child: Text(
+//                           streamStatus,
+//                           style: const TextStyle(
+//                             color: Colors.white70,
+//                             fontSize: 12,
+//                             fontWeight: FontWeight.w600,
+//                           ),
+//                         ),
+//                       ),
+//                     ),
+//                   ),
+
+//                   // Camera Controls
+//                   if (!isStreaming && !isPreparing)
+//                     Positioned(
+//                       right: 20,
+//                       top: MediaQuery.of(context).size.height * 0.35,
+//                       child: Column(
+//                         children: [
+//                           _controlButton(
+//                             icon: Icons.cameraswitch_rounded,
+//                             onTap: _toggleCamera,
+//                           ),
+//                           const SizedBox(height: 20),
+//                           _controlButton(
+//                             icon: isLandscape ? Icons.screen_lock_landscape_rounded : Icons.screen_lock_portrait_rounded,
+//                             onTap: _toggleOrientation,
+//                           ),
+//                         ],
+//                       ),
+//                     ),
+
+//                   // Main Action Button (Go Live / Stop)
+//                   Positioned(
+//                     bottom: 40, left: 24, right: 24,
+//                     child: GestureDetector(
+//                       onTap: isStreaming 
+//                         ? () async {
+//                             setState(() => isStopping = true);
+//                             await _cleanupOnExit();
+//                             _navToHome();
+//                           }
+//                         : startCountdownFlow,
+//                       child: AnimatedContainer(
+//                         duration: const Duration(milliseconds: 300),
+//                         height: 64,
+//                         decoration: BoxDecoration(
+//                           borderRadius: BorderRadius.circular(32),
+//                           gradient: LinearGradient(
+//                             colors: isStreaming 
+//                                 ? [appColors.red, const Color(0xFF991B1B)]
+//                                 : [appColors.accent, const Color(0xFF1E40AF)],
+//                             begin: Alignment.topLeft,
+//                             end: Alignment.bottomRight,
+//                           ),
+//                           boxShadow: [
+//                             BoxShadow(
+//                               color: (isStreaming ? appColors.red : appColors.accent).withOpacity(0.4),
+//                               blurRadius: 16,
+//                               offset: const Offset(0, 6),
+//                             )
+//                           ]
+//                         ),
+//                         child: Center(
+//                           child: Text(
+//                             isStreaming ? "STOP STREAM" : "GO LIVE",
+//                             style: const TextStyle(
+//                               color: Colors.white,
+//                               fontSize: 16,
+//                               fontWeight: FontWeight.w800,
+//                               letterSpacing: 1.2,
+//                             ),
+//                           ),
+//                         ),
+//                       ),
+//                     ),
+//                   ),
+
+//                   // Countdown Overlay
+//                   if (isPreparing)
+//                     Positioned.fill(
+//                       child: Container(
+//                         color: Colors.black.withOpacity(0.5), // Dims background slightly to make countdown pop
+//                         child: Center(
+//                           child: Text(
+//                             "$countdown",
+//                             style: const TextStyle(
+//                               fontSize: 120,
+//                               color: Colors.white,
+//                               fontWeight: FontWeight.w800,
+//                             ),
+//                           ),
+//                         ),
+//                       ),
+//                     ),
+//                 ],
+//               ),
+//             ),
+//           ],
+//         ),
+//       ),
+//     );
+//   }
+// }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 import 'dart:ui';
 import 'package:cms_app/pages/home/home_page.dart';
 import 'package:cms_app/providers/live_content_provider.dart';
-import 'package:cms_app/theme/app_colors.dart'; // Make sure this path is correct
+import 'package:cms_app/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
+import 'package:permission_handler/permission_handler.dart';
+import '../../providers/channel_provider.dart';
 
 class GoLivePage extends StatefulWidget {
   final String rtmpUrl;
@@ -1421,35 +1894,63 @@ class GoLivePage extends StatefulWidget {
 }
 
 class _GoLivePageState extends State<GoLivePage> with WidgetsBindingObserver {
+
+  // ── Native channel (same name as Android StreamingPlugin + iOS AppDelegate) ──
   static const MethodChannel _channel = MethodChannel('streaming_channel');
 
-  bool isStreaming = false;
-  bool isPreparing = false;
-  bool isStopping = false;
-  bool _isCleaned = false;
-  
-  bool isFrontCamera = false;
-  bool isLandscape = false;
+  bool isStreaming  = false;
+  bool isLoading    = true;
+  bool _isCleaned   = false;
+  bool isStopping   = false;
+  bool isPreparing  = false;
+  bool isSwitching  = false;
+  bool hasPermissions = false; // Added to track permission state
 
-  int countdown = 3;
-  late LiveContentProvider liveProvider;
+  bool isFrontCamera       = false;
+  bool userSelectedLandscape = false;
+
+  int    countdown    = 3;
   String streamStatus = "Ready to stream";
+
+  late LiveContentProvider liveProvider;
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // LIFECYCLE
+  // ─────────────────────────────────────────────────────────────────────────────
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     liveProvider = Provider.of<LiveContentProvider>(context, listen: false);
-    _startPreview();
-    WakelockPlus.enable();
+    
+    // Gatekeep the initialization with permissions check
+    _initializePermissions();
   }
 
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    _cleanupOnExit();
-    SystemChrome.setPreferredOrientations(DeviceOrientation.values);
-    super.dispose();
+  Future<void> _initializePermissions() async {
+    // Request both permissions simultaneously
+    Map<Permission, PermissionStatus> statuses = await [
+      Permission.camera,
+      Permission.microphone,
+    ].request();
+
+    if (statuses[Permission.camera]!.isGranted &&
+        statuses[Permission.microphone]!.isGranted) {
+      // Only proceed once explicitly granted
+      if (mounted) {
+        setState(() => hasPermissions = true);
+        await _startPreview();
+      }
+    } else {
+      // Handle denial - prevent the user from staying on a broken page
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Camera and Microphone permissions are required to go live.')),
+        );
+        Navigator.of(context).pop(); 
+      }
+    }
   }
 
   @override
@@ -1460,130 +1961,238 @@ class _GoLivePageState extends State<GoLivePage> with WidgetsBindingObserver {
     }
   }
 
-  // ─── NATIVE SETUP CONTROLS ──────────────────────────────────────────────────
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    SystemChrome.setPreferredOrientations(DeviceOrientation.values);
+    super.dispose();
+  }
 
+  // ─────────────────────────────────────────────────────────────────────────────
+  // NATIVE CONTROLS
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  /// Mirrors: StreamManager.shared.startPreview(isFront:isLandscape:)
   Future<void> _startPreview() async {
     try {
-      SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+      await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
       await _channel.invokeMethod('startPreview', {
-        'isFront': isFrontCamera,
-        'isLandscape': isLandscape,
+        'isFront':      isFrontCamera,
+        'isLandscape':  userSelectedLandscape,
       });
     } catch (e) {
-      debugPrint("Preview Error: $e");
+      debugPrint("startPreview error: $e");
+    } finally {
+      if (mounted) setState(() => isLoading = false);
     }
   }
 
+  /// Mirrors: StreamManager.shared.switchCamera(isFront:)
   Future<void> _toggleCamera() async {
-    setState(() => isFrontCamera = !isFrontCamera);
+    if (isStreaming || isPreparing || isSwitching) return;
+
+    setState(() {
+      isSwitching    = true;
+      isFrontCamera  = !isFrontCamera;
+    });
+
     try {
       await _channel.invokeMethod('switchCamera', {'isFront': isFrontCamera});
     } catch (e) {
-      debugPrint("Camera Switch Error: $e");
+      debugPrint("switchCamera error: $e");
+    } finally {
+      // Small delay so native side finishes reconfiguring before we unblock UI
+      await Future.delayed(const Duration(milliseconds: 400));
+      if (mounted) setState(() => isSwitching = false);
     }
   }
 
+  /// Mirrors: StreamManager.shared.setOrientation(isLandscape:)
   Future<void> _toggleOrientation() async {
-    setState(() => isLandscape = !isLandscape);
-    
-    if (isLandscape) {
-      SystemChrome.setPreferredOrientations([
-        DeviceOrientation.landscapeRight, 
-        DeviceOrientation.landscapeLeft
-      ]);
-    } else {
-      SystemChrome.setPreferredOrientations([
-        DeviceOrientation.portraitUp
-      ]);
-    }
+    if (isStreaming || isPreparing || isSwitching) return;
+
+    setState(() {
+      isSwitching          = true;
+      userSelectedLandscape = !userSelectedLandscape;
+    });
 
     try {
-      await _channel.invokeMethod('setOrientation', {'isLandscape': isLandscape});
+      if (userSelectedLandscape) {
+        await SystemChrome.setPreferredOrientations([
+          DeviceOrientation.landscapeLeft,
+          DeviceOrientation.landscapeRight,
+        ]);
+      } else {
+        await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+      }
+
+      await _channel.invokeMethod('setOrientation', {
+        'isLandscape': userSelectedLandscape,
+      });
     } catch (e) {
-      debugPrint("Orientation Switch Error: $e");
+      debugPrint("setOrientation error: $e");
+    } finally {
+      await Future.delayed(const Duration(milliseconds: 600));
+      if (mounted) setState(() => isSwitching = false);
     }
   }
 
-  // ─── START & STOP STREAM ────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────────
+  // STREAM CONTROLS
+  // ─────────────────────────────────────────────────────────────────────────────
 
+  Future<void> startCountdownFlow() async {
+    if (_isCleaned || !mounted) return;
+
+    final provider = context.read<ChannelProvider>();
+
+    try {
+      setState(() {
+        isPreparing  = true;
+        streamStatus = "Starting...";
+      });
+
+      // Start channel on backend if not already live
+      final channel = provider.selectedChannel;
+      if (channel != null && channel.status != "live") {
+        await provider.startChannel(channel.channelId);
+      }
+
+      // Countdown 3 → 2 → 1
+      for (int i = 3; i > 0; i--) {
+        if (!mounted || _isCleaned || !isPreparing) return;
+        setState(() => countdown = i);
+        await Future.delayed(const Duration(seconds: 1));
+      }
+
+      if (mounted && !_isCleaned && isPreparing) {
+        await startStream();
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          isPreparing  = false;
+          streamStatus = "Failed to start";
+        });
+      }
+    }
+  }
+
+  /// Mirrors: StreamManager.shared.startStream(url:streamKey:)
   Future<void> startStream() async {
+    if (_isCleaned || !mounted) return;
+
     try {
       setState(() => streamStatus = "Connecting...");
 
-      final uri = Uri.parse(widget.rtmpUrl);
+      // Split rtmpUrl into base + streamKey to match iOS/Android native API
+      final uri      = Uri.parse(widget.rtmpUrl);
       final segments = uri.pathSegments;
-      final streamKey = segments.last;
-      final basePath = segments.sublist(0, segments.length - 1).join('/');
-      final rtmpBaseUrl = "${uri.scheme}://${uri.host}/$basePath";
+      final streamKey  = segments.last;
+      final basePath   = segments.sublist(0, segments.length - 1).join('/');
+      final rtmpBase   = "${uri.scheme}://${uri.host}/$basePath";
 
       await _channel.invokeMethod('startStream', {
-        "url": rtmpBaseUrl,
-        "key": streamKey,
+        'url': rtmpBase,
+        'key': streamKey,
       });
 
-      setState(() {
-        isStreaming = true;
-        isPreparing = false;
-        streamStatus = "LIVE";
-      });
+      await WakelockPlus.enable();
+
+      if (mounted) {
+        setState(() {
+          isStreaming  = true;
+          isPreparing  = false;
+          streamStatus = "LIVE";
+        });
+      }
     } catch (e) {
-      setState(() {
-        isPreparing = false;
-        isStreaming = false;
-        streamStatus = "Stream Failed";
-      });
+      debugPrint("startStream error: $e");
+      if (mounted) {
+        setState(() {
+          isPreparing  = false;
+          streamStatus = "Stream Failed";
+        });
+      }
     }
   }
 
+  /// Mirrors: StreamManager.shared.stopStream()
   Future<void> stopStream() async {
     try {
       setState(() => streamStatus = "Stopping...");
       await _channel.invokeMethod('stopStream');
     } catch (e) {
-      debugPrint("Stop Stream Error => $e");
+      debugPrint("stopStream error: $e");
     }
   }
 
   Future<void> _cleanupOnExit() async {
     if (_isCleaned) return;
     _isCleaned = true;
+
+    // Restore all orientations
+    await SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
+
     try {
-      await stopStream();
+      if (isStreaming) await stopStream();
       await WakelockPlus.disable();
       liveProvider.deleteSchedules(widget.contentId);
     } catch (e) {
-      debugPrint("Cleanup Error => $e");
+      debugPrint("cleanup error: $e");
+    } finally {
+      if (mounted) {
+        setState(() {
+          isStreaming  = false;
+          isPreparing  = false;
+          isStopping   = false;
+          streamStatus = "Stopped";
+        });
+      }
     }
-    if (mounted) {
-      setState(() {
-        isStreaming = false;
-        isPreparing = false;
-        isStopping = false;
-        streamStatus = "Stopped";
-      });
-    }
-  }
-
-  Future<void> startCountdownFlow() async {
-    setState(() {
-      isPreparing = true;
-      streamStatus = "Starting...";
-    });
-    for (int i = 3; i > 0; i--) {
-      setState(() => countdown = i);
-      await Future.delayed(const Duration(seconds: 1));
-    }
-    await startStream();
   }
 
   void _navToHome() {
-    if(!mounted) return;
-    Navigator.of(context).popUntil((route) => route.isFirst);
+    if (!mounted) return;
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const HomePage()),
+      (route) => false,
+    );
   }
 
-  // ─── UI COMPONENTS ──────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────────
+  // UI HELPERS
+  // ─────────────────────────────────────────────────────────────────────────────
 
-  Widget _glassContainer({required Widget child, EdgeInsetsGeometry? padding, double borderRadius = 20}) {
+  /// Camera preview — uses AndroidView on Android, UiKitView on iOS.
+  /// Both are registered under the same 'camera_preview' viewType.
+  Widget _buildPreview() {
+    // Prevent the native view from mounting before permissions are granted
+    if (!hasPermissions || isLoading || isSwitching) {
+      return Container(
+        color: Colors.black,
+        child: const Center(
+          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+        ),
+      );
+    }
+
+    // Platform-adaptive native view
+    if (Theme.of(context).platform == TargetPlatform.android) {
+      return const AndroidView(viewType: 'camera_preview');
+    }
+    return const UiKitView(viewType: 'camera_preview');
+  }
+
+  Widget _glassContainer({
+    required Widget child,
+    EdgeInsetsGeometry? padding,
+    double borderRadius = 20,
+  }) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(borderRadius),
       child: BackdropFilter(
@@ -1601,20 +2210,32 @@ class _GoLivePageState extends State<GoLivePage> with WidgetsBindingObserver {
     );
   }
 
-  Widget _controlButton({required IconData icon, required VoidCallback onTap}) {
+  Widget _controlButton({
+    required Widget icon,
+    required VoidCallback? onTap,
+    bool disabled = false,
+  }) {
     return GestureDetector(
-      onTap: onTap,
-      child: _glassContainer(
-        borderRadius: 30,
-        padding: const EdgeInsets.all(12),
-        child: Icon(icon, color: Colors.white, size: 26),
+      onTap: disabled ? null : onTap,
+      child: Opacity(
+        opacity: disabled ? 0.5 : 1.0,
+        child: _glassContainer(
+          borderRadius: 30,
+          padding: const EdgeInsets.all(12),
+          child: icon,
+        ),
       ),
     );
   }
 
+  // ─────────────────────────────────────────────────────────────────────────────
+  // BUILD
+  // ─────────────────────────────────────────────────────────────────────────────
+
   @override
   Widget build(BuildContext context) {
-    // 👇 Updated to PopScope
+    final bool lockControls = isStreaming || isPreparing || isSwitching || isLoading;
+
     return PopScope(
       canPop: false,
       onPopInvoked: (didPop) async {
@@ -1627,12 +2248,11 @@ class _GoLivePageState extends State<GoLivePage> with WidgetsBindingObserver {
         backgroundColor: Colors.black,
         body: Stack(
           children: [
-            // Camera Background
-            Positioned.fill(
-              child: const UiKitView(viewType: 'camera_preview'),
-            ),
 
-            // Top Gradient Overlay (for text readability)
+            // ── Camera preview (full screen) ──────────────────────────────────
+            Positioned.fill(child: _buildPreview()),
+
+            // ── Top gradient for readability ──────────────────────────────────
             Positioned(
               top: 0, left: 0, right: 0,
               height: 140,
@@ -1650,13 +2270,15 @@ class _GoLivePageState extends State<GoLivePage> with WidgetsBindingObserver {
             SafeArea(
               child: Stack(
                 children: [
-                  // Top Bar
+
+                  // ── Top bar ─────────────────────────────────────────────────
                   Positioned(
                     top: 16, left: 20, right: 20,
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        // Close Button & Channel Name
+
+                        // Close + Channel name
                         _glassContainer(
                           borderRadius: 30,
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
@@ -1685,7 +2307,7 @@ class _GoLivePageState extends State<GoLivePage> with WidgetsBindingObserver {
                           ),
                         ),
 
-                        // LIVE Badge
+                        // LIVE badge
                         if (isStreaming)
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
@@ -1697,8 +2319,8 @@ class _GoLivePageState extends State<GoLivePage> with WidgetsBindingObserver {
                                   color: appColors.red.withOpacity(0.4),
                                   blurRadius: 8,
                                   spreadRadius: 2,
-                                )
-                              ]
+                                ),
+                              ],
                             ),
                             child: Row(
                               children: [
@@ -1726,7 +2348,7 @@ class _GoLivePageState extends State<GoLivePage> with WidgetsBindingObserver {
                     ),
                   ),
 
-                  // Status Text
+                  // ── Stream status ────────────────────────────────────────────
                   Positioned(
                     top: 70, left: 0, right: 0,
                     child: Center(
@@ -1745,7 +2367,7 @@ class _GoLivePageState extends State<GoLivePage> with WidgetsBindingObserver {
                     ),
                   ),
 
-                  // Camera Controls
+                  // ── Camera controls (hidden while streaming) ─────────────────
                   if (!isStreaming && !isPreparing)
                     Positioned(
                       right: 20,
@@ -1753,36 +2375,55 @@ class _GoLivePageState extends State<GoLivePage> with WidgetsBindingObserver {
                       child: Column(
                         children: [
                           _controlButton(
-                            icon: Icons.cameraswitch_rounded,
+                            icon: Icon(
+                              isFrontCamera
+                                  ? Icons.camera_front_rounded
+                                  : Icons.camera_rear_rounded,
+                              color: Colors.white,
+                              size: 26,
+                            ),
+                            disabled: lockControls,
                             onTap: _toggleCamera,
                           ),
                           const SizedBox(height: 20),
                           _controlButton(
-                            icon: isLandscape ? Icons.screen_lock_landscape_rounded : Icons.screen_lock_portrait_rounded,
+                            icon: Icon(
+                              userSelectedLandscape
+                                  ? Icons.screen_lock_landscape_rounded
+                                  : Icons.screen_lock_portrait_rounded,
+                              color: Colors.white,
+                              size: 26,
+                            ),
+                            disabled: lockControls,
                             onTap: _toggleOrientation,
                           ),
                         ],
                       ),
                     ),
 
-                  // Main Action Button (Go Live / Stop)
+                  // ── Go Live / Stop button ────────────────────────────────────
                   Positioned(
                     bottom: 40, left: 24, right: 24,
                     child: GestureDetector(
-                      onTap: isStreaming 
-                        ? () async {
-                            setState(() => isStopping = true);
-                            await _cleanupOnExit();
-                            _navToHome();
-                          }
-                        : startCountdownFlow,
+                      onTap: lockControls
+                          ? null
+                          : () async {
+                              if (!isStreaming) {
+                                _isCleaned = false;
+                                await startCountdownFlow();
+                              } else {
+                                setState(() => isStopping = true);
+                                await _cleanupOnExit();
+                                _navToHome();
+                              }
+                            },
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 300),
                         height: 64,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(32),
                           gradient: LinearGradient(
-                            colors: isStreaming 
+                            colors: isStreaming
                                 ? [appColors.red, const Color(0xFF991B1B)]
                                 : [appColors.accent, const Color(0xFF1E40AF)],
                             begin: Alignment.topLeft,
@@ -1790,32 +2431,39 @@ class _GoLivePageState extends State<GoLivePage> with WidgetsBindingObserver {
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: (isStreaming ? appColors.red : appColors.accent).withOpacity(0.4),
+                              color: (isStreaming ? appColors.red : appColors.accent)
+                                  .withOpacity(0.4),
                               blurRadius: 16,
                               offset: const Offset(0, 6),
-                            )
-                          ]
+                            ),
+                          ],
                         ),
                         child: Center(
-                          child: Text(
-                            isStreaming ? "STOP STREAM" : "GO LIVE",
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: 1.2,
-                            ),
-                          ),
+                          child: isStopping
+                              ? const SizedBox(
+                                  height: 24, width: 24,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 3, color: Colors.white),
+                                )
+                              : Text(
+                                  isStreaming ? "STOP STREAM" : "GO LIVE",
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 1.2,
+                                  ),
+                                ),
                         ),
                       ),
                     ),
                   ),
 
-                  // Countdown Overlay
+                  // ── Countdown overlay ────────────────────────────────────────
                   if (isPreparing)
                     Positioned.fill(
                       child: Container(
-                        color: Colors.black.withOpacity(0.5), // Dims background slightly to make countdown pop
+                        color: Colors.black.withOpacity(0.5),
                         child: Center(
                           child: Text(
                             "$countdown",
@@ -1828,6 +2476,7 @@ class _GoLivePageState extends State<GoLivePage> with WidgetsBindingObserver {
                         ),
                       ),
                     ),
+
                 ],
               ),
             ),
