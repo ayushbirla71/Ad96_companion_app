@@ -2120,6 +2120,18 @@ class _ResetPasswordDialogState extends State<_ResetPasswordDialog> {
       return;
     }
 
+    final passwordRegex = RegExp(
+      r'^(?=.*[0-9])(?=.*[!@#$%^&*])[A-Za-z\d!@#$%^&*]{8,}$',
+    );
+
+    if (!passwordRegex.hasMatch(newPass)) {
+      setState(() {
+        _errorMsg =
+            'Password must be at least 8 characters long and include at least one number and one special character.';
+      });
+      return;
+    }
+
     setState(() {
       _saving = true;
       _errorMsg = null;
@@ -2131,7 +2143,7 @@ class _ResetPasswordDialogState extends State<_ResetPasswordDialog> {
         'confirmPassword': confirmPass,
       };
 
-      final res = await ApiService.post('/user/update', body);
+      final res = await ApiService.put('/user/update', body);
 
       if (res.statusCode == 200) {
         if (mounted) {

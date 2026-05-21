@@ -715,17 +715,204 @@ class _DeviceGroupDetailsPageState extends State<DeviceGroupDetailsPage>
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             _sectionLabel('Scroll Text'),
-            _editToggleBtn(
-              editing: _editScrollText,
-              onTap: () {
-                setState(() {
-                  if (_editScrollText) {
-                    // Cancel — revert
-                    _messageCtrl.text = d.scrollText?.message ?? '';
-                  }
-                  _editScrollText = !_editScrollText;
-                });
-              },
+            Row(
+              children: [
+                /// DELETE BUTTON
+                if (d.scrollText != null)
+                  GestureDetector(
+                    onTap: () async {
+                      final confirm = await showDialog<bool>(
+                        context: context,
+                        builder: (dialogContext) => Dialog(
+                          backgroundColor: Colors.transparent,
+
+                          child: Container(
+                            padding: const EdgeInsets.all(22),
+
+                            decoration: BoxDecoration(
+                              color: appColors.surface,
+                              borderRadius: BorderRadius.circular(22),
+                              border: Border.all(color: appColors.border),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.08),
+                                  blurRadius: 20,
+                                  offset: const Offset(0, 8),
+                                ),
+                              ],
+                            ),
+
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+
+                              children: [
+                                /// ICON
+                                Container(
+                                  width: 58,
+                                  height: 58,
+
+                                  decoration: BoxDecoration(
+                                    color: appColors.redLight,
+                                    shape: BoxShape.circle,
+                                  ),
+
+                                  child: Icon(
+                                    Icons.delete_rounded,
+                                    color: appColors.red,
+                                    size: 28,
+                                  ),
+                                ),
+
+                                const SizedBox(height: 18),
+
+                                /// TITLE
+                                Text(
+                                  'Delete Scroll Text',
+                                  style: TextStyle(
+                                    color: appColors.textPrimary,
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+
+                                const SizedBox(height: 10),
+
+                                /// MESSAGE
+                                Text(
+                                  'Are you sure you want to delete this scroll text?\nThis action cannot be undone.',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: appColors.textSecondary,
+                                    fontSize: 13,
+                                    height: 1.5,
+                                  ),
+                                ),
+
+                                const SizedBox(height: 24),
+
+                                /// BUTTONS
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: OutlinedButton(
+                                        onPressed: () =>
+                                            Navigator.pop(dialogContext, false),
+
+                                        style: OutlinedButton.styleFrom(
+                                          foregroundColor:
+                                              appColors.textSecondary,
+
+                                          side: BorderSide(
+                                            color: appColors.border,
+                                          ),
+
+                                          padding: const EdgeInsets.symmetric(
+                                            vertical: 13,
+                                          ),
+
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              14,
+                                            ),
+                                          ),
+                                        ),
+
+                                        child: const Text(
+                                          'Cancel',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+
+                                    const SizedBox(width: 12),
+
+                                    Expanded(
+                                      child: FilledButton(
+                                        onPressed: () =>
+                                            Navigator.pop(dialogContext, true),
+
+                                        style: FilledButton.styleFrom(
+                                          backgroundColor: appColors.red,
+                                          foregroundColor: Colors.white,
+
+                                          padding: const EdgeInsets.symmetric(
+                                            vertical: 13,
+                                          ),
+
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              14,
+                                            ),
+                                          ),
+                                        ),
+
+                                        child: const Text(
+                                          'Delete',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+
+                      if (confirm == true) {
+                        try {
+                          await ApiService.post(
+                            '/scroll-text/delete/${widget.group.id}',
+                            {},
+                          );
+
+                          _snack('Scroll text deleted successfully');
+
+                          await _load();
+                        } catch (e) {
+                          _snack('Failed to delete scroll text');
+                        }
+                      }
+                    },
+
+                    child: Container(
+                      margin: const EdgeInsets.only(right: 8),
+                      width: 34,
+                      height: 34,
+
+                      decoration: BoxDecoration(
+                        color: appColors.redLight,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: appColors.red.withOpacity(0.3),
+                        ),
+                      ),
+
+                      child: Icon(
+                        Icons.delete_rounded,
+                        color: appColors.red,
+                        size: 17,
+                      ),
+                    ),
+                  ),
+                _editToggleBtn(
+                  editing: _editScrollText,
+                  onTap: () {
+                    setState(() {
+                      if (_editScrollText) {
+                        // Cancel — revert
+                        _messageCtrl.text = d.scrollText?.message ?? '';
+                      }
+                      _editScrollText = !_editScrollText;
+                    });
+                  },
+                ),
+              ],
             ),
           ],
         ),
