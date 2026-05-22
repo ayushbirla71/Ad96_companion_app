@@ -1862,8 +1862,6 @@
 
 
 
-
-
 import 'dart:ui';
 import 'package:cms_app/pages/home/home_page.dart';
 import 'package:cms_app/providers/live_content_provider.dart';
@@ -1872,7 +1870,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
-import 'package:permission_handler/permission_handler.dart';
 import '../../providers/channel_provider.dart';
 import 'dart:ui' show TextDirection;
 import 'package:flutter/gestures.dart';
@@ -1908,7 +1905,6 @@ class _GoLivePageState extends State<GoLivePage> with WidgetsBindingObserver {
   bool isStopping   = false;
   bool isPreparing  = false;
   bool isSwitching  = false;
-  bool hasPermissions = false; // Added to track permission state
 
   bool isFrontCamera       = false;
   bool userSelectedLandscape = false;
@@ -1927,34 +1923,7 @@ class _GoLivePageState extends State<GoLivePage> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     liveProvider = Provider.of<LiveContentProvider>(context, listen: false);
-    
-    // Gatekeep the initialization with permissions check
-    _initializePermissions();
-  }
-
-  Future<void> _initializePermissions() async {
-    // Request both permissions simultaneously
-    Map<Permission, PermissionStatus> statuses = await [
-      Permission.camera,
-      Permission.microphone,
-    ].request();
-
-    if (statuses[Permission.camera]!.isGranted &&
-        statuses[Permission.microphone]!.isGranted) {
-      // Only proceed once explicitly granted
-      if (mounted) {
-        setState(() => hasPermissions = true);
-        await _startPreview();
-      }
-    } else {
-      // Handle denial - prevent the user from staying on a broken page
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Camera and Microphone permissions are required to go live.')),
-        );
-        Navigator.of(context).pop(); 
-      }
-    }
+    _startPreview();
   }
 
   @override
