@@ -1874,6 +1874,10 @@ import 'package:provider/provider.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../../providers/channel_provider.dart';
+import 'dart:ui' show TextDirection;
+import 'package:flutter/gestures.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 
 class GoLivePage extends StatefulWidget {
   final String rtmpUrl;
@@ -2170,23 +2174,71 @@ class _GoLivePageState extends State<GoLivePage> with WidgetsBindingObserver {
 
   /// Camera preview — uses AndroidView on Android, UiKitView on iOS.
   /// Both are registered under the same 'camera_preview' viewType.
-  Widget _buildPreview() {
-    // Prevent the native view from mounting before permissions are granted
-    if (!hasPermissions || isLoading || isSwitching) {
-      return Container(
-        color: Colors.black,
-        child: const Center(
-          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-        ),
-      );
-    }
-
-    // Platform-adaptive native view
-    if (Theme.of(context).platform == TargetPlatform.android) {
-      return const AndroidView(viewType: 'camera_preview');
-    }
-    return const UiKitView(viewType: 'camera_preview');
+Widget _buildPreview() {
+  if (isLoading || isSwitching) {
+    return Container(
+      color: Colors.black,
+      child: const Center(
+        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+      ),
+    );
   }
+
+  // Black background behind the correctly-sized preview
+  return Container(
+    color: Colors.black,
+    child: Center(
+      child: _buildNativePreview(),
+    ),
+  );
+}
+
+Widget _buildNativePreview() {
+  if (Theme.of(context).platform == TargetPlatform.android) {
+    return PlatformViewLink(
+      viewType: 'camera_preview',
+      surfaceFactory: (context, controller) {
+        return AndroidViewSurface(
+          controller: controller as AndroidViewController,
+          gestureRecognizers: const {},
+          hitTestBehavior: PlatformViewHitTestBehavior.opaque,
+        );
+      },
+      onCreatePlatformView: (params) {
+        return PlatformViewsService.initExpensiveAndroidView(
+          id: params.id,
+          viewType: 'camera_preview',
+          layoutDirection: TextDirection.ltr,
+          creationParamsCodec: const StandardMessageCodec(),
+        )
+          ..addOnPlatformViewCreatedListener(params.onPlatformViewCreated)
+          ..create();
+      },
+    );
+  }
+  return const UiKitView(viewType: 'camera_preview');
+}
+
+static Widget _surfaceFactory(
+    BuildContext context, PlatformViewController controller) {
+  return AndroidViewSurface(
+    controller: controller as AndroidViewController,
+    gestureRecognizers: const {},
+    hitTestBehavior: PlatformViewHitTestBehavior.opaque,
+  );
+}
+
+static PlatformViewController _onCreatePlatformView(
+    PlatformViewCreationParams params) {
+  return PlatformViewsService.initExpensiveAndroidView(
+    id: params.id,
+    viewType: 'camera_preview',
+    layoutDirection: TextDirection.ltr,
+    creationParamsCodec: const StandardMessageCodec(),
+  )
+    ..addOnPlatformViewCreatedListener(params.onPlatformViewCreated)
+    ..create();
+}
 
   Widget _glassContainer({
     required Widget child,
