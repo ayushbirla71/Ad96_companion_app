@@ -45,8 +45,15 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
       return;
     }
 
-    if (newPassword.length < 6) {
-      setState(() => _errorMsg = 'New password must be at least 6 characters.');
+    final passwordRegex = RegExp(
+      r'^(?=.*[0-9])(?=.*[!@#$%^&*])[A-Za-z\d!@#$%^&*]{8,}$',
+    );
+
+    if (!passwordRegex.hasMatch(newPassword)) {
+      setState(() {
+        _errorMsg =
+            'Password must be at least 8 characters long and include at least one number and one special character.';
+      });
       return;
     }
 
@@ -56,7 +63,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
     });
 
     try {
-      final res = await ApiService.post('/user/change_passowrd', {
+      final res = await ApiService.put('/user/change_passowrd', {
         'oldPassword': oldPassword,
         'newPassword': newPassword,
       });
