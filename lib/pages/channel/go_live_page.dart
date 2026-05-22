@@ -2253,9 +2253,267 @@ static PlatformViewController _onCreatePlatformView(
   // BUILD
   // ─────────────────────────────────────────────────────────────────────────────
 
+  // @override
+  // Widget build(BuildContext context) {
+  //   final bool lockControls = isStreaming || isPreparing || isSwitching || isLoading;
+
+  //   return PopScope(
+  //     canPop: false,
+  //     onPopInvoked: (didPop) async {
+  //       if (didPop) return;
+  //       setState(() => isStopping = true);
+  //       await _cleanupOnExit();
+  //       _navToHome();
+  //     },
+  //     child: Scaffold(
+  //       backgroundColor: Colors.black,
+  //       body: Stack(
+  //         children: [
+
+  //           // ── Camera preview (full screen) ──────────────────────────────────
+  //           Positioned.fill(child: _buildPreview()),
+
+  //           // ── Top gradient for readability ──────────────────────────────────
+  //           Positioned(
+  //             top: 0, left: 0, right: 0,
+  //             height: 140,
+  //             child: Container(
+  //               decoration: BoxDecoration(
+  //                 gradient: LinearGradient(
+  //                   begin: Alignment.topCenter,
+  //                   end: Alignment.bottomCenter,
+  //                   colors: [Colors.black.withOpacity(0.6), Colors.transparent],
+  //                 ),
+  //               ),
+  //             ),
+  //           ),
+
+  //           SafeArea(
+  //             child: Stack(
+  //               children: [
+
+  //                 // ── Top bar ─────────────────────────────────────────────────
+  //                 Positioned(
+  //                   top: 16, left: 20, right: 20,
+  //                   child: Row(
+  //                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  //                     children: [
+
+  //                       // Close + Channel name
+  //                       _glassContainer(
+  //                         borderRadius: 30,
+  //                         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+  //                         child: Row(
+  //                           children: [
+  //                             GestureDetector(
+  //                               onTap: () async {
+  //                                 setState(() => isStopping = true);
+  //                                 await _cleanupOnExit();
+  //                                 _navToHome();
+  //                               },
+  //                               child: const Icon(Icons.close_rounded, color: Colors.white, size: 20),
+  //                             ),
+  //                             const SizedBox(width: 10),
+  //                             Container(width: 1, height: 16, color: Colors.white30),
+  //                             const SizedBox(width: 10),
+  //                             Text(
+  //                               widget.channelName,
+  //                               style: const TextStyle(
+  //                                 color: Colors.white,
+  //                                 fontSize: 14,
+  //                                 fontWeight: FontWeight.w700,
+  //                               ),
+  //                             ),
+  //                           ],
+  //                         ),
+  //                       ),
+
+  //                       // LIVE badge
+  //                       if (isStreaming)
+  //                         Container(
+  //                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+  //                           decoration: BoxDecoration(
+  //                             color: appColors.red.withOpacity(0.9),
+  //                             borderRadius: BorderRadius.circular(30),
+  //                             boxShadow: [
+  //                               BoxShadow(
+  //                                 color: appColors.red.withOpacity(0.4),
+  //                                 blurRadius: 8,
+  //                                 spreadRadius: 2,
+  //                               ),
+  //                             ],
+  //                           ),
+  //                           child: Row(
+  //                             children: [
+  //                               Container(
+  //                                 width: 8, height: 8,
+  //                                 decoration: const BoxDecoration(
+  //                                   color: Colors.white,
+  //                                   shape: BoxShape.circle,
+  //                                 ),
+  //                               ),
+  //                               const SizedBox(width: 6),
+  //                               const Text(
+  //                                 "LIVE",
+  //                                 style: TextStyle(
+  //                                   color: Colors.white,
+  //                                   fontSize: 13,
+  //                                   fontWeight: FontWeight.w800,
+  //                                   letterSpacing: 0.5,
+  //                                 ),
+  //                               ),
+  //                             ],
+  //                           ),
+  //                         ),
+  //                     ],
+  //                   ),
+  //                 ),
+
+  //                 // ── Stream status ────────────────────────────────────────────
+  //                 Positioned(
+  //                   top: 70, left: 0, right: 0,
+  //                   child: Center(
+  //                     child: _glassContainer(
+  //                       borderRadius: 20,
+  //                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+  //                       child: Text(
+  //                         streamStatus,
+  //                         style: const TextStyle(
+  //                           color: Colors.white70,
+  //                           fontSize: 12,
+  //                           fontWeight: FontWeight.w600,
+  //                         ),
+  //                       ),
+  //                     ),
+  //                   ),
+  //                 ),
+
+  //                 // ── Camera controls (hidden while streaming) ─────────────────
+  //                 if (!isStreaming && !isPreparing)
+  //                   Positioned(
+  //                     right: 20,
+  //                     top: MediaQuery.of(context).size.height * 0.35,
+  //                     child: Column(
+  //                       children: [
+  //                         _controlButton(
+  //                           icon: Icon(
+  //                             isFrontCamera
+  //                                 ? Icons.camera_front_rounded
+  //                                 : Icons.camera_rear_rounded,
+  //                             color: Colors.white,
+  //                             size: 26,
+  //                           ),
+  //                           disabled: lockControls,
+  //                           onTap: _toggleCamera,
+  //                         ),
+  //                         const SizedBox(height: 20),
+  //                         _controlButton(
+  //                           icon: Icon(
+  //                             userSelectedLandscape
+  //                                 ? Icons.screen_lock_landscape_rounded
+  //                                 : Icons.screen_lock_portrait_rounded,
+  //                             color: Colors.white,
+  //                             size: 26,
+  //                           ),
+  //                           disabled: lockControls,
+  //                           onTap: _toggleOrientation,
+  //                         ),
+  //                       ],
+  //                     ),
+  //                   ),
+
+  //                 // ── Go Live / Stop button ────────────────────────────────────
+  //                 Positioned(
+  //                   bottom: 40, left: 24, right: 24,
+  //                   child: GestureDetector(
+  //                     onTap: lockControls
+  //                         ? null
+  //                         : () async {
+  //                             if (!isStreaming) {
+  //                               _isCleaned = false;
+  //                               await startCountdownFlow();
+  //                             } else {
+  //                               setState(() => isStopping = true);
+  //                               await _cleanupOnExit();
+  //                               _navToHome();
+  //                             }
+  //                           },
+  //                     child: AnimatedContainer(
+  //                       duration: const Duration(milliseconds: 300),
+  //                       height: 64,
+  //                       decoration: BoxDecoration(
+  //                         borderRadius: BorderRadius.circular(32),
+  //                         gradient: LinearGradient(
+  //                           colors: isStreaming
+  //                               ? [appColors.red, const Color(0xFF991B1B)]
+  //                               : [appColors.accent, const Color(0xFF1E40AF)],
+  //                           begin: Alignment.topLeft,
+  //                           end: Alignment.bottomRight,
+  //                         ),
+  //                         boxShadow: [
+  //                           BoxShadow(
+  //                             color: (isStreaming ? appColors.red : appColors.accent)
+  //                                 .withOpacity(0.4),
+  //                             blurRadius: 16,
+  //                             offset: const Offset(0, 6),
+  //                           ),
+  //                         ],
+  //                       ),
+  //                       child: Center(
+  //                         child: isStopping
+  //                             ? const SizedBox(
+  //                                 height: 24, width: 24,
+  //                                 child: CircularProgressIndicator(
+  //                                   strokeWidth: 3, color: Colors.white),
+  //                               )
+  //                             : Text(
+  //                                 isStreaming ? "STOP STREAM" : "GO LIVE",
+  //                                 style: const TextStyle(
+  //                                   color: Colors.white,
+  //                                   fontSize: 16,
+  //                                   fontWeight: FontWeight.w800,
+  //                                   letterSpacing: 1.2,
+  //                                 ),
+  //                               ),
+  //                       ),
+  //                     ),
+  //                   ),
+  //                 ),
+
+  //                 // ── Countdown overlay ────────────────────────────────────────
+  //                 if (isPreparing)
+  //                   Positioned.fill(
+  //                     child: Container(
+  //                       color: Colors.black.withOpacity(0.5),
+  //                       child: Center(
+  //                         child: Text(
+  //                           "$countdown",
+  //                           style: const TextStyle(
+  //                             fontSize: 120,
+  //                             color: Colors.white,
+  //                             fontWeight: FontWeight.w800,
+  //                           ),
+  //                         ),
+  //                       ),
+  //                     ),
+  //                   ),
+
+  //               ],
+  //             ),
+  //           ),
+  //         ],
+  //       ),
+  //     ),
+  //   );
+  // }
+
+
+
   @override
   Widget build(BuildContext context) {
-    final bool lockControls = isStreaming || isPreparing || isSwitching || isLoading;
+    // FIX: Removed 'isStreaming' from the lock. 
+    // We want the button to remain interactive while the stream is live.
+    final bool lockControls = isPreparing || isSwitching || isLoading;
 
     return PopScope(
       canPop: false,
@@ -2269,11 +2527,9 @@ static PlatformViewController _onCreatePlatformView(
         backgroundColor: Colors.black,
         body: Stack(
           children: [
-
-            // ── Camera preview (full screen) ──────────────────────────────────
             Positioned.fill(child: _buildPreview()),
 
-            // ── Top gradient for readability ──────────────────────────────────
+            // ── Top gradient ──────────────────────────────────────────
             Positioned(
               top: 0, left: 0, right: 0,
               height: 140,
@@ -2291,15 +2547,12 @@ static PlatformViewController _onCreatePlatformView(
             SafeArea(
               child: Stack(
                 children: [
-
-                  // ── Top bar ─────────────────────────────────────────────────
+                  // ── Top bar ─────────────────────────────────────────
                   Positioned(
                     top: 16, left: 20, right: 20,
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-
-                        // Close + Channel name
                         _glassContainer(
                           borderRadius: 30,
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
@@ -2316,52 +2569,22 @@ static PlatformViewController _onCreatePlatformView(
                               const SizedBox(width: 10),
                               Container(width: 1, height: 16, color: Colors.white30),
                               const SizedBox(width: 10),
-                              Text(
-                                widget.channelName,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
+                              Text(widget.channelName, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w700)),
                             ],
                           ),
                         ),
-
-                        // LIVE badge
                         if (isStreaming)
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                             decoration: BoxDecoration(
                               color: appColors.red.withOpacity(0.9),
                               borderRadius: BorderRadius.circular(30),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: appColors.red.withOpacity(0.4),
-                                  blurRadius: 8,
-                                  spreadRadius: 2,
-                                ),
-                              ],
                             ),
-                            child: Row(
+                            child: const Row(
                               children: [
-                                Container(
-                                  width: 8, height: 8,
-                                  decoration: const BoxDecoration(
-                                    color: Colors.white,
-                                    shape: BoxShape.circle,
-                                  ),
-                                ),
-                                const SizedBox(width: 6),
-                                const Text(
-                                  "LIVE",
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w800,
-                                    letterSpacing: 0.5,
-                                  ),
-                                ),
+                                Icon(Icons.fiber_manual_record, color: Colors.white, size: 10),
+                                SizedBox(width: 6),
+                                Text("LIVE", style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w800)),
                               ],
                             ),
                           ),
@@ -2374,16 +2597,8 @@ static PlatformViewController _onCreatePlatformView(
                     top: 70, left: 0, right: 0,
                     child: Center(
                       child: _glassContainer(
-                        borderRadius: 20,
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                        child: Text(
-                          streamStatus,
-                          style: const TextStyle(
-                            color: Colors.white70,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
+                        child: Text(streamStatus, style: const TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w600)),
                       ),
                     ),
                   ),
@@ -2396,25 +2611,13 @@ static PlatformViewController _onCreatePlatformView(
                       child: Column(
                         children: [
                           _controlButton(
-                            icon: Icon(
-                              isFrontCamera
-                                  ? Icons.camera_front_rounded
-                                  : Icons.camera_rear_rounded,
-                              color: Colors.white,
-                              size: 26,
-                            ),
+                            icon: Icon(isFrontCamera ? Icons.camera_front_rounded : Icons.camera_rear_rounded, color: Colors.white, size: 26),
                             disabled: lockControls,
                             onTap: _toggleCamera,
                           ),
                           const SizedBox(height: 20),
                           _controlButton(
-                            icon: Icon(
-                              userSelectedLandscape
-                                  ? Icons.screen_lock_landscape_rounded
-                                  : Icons.screen_lock_portrait_rounded,
-                              color: Colors.white,
-                              size: 26,
-                            ),
+                            icon: Icon(userSelectedLandscape ? Icons.screen_lock_landscape_rounded : Icons.screen_lock_portrait_rounded, color: Colors.white, size: 26),
                             disabled: lockControls,
                             onTap: _toggleOrientation,
                           ),
@@ -2422,10 +2625,11 @@ static PlatformViewController _onCreatePlatformView(
                       ),
                     ),
 
-                  // ── Go Live / Stop button ────────────────────────────────────
+                  // ── GO LIVE / STOP BUTTON ──────────────────────────────────
                   Positioned(
                     bottom: 40, left: 24, right: 24,
                     child: GestureDetector(
+                      // FIX: Only lock when loading/preparing, NOT while live
                       onTap: lockControls
                           ? null
                           : () async {
@@ -2433,6 +2637,7 @@ static PlatformViewController _onCreatePlatformView(
                                 _isCleaned = false;
                                 await startCountdownFlow();
                               } else {
+                                // Unified Stop Logic
                                 setState(() => isStopping = true);
                                 await _cleanupOnExit();
                                 _navToHome();
@@ -2447,57 +2652,26 @@ static PlatformViewController _onCreatePlatformView(
                             colors: isStreaming
                                 ? [appColors.red, const Color(0xFF991B1B)]
                                 : [appColors.accent, const Color(0xFF1E40AF)],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
                           ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: (isStreaming ? appColors.red : appColors.accent)
-                                  .withOpacity(0.4),
-                              blurRadius: 16,
-                              offset: const Offset(0, 6),
-                            ),
-                          ],
                         ),
                         child: Center(
                           child: isStopping
-                              ? const SizedBox(
-                                  height: 24, width: 24,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 3, color: Colors.white),
-                                )
-                              : Text(
-                                  isStreaming ? "STOP STREAM" : "GO LIVE",
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w800,
-                                    letterSpacing: 1.2,
-                                  ),
-                                ),
+                              ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(strokeWidth: 3, color: Colors.white))
+                              : Text(isStreaming ? "STOP STREAM" : "GO LIVE",
+                                  style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800, letterSpacing: 1.2)),
                         ),
                       ),
                     ),
                   ),
 
-                  // ── Countdown overlay ────────────────────────────────────────
+                  // ── Countdown ────────────────────────────────────────
                   if (isPreparing)
                     Positioned.fill(
                       child: Container(
                         color: Colors.black.withOpacity(0.5),
-                        child: Center(
-                          child: Text(
-                            "$countdown",
-                            style: const TextStyle(
-                              fontSize: 120,
-                              color: Colors.white,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                        ),
+                        child: Center(child: Text("$countdown", style: const TextStyle(fontSize: 120, color: Colors.white, fontWeight: FontWeight.w800))),
                       ),
                     ),
-
                 ],
               ),
             ),
