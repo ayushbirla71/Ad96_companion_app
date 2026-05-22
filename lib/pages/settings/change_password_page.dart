@@ -352,7 +352,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      'Password must be at least 6 characters long.',
+                      'Password must be at least 8 characters long and include at least one number and one special character.',
                       style: TextStyle(
                         color: appColors.accent,
                         fontSize: 12,
