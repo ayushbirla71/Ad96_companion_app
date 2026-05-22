@@ -25,7 +25,7 @@ class CameraPreviewView(
         (sv.parent as? android.view.ViewGroup)?.removeView(sv)
 
         if (isLandscape) {
-            // ── LANDSCAPE: original working approach ──────────────────────────
+            // ── LANDSCAPE ──────────────────────────────────────────────────────
             // Camera outputs 1280x720 landscape → display as-is with 16:9 ratio
             sv.rotation = 0f
 
@@ -45,40 +45,47 @@ class CameraPreviewView(
                     Gravity.CENTER
                 )
             )
-            Log.d("CameraPreviewView", "Landscape mode — AspectRatio 16:9")
-
         } else {
-            // ── PORTRAIT: rotate sensor output 90° to fill portrait screen ───
-            // Camera outputs 1280x720 landscape frames.
-            // We render SurfaceView at swapped dims then rotate 90°
-            // so the result looks like a proper portrait camera preview.
-            val metrics     = context.resources.displayMetrics
-            val screenW     = metrics.widthPixels
-            val screenH     = metrics.heightPixels
+            // ── PORTRAIT ───────────────────────────────────────────────────────
+            val metrics = context.resources.displayMetrics
+            val screenW = metrics.widthPixels
+            val screenH = metrics.heightPixels
 
-            // After 90° rotation we want 9:16 portrait fill
-            // Before rotation (landscape dims): height=screenW, width=screenH*(9/16)
-            // But we want to fill width=screenW so:
-            // svW (before rot) = screenH  → becomes height after rot
-            // svH (before rot) = screenW  → becomes width after rot
-            val svW = (screenH * (9f / 16f)).toInt() // landscape width before rotation
-            val svH = screenW                          // landscape height before rotation
+            // 1. Enforce a strict 16:9 ratio to prevent ANY stretching
+            val cameraAspect = 16f / 9f
+
+            // 2. We want the rotated preview to fill the portrait screen.
+            // After 90 deg rotation: visualWidth = svH, visualHeight = svW
+            var svH = screenW // Try fitting to the screen's width first
+            var svW = (svH * cameraAspect).toInt()
+
+            // 3. If fitting to width leaves black bars at the top/bottom, 
+            // we scale it up to fit the height instead (Center-Crop)
+            if (svW < screenH) {
+                svW = screenH
+                svH = (svW / cameraAspect).toInt()
+            }
 
             val params = FrameLayout.LayoutParams(svW, svH)
             params.gravity = Gravity.CENTER
 
-            // Pivot at center of the SurfaceView before rotation
+            // 4. Pivot at the exact center of the unrotated SurfaceView
             sv.pivotX   = svW / 2f
             sv.pivotY   = svH / 2f
             sv.rotation = 90f
 
             Log.d("CameraPreviewView",
-                "Portrait mode — sv before rotation: ${svW}x${svH} → after 90°: ${svH}x${svW}")
+                "Portrait mode — Perfect 16:9 Layout: ${svW}x${svH} (Rotated to fill screen)")
 
             container.addView(sv, params)
         }
     }
 
-    override fun getView(): View = container
-    override fun dispose() {}
+    override fun getView(): View {
+        return container
+    }
+
+    override fun dispose() {
+        // Handled by StreamManager cleanup
+    }
 }

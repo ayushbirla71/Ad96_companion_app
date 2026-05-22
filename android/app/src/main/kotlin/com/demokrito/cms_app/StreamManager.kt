@@ -10,6 +10,7 @@ import android.util.Log
 import android.view.Surface
 import android.view.SurfaceHolder
 import android.view.SurfaceView
+import java.nio.ByteBuffer
 import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
 
@@ -35,7 +36,6 @@ class StreamManager private constructor() {
     private var cameraDevice: CameraDevice? = null
     private var captureSession: CameraCaptureSession? = null
 
-    // Use a single lock object for all camera state changes
     private val cameraStateLock = Any()
     private val cameraOpenLock = Semaphore(1)
 
@@ -52,12 +52,11 @@ class StreamManager private constructor() {
     private var audioRecord: AudioRecord? = null
     private var encoderSurface: Surface? = null
 
-    private val rtmpClient = RtmpClient()
+    val rtmpClient = RtmpClient() // Made public so loops can read isConnected
     private var isStreaming = false
     private var audioThread: Thread? = null
     private var videoThread: Thread? = null
 
-    // Guards against surfaceDestroyed racing with onConfigured
     @Volatile private var surfaceReady = false
     @Volatile private var isCameraClosing = false
 
@@ -80,7 +79,6 @@ class StreamManager private constructor() {
 
             override fun surfaceChanged(holder: SurfaceHolder, format: Int, w: Int, h: Int) {
                 Log.d(TAG, "surfaceChanged: ${w}x${h}")
-                // Surface dimensions changed — restart session only if camera is open
                 if (surfaceReady && cameraDevice != null) {
                     restartCaptureSession()
                 }
@@ -102,8 +100,9 @@ class StreamManager private constructor() {
     fun startPreview(isFront: Boolean, landscape: Boolean) {
         isFrontCamera = isFront
         isLandscape   = landscape
-        // Do NOT call setFixedSize here — let the view fill naturally
-        // and use TEMPLATE_RECORD which auto-selects best output size
+        
+        // FIX: Force the UI buffer to match the physical sensor size exactly.
+        surfaceView.holder.setFixedSize(1280, 720)
         openCameraIfReady()
     }
 
@@ -118,6 +117,10 @@ class StreamManager private constructor() {
     fun setOrientation(landscape: Boolean) {
         isLandscape = landscape
         isCameraClosing = true
+        
+        // FIX: Ensure orientation changes don't break the buffer size
+        surfaceView.holder.setFixedSize(1280, 720)
+        
         safeCloseCamera()
         isCameraClosing = false
         openCameraIfReady()
@@ -138,9 +141,19 @@ class StreamManager private constructor() {
 
     fun stopStream() {
         if (!isStreaming) return
-        isStreaming = false
-        audioThread?.interrupt()
-        videoThread?.interrupt()
+        isStreaming = false // Signal loops to stop
+
+        // FIX: Wait for background threads to cleanly finish their current cycle
+        try {
+            videoThread?.join(500)
+            audioThread?.join(500)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error waiting for threads: ${e.message}")
+        }
+
+        videoThread = null
+        audioThread = null
+
         rtmpClient.disconnect()
         releaseEncoders()
     }
@@ -171,7 +184,6 @@ class StreamManager private constructor() {
                     cameraOpenLock.release()
                     synchronized(cameraStateLock) {
                         if (isCameraClosing) {
-                            // Surface was destroyed while we were opening — abort
                             camera.close()
                             return
                         }
@@ -228,36 +240,35 @@ class StreamManager private constructor() {
                     targets,
                     object : CameraCaptureSession.StateCallback() {
                         override fun onConfigured(session: CameraCaptureSession) {
-    synchronized(cameraStateLock) {
-        if (isCameraClosing || !surfaceReady || cameraDevice == null) {
-            Log.d(TAG, "Session configured but camera already closing — aborting")
-            session.close()
-            return
-        }
-        captureSession = session
-    }
+                            synchronized(cameraStateLock) {
+                                if (isCameraClosing || !surfaceReady || cameraDevice == null) {
+                                    Log.d(TAG, "Session configured but camera already closing — aborting")
+                                    session.close()
+                                    return
+                                }
+                                captureSession = session
+                            }
 
-    try {
-        // ↓ REPLACE your existing val req = ... block with this
-        val req = cameraDevice!!.createCaptureRequest(
-            CameraDevice.TEMPLATE_RECORD
-        ).apply {
-            addTarget(holderSurface)
-            encoderSurface?.let { addTarget(it) }
-            set(CaptureRequest.CONTROL_MODE, CaptureRequest.CONTROL_MODE_AUTO)
-            set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON)
-            set(CaptureRequest.CONTROL_AF_MODE,
-                CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO)
-            // Rotation hint to camera HAL
-            val rotation = if (isLandscape) 0 else 90
-            set(CaptureRequest.JPEG_ORIENTATION, rotation)
-        }
-        session.setRepeatingRequest(req.build(), null, cameraHandler)
-        Log.d(TAG, "Capture session started ✓")
-    } catch (e: Exception) {
-        Log.e(TAG, "setRepeatingRequest failed: ${e.message}")
-    }
-}
+                            try {
+                                val req = cameraDevice!!.createCaptureRequest(
+                                    CameraDevice.TEMPLATE_RECORD
+                                ).apply {
+                                    addTarget(holderSurface)
+                                    encoderSurface?.let { addTarget(it) }
+                                    set(CaptureRequest.CONTROL_MODE, CaptureRequest.CONTROL_MODE_AUTO)
+                                    set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON)
+                                    set(CaptureRequest.CONTROL_AF_MODE,
+                                        CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO)
+                                    
+                                    val rotation = if (isLandscape) 0 else 90
+                                    set(CaptureRequest.JPEG_ORIENTATION, rotation)
+                                }
+                                session.setRepeatingRequest(req.build(), null, cameraHandler)
+                                Log.d(TAG, "Capture session started ✓")
+                            } catch (e: Exception) {
+                                Log.e(TAG, "setRepeatingRequest failed: ${e.message}")
+                            }
+                        }
 
                         override fun onConfigureFailed(session: CameraCaptureSession) {
                             Log.e(TAG, "Session configure failed")
@@ -311,7 +322,10 @@ class StreamManager private constructor() {
     // ─────────────────────────────────────────────────────────────────────────
 
     private fun setupEncoders() {
-        val (w, h) = if (isLandscape) Pair(1280, 720) else Pair(720, 1280)
+        // FIX: Always use landscape dimensions for the hardware encoder buffer.
+        val w = 1280
+        val h = 720 
+        
         val videoFmt = MediaFormat.createVideoFormat(VIDEO_MIME, w, h).apply {
             setInteger(MediaFormat.KEY_BIT_RATE, VIDEO_BITRATE)
             setInteger(MediaFormat.KEY_FRAME_RATE, FPS)
@@ -343,7 +357,6 @@ class StreamManager private constructor() {
             start()
         }
 
-        // Reopen session to include encoder surface
         restartCaptureSession()
     }
 
@@ -365,33 +378,47 @@ class StreamManager private constructor() {
         var startPts = -1L
 
         videoThread = Thread {
-            while (isStreaming) {
-                val enc = videoEncoder ?: break
-                val idx = enc.dequeueOutputBuffer(info, 10_000)
-                when {
-                    idx == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED -> {
-                        val fmt = enc.outputFormat
-                        sps = fmt.getByteBuffer("csd-0")
-                            ?.let { ByteArray(it.remaining()).also { b -> it.get(b) } }
-                        pps = fmt.getByteBuffer("csd-1")
-                            ?.let { ByteArray(it.remaining()).also { b -> it.get(b) } }
-                        if (sps != null && pps != null)
-                            rtmpClient.sendAvcSequenceHeader(sps!!, pps!!)
-                    }
-                    idx >= 0 -> {
-                        val buf = enc.getOutputBuffer(idx)
-                        val isConfig = info.flags and MediaCodec.BUFFER_FLAG_CODEC_CONFIG != 0
-                        if (!isConfig && buf != null) {
-                            if (startPts < 0) startPts = info.presentationTimeUs
-                            val pts = (info.presentationTimeUs - startPts) / 1000
-                            val data = ByteArray(info.size)
-                            buf.position(info.offset); buf.get(data)
-                            val isKey = info.flags and MediaCodec.BUFFER_FLAG_KEY_FRAME != 0
-                            rtmpClient.sendVideoData(data, pts, isKey)
+            try {
+                // FIX: Stop looping if the socket connection dies
+                while (isStreaming && rtmpClient.isConnected) {
+                    val enc = videoEncoder ?: break
+                    val idx = enc.dequeueOutputBuffer(info, 10_000)
+                    when {
+                        idx == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED -> {
+                            val fmt = enc.outputFormat
+                            // FIX: Strip Annex-B start codes before sending to the server
+                            sps = fmt.getByteBuffer("csd-0")?.let { extractNalu(it) }
+                            pps = fmt.getByteBuffer("csd-1")?.let { extractNalu(it) }
+                            
+                            if (sps != null && pps != null)
+                                rtmpClient.sendAvcSequenceHeader(sps!!, pps!!)
                         }
-                        enc.releaseOutputBuffer(idx, false)
+                        idx >= 0 -> {
+                            val buf = enc.getOutputBuffer(idx)
+                            val isConfig = info.flags and MediaCodec.BUFFER_FLAG_CODEC_CONFIG != 0
+                            
+                            if (!isConfig && buf != null) {
+                                // FIX: Never send a video frame before the SPS/PPS headers
+                                if (sps == null || pps == null) {
+                                    enc.releaseOutputBuffer(idx, false)
+                                    continue
+                                }
+
+                                if (startPts < 0) startPts = info.presentationTimeUs
+                                val pts = (info.presentationTimeUs - startPts) / 1000
+                                val data = ByteArray(info.size)
+                                buf.position(info.offset); buf.get(data)
+                                val isKey = info.flags and MediaCodec.BUFFER_FLAG_KEY_FRAME != 0
+                                rtmpClient.sendVideoData(data, pts, isKey)
+                            }
+                            enc.releaseOutputBuffer(idx, false)
+                        }
                     }
                 }
+            } catch (e: IllegalStateException) {
+                Log.d(TAG, "Video encoder released during shutdown")
+            } catch (e: Exception) {
+                Log.e(TAG, "Video loop error: ${e.message}")
             }
         }.also { it.start() }
     }
@@ -404,34 +431,58 @@ class StreamManager private constructor() {
         var startPts = -1L
 
         audioThread = Thread {
-            while (isStreaming) {
-                val enc = audioEncoder ?: break
-                val rec = audioRecord ?: break
-                val inIdx = enc.dequeueInputBuffer(10_000)
-                if (inIdx >= 0) {
-                    val inBuf = enc.getInputBuffer(inIdx) ?: continue
-                    val read = rec.read(pcm, 0, pcm.size)
-                    if (read > 0) {
-                        inBuf.clear(); inBuf.put(pcm, 0, read)
-                        enc.queueInputBuffer(inIdx, 0, read,
-                            System.nanoTime() / 1000, 0)
+            try {
+                // FIX: Stop looping if the socket connection dies
+                while (isStreaming && rtmpClient.isConnected) {
+                    val enc = audioEncoder ?: break
+                    val rec = audioRecord ?: break
+                    val inIdx = enc.dequeueInputBuffer(10_000)
+                    if (inIdx >= 0) {
+                        val inBuf = enc.getInputBuffer(inIdx) ?: continue
+                        val read = rec.read(pcm, 0, pcm.size)
+                        if (read > 0) {
+                            inBuf.clear()
+                            inBuf.put(pcm, 0, read)
+                            enc.queueInputBuffer(inIdx, 0, read, System.nanoTime() / 1000, 0)
+                        }
+                    }
+                    val outIdx = enc.dequeueOutputBuffer(info, 0)
+                    if (outIdx >= 0) {
+                        val outBuf = enc.getOutputBuffer(outIdx)
+                        val isConfig = info.flags and MediaCodec.BUFFER_FLAG_CODEC_CONFIG != 0
+                        if (!isConfig && outBuf != null) {
+                            if (startPts < 0) startPts = info.presentationTimeUs
+                            val pts = (info.presentationTimeUs - startPts) / 1000
+                            val data = ByteArray(info.size)
+                            outBuf.position(info.offset); outBuf.get(data)
+                            rtmpClient.sendAudioData(data, pts)
+                        }
+                        enc.releaseOutputBuffer(outIdx, false)
                     }
                 }
-                val outIdx = enc.dequeueOutputBuffer(info, 0)
-                if (outIdx >= 0) {
-                    val outBuf = enc.getOutputBuffer(outIdx)
-                    val isConfig = info.flags and MediaCodec.BUFFER_FLAG_CODEC_CONFIG != 0
-                    if (!isConfig && outBuf != null) {
-                        if (startPts < 0) startPts = info.presentationTimeUs
-                        val pts = (info.presentationTimeUs - startPts) / 1000
-                        val data = ByteArray(info.size)
-                        outBuf.position(info.offset); outBuf.get(data)
-                        rtmpClient.sendAudioData(data, pts)
-                    }
-                    enc.releaseOutputBuffer(outIdx, false)
-                }
+            } catch (e: IllegalStateException) {
+                Log.d(TAG, "Audio encoder released during shutdown")
+            } catch (e: Exception) {
+                Log.e(TAG, "Audio loop error: ${e.message}")
+            } finally {
+                try { audioRecord?.stop() } catch (e: Exception) {}
             }
-            audioRecord?.stop()
         }.also { it.start() }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // HELPERS
+    // ─────────────────────────────────────────────────────────────────────────
+
+    private fun extractNalu(buffer: ByteBuffer): ByteArray {
+        val bytes = ByteArray(buffer.remaining())
+        buffer.get(bytes)
+        var start = 0
+        if (bytes.size > 4 && bytes[0].toInt() == 0 && bytes[1].toInt() == 0 && bytes[2].toInt() == 0 && bytes[3].toInt() == 1) {
+            start = 4
+        } else if (bytes.size > 3 && bytes[0].toInt() == 0 && bytes[1].toInt() == 0 && bytes[2].toInt() == 1) {
+            start = 3
+        }
+        return bytes.copyOfRange(start, bytes.size)
     }
 }

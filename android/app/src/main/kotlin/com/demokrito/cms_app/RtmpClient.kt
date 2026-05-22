@@ -8,7 +8,13 @@ class RtmpClient {
     private var socket: Socket? = null
     private var output: DataOutputStream? = null
     private var input: DataInputStream? = null
-    private var isConnected = false
+    
+    // FIX: Expose isConnected so the loops can read it
+    var isConnected = false
+        private set
+
+    // FIX: Lock to prevent audio/video threads from corrupting socket data
+    private val writeLock = Any()
 
     private val chunkSize = 128
     private val streamId = 1
@@ -47,20 +53,26 @@ class RtmpClient {
         }
     }
 
-    fun sendVideoData(data: ByteArray, pts: Long, isKeyFrame: Boolean) {
+fun sendVideoData(data: ByteArray, pts: Long, isKeyFrame: Boolean) {
         if (!isConnected) return
         try {
+            // FIX: Convert raw Android Annex-B frame to RTMP AVCC format
+            val avccData = annexBtoAvcc(data) 
+            
             val frameType = if (isKeyFrame) 0x10 else 0x20
-            val payload = ByteArray(data.size + 5)
+            val payload = ByteArray(avccData.size + 5)
             payload[0] = (frameType or 0x07).toByte()
             payload[1] = 0x01
             payload[2] = 0x00
             payload[3] = 0x00
             payload[4] = 0x00
-            System.arraycopy(data, 0, payload, 5, data.size)
+            
+            // Copy the newly formatted avccData instead of the raw data
+            System.arraycopy(avccData, 0, payload, 5, avccData.size)
             sendRtmpPacket(0x09, pts, payload)
         } catch (e: Exception) {
             Log.e(TAG, "Send video error: ${e.message}")
+            isConnected = false
         }
     }
 
@@ -74,6 +86,7 @@ class RtmpClient {
             sendRtmpPacket(0x08, pts, payload)
         } catch (e: Exception) {
             Log.e(TAG, "Send audio error: ${e.message}")
+            isConnected = false // FIX: Stop loops if pipe breaks
         }
     }
 
@@ -84,6 +97,7 @@ class RtmpClient {
             sendRtmpPacket(0x09, 0L, payload)
         } catch (e: Exception) {
             Log.e(TAG, "Send SPS/PPS error: ${e.message}")
+            isConnected = false
         }
     }
 
@@ -94,6 +108,7 @@ class RtmpClient {
             sendRtmpPacket(0x08, 0L, payload)
         } catch (e: Exception) {
             Log.e(TAG, "Send AAC header error: ${e.message}")
+            isConnected = false
         }
     }
 
@@ -185,28 +200,31 @@ class RtmpClient {
         chunkStreamId: Int = this.chunkStreamId,
         streamId: Int = this.streamId,
     ) {
-        val out = output ?: return
-        var offset = 0
+        // FIX: Synchronize the socket to prevent audio/video data corruption
+        synchronized(writeLock) {
+            val out = output ?: return
+            var offset = 0
 
-        while (offset < payload.size) {
-            val end = minOf(offset + chunkSize, payload.size)
-            val chunkPayload = payload.copyOfRange(offset, end)
-            val isFirst = offset == 0
+            while (offset < payload.size) {
+                val end = minOf(offset + chunkSize, payload.size)
+                val chunkPayload = payload.copyOfRange(offset, end)
+                val isFirst = offset == 0
 
-            if (isFirst) {
-                out.writeByte(chunkStreamId and 0x3F)
-                writeUInt24(out, timestamp.toInt() and 0xFFFFFF)
-                writeUInt24(out, payload.size)
-                out.writeByte(messageType)
-                writeUInt32LE(out, streamId)
-            } else {
-                out.writeByte(0xC0 or (chunkStreamId and 0x3F))
+                if (isFirst) {
+                    out.writeByte(chunkStreamId and 0x3F)
+                    writeUInt24(out, timestamp.toInt() and 0xFFFFFF)
+                    writeUInt24(out, payload.size)
+                    out.writeByte(messageType)
+                    writeUInt32LE(out, streamId)
+                } else {
+                    out.writeByte(0xC0 or (chunkStreamId and 0x3F))
+                }
+
+                out.write(chunkPayload)
+                offset += chunkSize
             }
-
-            out.write(chunkPayload)
-            offset += chunkSize
+            out.flush()
         }
-        out.flush()
     }
 
     private fun readResponses(count: Int) {
@@ -290,7 +308,11 @@ class RtmpClient {
             16000 -> 8; 12000 -> 9; 11025 -> 10; 8000 -> 11
             else -> 4
         }
-        val word = (0x10 shl 11) or (rateIndex shl 7) or (channels shl 3)
+        
+        // FIX: AAC-LC Audio Object Type must be 2. 
+        val audioObjectType = 2 
+        val word = (audioObjectType shl 11) or (rateIndex shl 7) or (channels shl 3)
+        
         return byteArrayOf(
             0xAF.toByte(),
             0x00,
@@ -325,5 +347,44 @@ class RtmpClient {
             "app"       to (pathParts?.getOrNull(0) ?: "live"),
             "streamKey" to (pathParts?.getOrNull(1) ?: "")
         )
+    }
+
+
+
+
+
+
+
+    private fun annexBtoAvcc(annexB: ByteArray): ByteArray {
+        val out = ByteArrayOutputStream()
+        val dataStream = DataOutputStream(out)
+        var i = 0
+        while (i < annexB.size - 3) {
+            var startCodeLen = 0
+            if (annexB[i].toInt() == 0 && annexB[i+1].toInt() == 0 && annexB[i+2].toInt() == 0 && annexB[i+3].toInt() == 1) {
+                startCodeLen = 4
+            } else if (annexB[i].toInt() == 0 && annexB[i+1].toInt() == 0 && annexB[i+2].toInt() == 1) {
+                startCodeLen = 3
+            }
+
+            if (startCodeLen > 0) {
+                // Find the next start code to calculate the length of the current NALU
+                var nextStart = annexB.size
+                for (j in i + startCodeLen until annexB.size - 2) {
+                    if (annexB[j].toInt() == 0 && annexB[j+1].toInt() == 0 && 
+                       (annexB[j+2].toInt() == 1 || (j + 3 < annexB.size && annexB[j+2].toInt() == 0 && annexB[j+3].toInt() == 1))) {
+                        nextStart = j
+                        break
+                    }
+                }
+                val naluLen = nextStart - (i + startCodeLen)
+                dataStream.writeInt(naluLen) // Write the 4-byte length
+                dataStream.write(annexB, i + startCodeLen, naluLen) // Write the data
+                i = nextStart
+            } else {
+                i++
+            }
+        }
+        return out.toByteArray()
     }
 }
