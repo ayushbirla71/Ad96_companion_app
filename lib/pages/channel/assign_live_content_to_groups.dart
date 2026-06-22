@@ -1111,6 +1111,7 @@ import '../../models/liveContent.dart';
 
 import 'select_method_to_go_live.dart';
 import 'package:cms_app/theme/app_colors.dart';
+import 'dart:convert';
 
 class AssignLiveContentToGroups extends StatefulWidget {
   const AssignLiveContentToGroups({super.key});
@@ -1135,10 +1136,38 @@ class _AssignLiveContentToGroupsState extends State<AssignLiveContentToGroups> {
 
   bool showGroups = false;
 
+  bool showLayouts = false;
+
+  String? selectedLayoutId;
+  Map<String, dynamic>? selectedLayout;
+
+  List<dynamic> layouts = [];
+  bool layoutsLoading = false;
+
   @override
   void initState() {
     super.initState();
     initData();
+  }
+
+  Future<void> loadLayouts() async {
+    try {
+      setState(() => layoutsLoading = true);
+
+      final response = await ApiService.get(
+        "/layout/templates?is_live_content_template=true",
+      );
+
+      final jsonResponse = jsonDecode(response.body);
+
+      setState(() {
+        layouts = jsonResponse["data"] ?? [];
+        layoutsLoading = false;
+      });
+    } catch (e) {
+      setState(() => layoutsLoading = false);
+      _err("Failed to load layouts");
+    }
   }
 
   /// INIT DATA
@@ -1244,7 +1273,7 @@ class _AssignLiveContentToGroupsState extends State<AssignLiveContentToGroups> {
     final selectedGroups = groupProvider.groups
         .where((g) => selectedGroupIds.contains(g.id))
         .toList();
-
+    print("Passing Layout ID: $selectedLayoutId");
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -1252,6 +1281,7 @@ class _AssignLiveContentToGroupsState extends State<AssignLiveContentToGroups> {
           channelId: providerContent!.channel_id,
           contentId: providerContent!.id,
           selectedGroups: selectedGroups,
+          layoutId: selectedLayoutId, // optional
         ),
       ),
     );
@@ -1330,7 +1360,12 @@ class _AssignLiveContentToGroupsState extends State<AssignLiveContentToGroups> {
                 onPressed: () => Navigator.pop(context),
               ),
         title: Text(
-          showGroups ? 'Assign Channel' : 'Select Live Content',
+          // showGroups ? 'Assign Channel' : 'Select Live Content',
+          showGroups
+              ? 'Assign Channel'
+              : showLayouts
+              ? 'Select Layout'
+              : 'Select Live Content',
           style: TextStyle(
             color: appColors.textPrimary,
             fontSize: 15,
@@ -1343,7 +1378,12 @@ class _AssignLiveContentToGroupsState extends State<AssignLiveContentToGroups> {
           child: Container(height: 1, color: appColors.border),
         ),
       ),
-      body: showGroups ? buildGroupStep() : buildContentStep(),
+      // body: showGroups ? buildGroupStep() : buildContentStep(),
+      body: showGroups
+          ? buildGroupStep()
+          : showLayouts
+          ? buildLayoutStep()
+          : buildContentStep(),
     );
   }
 
@@ -1499,12 +1539,21 @@ class _AssignLiveContentToGroupsState extends State<AssignLiveContentToGroups> {
           child: SizedBox(
             width: double.infinity,
             child: FilledButton.icon(
-              onPressed: () {
+              onPressed: () async {
                 if (providerContent == null) {
                   _err("Please select a live content");
                   return;
                 }
-                setState(() => showGroups = true);
+                // setState(() => showGroups = true);
+                try {
+                  await loadLayouts();
+
+                  setState(() {
+                    showLayouts = true;
+                  });
+                } catch (e) {
+                  _err("Failed to load layouts");
+                }
               },
               icon: const Icon(Icons.arrow_forward_rounded, size: 17),
               label: const Text('Continue'),
@@ -1528,7 +1577,184 @@ class _AssignLiveContentToGroupsState extends State<AssignLiveContentToGroups> {
   }
 
   /// =========================
-  /// STEP 2: GROUP SELECTION
+  /// STEP 2: Layout SELECTION
+  /// =========================
+  Widget buildLayoutStep() {
+    return Column(
+      children: [
+        _stepBanner(
+          step: '02',
+          title: 'Select Layout',
+          subtitle: 'Choose a layout template (optional)',
+          icon: Icons.dashboard_customize_rounded,
+        ),
+
+        Expanded(
+          child: layoutsLoading
+              ? const Center(child: CircularProgressIndicator())
+              : ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: layouts.length,
+                  itemBuilder: (_, index) {
+                    final layout = layouts[index];
+
+                    final isSelected = selectedLayoutId == layout["layout_id"];
+
+                    return GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          selectedLayoutId = layout["layout_id"];
+                          selectedLayout = layout;
+                        });
+                      },
+                      child: Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: appColors.surface,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: isSelected
+                                ? appColors.accent
+                                : appColors.border,
+                            width: isSelected ? 2 : 1,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.dashboard_customize_rounded,
+                              color: isSelected
+                                  ? appColors.accent
+                                  : appColors.textMuted,
+                            ),
+                            const SizedBox(width: 12),
+
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    layout["name"] ?? "",
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+
+                                  const SizedBox(height: 4),
+
+                                  Text(
+                                    "${layout["orientation"]} • ${layout["resolution"]}",
+                                  ),
+
+                                  Text(
+                                    "${(layout["zones"] as List).length} Zones",
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            Radio<String>(
+                              value: layout["layout_id"],
+                              groupValue: selectedLayoutId,
+                              onChanged: (value) {
+                                setState(() {
+                                  selectedLayoutId = value;
+                                  selectedLayout = layout;
+                                });
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+        ),
+
+        Container(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+          decoration: BoxDecoration(
+            color: appColors.surface,
+            border: Border(top: BorderSide(color: appColors.border)),
+            boxShadow: [
+              BoxShadow(
+                color: appColors.shadow,
+                blurRadius: 8,
+                offset: const Offset(0, -2),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () {
+                    setState(() {
+                      selectedLayoutId = null;
+                      selectedLayout = null;
+
+                      showLayouts = false;
+                      showGroups = true;
+                    });
+                  },
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: appColors.textSecondary,
+                    side: BorderSide(color: appColors.border, width: 1.2),
+                    backgroundColor: appColors.surface,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    textStyle: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  child: const Text("Skip & Continue"),
+                ),
+              ),
+
+              const SizedBox(width: 12),
+
+              Expanded(
+                child: FilledButton.icon(
+                  onPressed: selectedLayoutId == null
+                      ? null
+                      : () {
+                          setState(() {
+                            showLayouts = false;
+                            showGroups = true;
+                          });
+                        },
+                  icon: const Icon(Icons.arrow_forward_rounded, size: 18),
+                  label: const Text("Continue"),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: appColors.accent,
+                    foregroundColor: Colors.white,
+                    disabledBackgroundColor: appColors.accent.withOpacity(0.4),
+                    disabledForegroundColor: Colors.white70,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    elevation: 0,
+                    textStyle: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// =========================
+  /// STEP 3: GROUP SELECTION
   /// =========================
   Widget buildGroupStep() {
     final groupProvider = context.watch<GroupProvider>();
@@ -1541,7 +1767,7 @@ class _AssignLiveContentToGroupsState extends State<AssignLiveContentToGroups> {
       children: [
         // ── Step indicator ──
         _stepBanner(
-          step: '02',
+          step: '03',
           title: 'Assign to Groups',
           subtitle: 'Select one or more groups to go live',
           icon: Icons.group_rounded,

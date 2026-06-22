@@ -354,12 +354,14 @@ class SelectMethodToGoLive extends StatefulWidget {
   final String channelId;
   final String contentId;
   final List<Group> selectedGroups;
+  final String? layoutId;
 
   const SelectMethodToGoLive({
     super.key,
     required this.channelId,
     required this.contentId,
     required this.selectedGroups,
+    this.layoutId,
   });
 
   @override
@@ -370,6 +372,8 @@ class _SelectMethodToGoLiveState extends State<SelectMethodToGoLive> {
   @override
   void initState() {
     super.initState();
+
+    print("Received Layout ID: ${widget.layoutId}");
 
     Future.microtask(() {
       final channelProvider = context.read<ChannelProvider>();
@@ -401,10 +405,12 @@ class _SelectMethodToGoLiveState extends State<SelectMethodToGoLive> {
     final start = DateTime(now.year, now.month, now.day, 0, 0);
     final end = DateTime(now.year, now.month, now.day, 23, 59);
     final groupIds = widget.selectedGroups.map((g) => g.id).toList();
-
+    final bool hasLayout = widget.layoutId != null;
     final payload = {
-      "content_type": "live_content",
-      "content_id": widget.contentId,
+      // "content_type": "live_content",
+      // "content_id": widget.contentId,
+      "content_type": hasLayout ? "layout" : "live_content",
+      "content_id": hasLayout ? widget.layoutId : widget.contentId,
       "groups": groupIds,
       "start_time": start.toIso8601String(),
       "end_time": end.toIso8601String(),
@@ -957,7 +963,8 @@ class _SelectMethodToGoLiveState extends State<SelectMethodToGoLive> {
 
                                   final url =
                                       "${channel.rtmpUrl}/${channel.streamKey}";
-
+                                  final bool hasLayout =
+                                      widget.layoutId != null;
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
@@ -965,7 +972,13 @@ class _SelectMethodToGoLiveState extends State<SelectMethodToGoLive> {
                                         rtmpUrl: url,
                                         channelName: channel.name,
                                         channelId: widget.channelId,
-                                        contentId: widget.contentId,
+                                        // contentId: widget.contentId,
+                                        contentId: hasLayout
+                                            ? widget.layoutId!
+                                            : widget.contentId,
+                                        contentType: hasLayout
+                                            ? "layout"
+                                            : "live_content",
                                       ),
                                     ),
                                   );

@@ -96,7 +96,7 @@ class LiveContentProvider extends ChangeNotifier {
         startTime: startTime,
         endTime: endTime,
         autoplay: autoplay,
-         channelId: channelId,
+        channelId: channelId,
         mute: mute,
         loop: loop,
       );
@@ -151,23 +151,17 @@ class LiveContentProvider extends ChangeNotifier {
     }
   }
 
-
   /// DELETE CONTENT
-  Future<void> deleteSchedules(String contentId) async {
+  Future<void> deleteSchedules(String contentId, String contentType) async {
     try {
-      await _service.deleteSchedules(contentId: contentId);
+      await _service.deleteSchedules(
+        contentId: contentId,
+        contentType: contentType,
+      );
 
       notifyListeners();
     } catch (e) {
       debugPrint("Delete content error: $e");
     }
   }
-
-
-
-
-
-
-
-  
 }

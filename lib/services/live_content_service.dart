@@ -69,7 +69,10 @@ class LiveContentService {
     }
   }
 
-   Future<void> deleteSchedules({required String contentId}) async {
+  Future<void> deleteSchedules({
+    required String contentId,
+    required String contentType,
+  }) async {
     try {
       final now = DateTime.now();
 
@@ -80,7 +83,9 @@ class LiveContentService {
 
       final response = await ApiService.post("/schedule/live/multiple-delete", {
         "contentId": contentId,
-        "contentType": "live_content",
+
+        // "contentType": "live_content",
+        "contentType": contentType,
         "startDate": startDate,
         "endDate": endDate,
       });

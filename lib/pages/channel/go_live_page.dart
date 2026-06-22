@@ -1,8 +1,5 @@
 ////////////////////////////////////////////////////////////// 001 ////////////////////////////////////
 
-
-
-
 // ///////////////////////////////////
 // ///
 // ///
@@ -11,7 +8,7 @@
 // import 'package:flutter/material.dart';
 // import 'package:flutter/services.dart';
 // import 'package:provider/provider.dart';
-// import 'package:rtmp_streaming/camera.dart'; 
+// import 'package:rtmp_streaming/camera.dart';
 // import 'package:wakelock_plus/wakelock_plus.dart';
 
 // import '../../providers/channel_provider.dart';
@@ -45,7 +42,7 @@
 //   bool isStopping = false;
 //   bool isPreparing = false;
 //   bool isSwitching = false;
-  
+
 //   bool userSelectedLandscape = false;
 //   int countdown = 3;
 //   late LiveContentProvider liveProvider;
@@ -85,8 +82,8 @@
 //   Future<void> _setupController() async {
 //     if (controller != null) {
 //       final oldController = controller;
-//       controller = null; 
-//       if (mounted) setState(() {}); 
+//       controller = null;
+//       if (mounted) setState(() {});
 //       await oldController!.dispose();
 //     }
 
@@ -126,9 +123,9 @@
 //       } else {
 //         await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 //       }
-      
+
 //       // Increased delay: Gives the OS memory time to allocate the flipped high-res buffer
-//       await Future.delayed(const Duration(milliseconds: 600)); 
+//       await Future.delayed(const Duration(milliseconds: 600));
 //       await _setupController();
 //     } finally {
 //       if (mounted) setState(() => isSwitching = false);
@@ -146,7 +143,7 @@
 
 //   Future<void> _cleanupOnExit() async {
 //     if (_isCleaned) return;
-//     _isCleaned = true; 
+//     _isCleaned = true;
 
 //     await SystemChrome.setPreferredOrientations([
 //       DeviceOrientation.portraitUp,
@@ -160,7 +157,7 @@
 //           await controller!.stopVideoStreaming();
 //         }
 //         await controller!.dispose();
-//         controller = null; 
+//         controller = null;
 //       }
 //       await WakelockPlus.disable();
 //        liveProvider.deleteSchedules(widget.contentId);
@@ -184,14 +181,14 @@
 //     final provider = context.read<ChannelProvider>();
 //     try {
 //       setState(() => isPreparing = true);
-      
+
 //       final channel = provider.selectedChannel;
 //       if (channel != null && channel.status != "live") {
 //         await provider.startChannel(channel.channelId);
 //       }
 
 //       for (int i = 3; i > 0; i--) {
-//         if (!mounted || _isCleaned || !isPreparing) return; 
+//         if (!mounted || _isCleaned || !isPreparing) return;
 //         setState(() => countdown = i);
 //         await Future.delayed(const Duration(seconds: 1));
 //       }
@@ -214,7 +211,7 @@
 //       if (mounted) {
 //         setState(() {
 //           isStreaming = true;
-//           isPreparing = false; 
+//           isPreparing = false;
 //         });
 //       }
 //     } catch (e) {
@@ -223,10 +220,10 @@
 //   }
 
 //   Future<void> switchCamera() async {
-//     if (isStreaming || isPreparing || isSwitching || controller == null) return; 
-    
+//     if (isStreaming || isPreparing || isSwitching || controller == null) return;
+
 //     setState(() => isSwitching = true);
-    
+
 //     try {
 //       final newCamera = cameras.firstWhere(
 //         (c) => c.name != currentCamera!.name,
@@ -274,16 +271,16 @@
 //     return [
 //       IconButton(
 //         onPressed: canInteract ? switchCamera : null,
-//         icon: isSwitching 
+//         icon: isSwitching
 //           ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
 //           : Icon(
 //               currentCamera?.lensDirection == CameraLensDirection.front ? Icons.camera_front : Icons.camera_rear,
-//               color: canInteract ? Colors.white : Colors.grey, 
+//               color: canInteract ? Colors.white : Colors.grey,
 //               size: 30,
 //             ),
 //       ),
 //       const SizedBox(width: 25),
-      
+
 //       IconButton(
 //         onPressed: canInteract ? _toggleOrientation : null,
 //         icon: Icon(
@@ -304,7 +301,7 @@
 //             ? null
 //             : () async {
 //                 if (!isStreaming) {
-//                   _isCleaned = false; 
+//                   _isCleaned = false;
 //                   await startCountdownFlow();
 //                 } else {
 //                   // STOP BUTTON LOGIC
@@ -396,11 +393,9 @@
 //   }
 // }
 
-
 //////// Android Ui Update code /////////////
 ///
 ///
-
 
 // import 'dart:ui';
 // import 'package:cms_app/pages/home/home_page.dart';
@@ -409,7 +404,7 @@
 // import 'package:flutter/material.dart';
 // import 'package:flutter/services.dart';
 // import 'package:provider/provider.dart';
-// import 'package:rtmp_streaming/camera.dart'; 
+// import 'package:rtmp_streaming/camera.dart';
 // import 'package:wakelock_plus/wakelock_plus.dart';
 
 // import '../../providers/channel_provider.dart';
@@ -443,7 +438,7 @@
 //   bool isStopping = false;
 //   bool isPreparing = false;
 //   bool isSwitching = false;
-  
+
 //   bool userSelectedLandscape = false;
 //   int countdown = 3;
 //   String streamStatus = "Ready to stream";
@@ -486,8 +481,8 @@
 //   Future<void> _setupController() async {
 //     if (controller != null) {
 //       final oldController = controller;
-//       controller = null; 
-//       if (mounted) setState(() {}); 
+//       controller = null;
+//       if (mounted) setState(() {});
 //       await oldController!.dispose();
 //     }
 
@@ -527,9 +522,9 @@
 //       } else {
 //         await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 //       }
-      
+
 //       // Gives the OS memory time to allocate the flipped high-res buffer
-//       await Future.delayed(const Duration(milliseconds: 600)); 
+//       await Future.delayed(const Duration(milliseconds: 600));
 //       await _setupController();
 //     } finally {
 //       if (mounted) setState(() => isSwitching = false);
@@ -537,10 +532,10 @@
 //   }
 
 //   Future<void> switchCamera() async {
-//     if (isStreaming || isPreparing || isSwitching || controller == null) return; 
-    
+//     if (isStreaming || isPreparing || isSwitching || controller == null) return;
+
 //     setState(() => isSwitching = true);
-    
+
 //     try {
 //       final newCamera = cameras.firstWhere(
 //         (c) => c.name != currentCamera!.name,
@@ -570,7 +565,7 @@
 
 //   Future<void> _cleanupOnExit() async {
 //     if (_isCleaned) return;
-//     _isCleaned = true; 
+//     _isCleaned = true;
 
 //     await SystemChrome.setPreferredOrientations([
 //       DeviceOrientation.portraitUp,
@@ -584,7 +579,7 @@
 //           await controller!.stopVideoStreaming();
 //         }
 //         await controller!.dispose();
-//         controller = null; 
+//         controller = null;
 //       }
 //       await WakelockPlus.disable();
 //       liveProvider.deleteSchedules(widget.contentId);
@@ -612,14 +607,14 @@
 //         isPreparing = true;
 //         streamStatus = "Starting...";
 //       });
-      
+
 //       final channel = provider.selectedChannel;
 //       if (channel != null && channel.status != "live") {
 //         await provider.startChannel(channel.channelId);
 //       }
 
 //       for (int i = 3; i > 0; i--) {
-//         if (!mounted || _isCleaned || !isPreparing) return; 
+//         if (!mounted || _isCleaned || !isPreparing) return;
 //         setState(() => countdown = i);
 //         await Future.delayed(const Duration(seconds: 1));
 //       }
@@ -645,11 +640,11 @@
 //       setState(() => streamStatus = "Connecting...");
 //       await controller!.startVideoStreaming(widget.rtmpUrl);
 //       await WakelockPlus.enable();
-      
+
 //       if (mounted) {
 //         setState(() {
 //           isStreaming = true;
-//           isPreparing = false; 
+//           isPreparing = false;
 //           streamStatus = "LIVE";
 //         });
 //       }
@@ -870,8 +865,8 @@
 //                         children: [
 //                           _controlButton(
 //                             icon: Icon(
-//                               currentCamera?.lensDirection == CameraLensDirection.front 
-//                                   ? Icons.camera_front_rounded 
+//                               currentCamera?.lensDirection == CameraLensDirection.front
+//                                   ? Icons.camera_front_rounded
 //                                   : Icons.camera_rear_rounded,
 //                               color: Colors.white,
 //                               size: 26,
@@ -901,7 +896,7 @@
 //                           ? null
 //                           : () async {
 //                               if (!isStreaming) {
-//                                 _isCleaned = false; 
+//                                 _isCleaned = false;
 //                                 await startCountdownFlow();
 //                               } else {
 //                                 setState(() => isStopping = true);
@@ -915,7 +910,7 @@
 //                         decoration: BoxDecoration(
 //                           borderRadius: BorderRadius.circular(32),
 //                           gradient: LinearGradient(
-//                             colors: isStreaming 
+//                             colors: isStreaming
 //                                 ? [appColors.red, const Color(0xFF991B1B)]
 //                                 : [appColors.accent, const Color(0xFF1E40AF)],
 //                             begin: Alignment.topLeft,
@@ -932,7 +927,7 @@
 //                         child: Center(
 //                           child: isStopping
 //                               ? const SizedBox(
-//                                   height: 24, width: 24, 
+//                                   height: 24, width: 24,
 //                                   child: CircularProgressIndicator(strokeWidth: 3, color: Colors.white)
 //                                 )
 //                               : Text(
@@ -976,11 +971,7 @@
 //   }
 // }
 
-
-
-
 // // ////////////////////// IOS code //////////////////////////////
-
 
 // import 'package:cms_app/pages/home/home_page.dart';
 // import 'package:cms_app/providers/live_content_provider.dart';
@@ -1014,7 +1005,7 @@
 //   bool isPreparing = false;
 //   bool isStopping = false;
 //   bool _isCleaned = false;
-  
+
 //   // New States for Camera & Orientation
 //   bool isFrontCamera = false;
 //   bool isLandscape = false;
@@ -1028,7 +1019,7 @@
 //     super.initState();
 //     WidgetsBinding.instance.addObserver(this);
 //     liveProvider = Provider.of<LiveContentProvider>(context, listen: false);
-    
+
 //     // 🔴 1. Start the camera preview immediately when screen opens
 //     _startPreview();
 
@@ -1080,11 +1071,11 @@
 
 //   Future<void> _toggleOrientation() async {
 //     setState(() => isLandscape = !isLandscape);
-    
+
 //     // 🔴 Lock the Flutter UI to match the selection
 //     if (isLandscape) {
 //       SystemChrome.setPreferredOrientations([
-//         DeviceOrientation.landscapeRight, 
+//         DeviceOrientation.landscapeRight,
 //         DeviceOrientation.landscapeLeft
 //       ]);
 //     } else {
@@ -1197,7 +1188,7 @@
 
 //   // @override
 //   // Widget build(BuildContext context) {
-    
+
 //   //   return Scaffold(
 //   //     backgroundColor: Colors.black,
 //   //     body: Stack(
@@ -1284,7 +1275,6 @@
 //   //     ),
 //   //   );
 //   // }
-
 
 //   @override
 //   Widget build(BuildContext context) {
@@ -1386,12 +1376,8 @@
 //   }
 // }
 
-
-
-
 ////// IOS Ui Update ////////
 ///
-
 
 import 'dart:ui';
 import 'package:cms_app/pages/home/home_page.dart';
@@ -1407,6 +1393,7 @@ class GoLivePage extends StatefulWidget {
   final String channelName;
   final String channelId;
   final String contentId;
+  final String contentType;
 
   const GoLivePage({
     super.key,
@@ -1414,6 +1401,7 @@ class GoLivePage extends StatefulWidget {
     required this.channelName,
     required this.channelId,
     required this.contentId,
+    required this.contentType,
   });
 
   @override
@@ -1427,7 +1415,7 @@ class _GoLivePageState extends State<GoLivePage> with WidgetsBindingObserver {
   bool isPreparing = false;
   bool isStopping = false;
   bool _isCleaned = false;
-  
+
   bool isFrontCamera = false;
   bool isLandscape = false;
 
@@ -1438,6 +1426,8 @@ class _GoLivePageState extends State<GoLivePage> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
+    print("Content Type: ${widget.contentType}");
+    print("Content ID: ${widget.contentId}");
     WidgetsBinding.instance.addObserver(this);
     liveProvider = Provider.of<LiveContentProvider>(context, listen: false);
     _startPreview();
@@ -1485,20 +1475,20 @@ class _GoLivePageState extends State<GoLivePage> with WidgetsBindingObserver {
 
   Future<void> _toggleOrientation() async {
     setState(() => isLandscape = !isLandscape);
-    
+
     if (isLandscape) {
       SystemChrome.setPreferredOrientations([
-        DeviceOrientation.landscapeRight, 
-        DeviceOrientation.landscapeLeft
+        DeviceOrientation.landscapeRight,
+        DeviceOrientation.landscapeLeft,
       ]);
     } else {
-      SystemChrome.setPreferredOrientations([
-        DeviceOrientation.portraitUp
-      ]);
+      SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
     }
 
     try {
-      await _channel.invokeMethod('setOrientation', {'isLandscape': isLandscape});
+      await _channel.invokeMethod('setOrientation', {
+        'isLandscape': isLandscape,
+      });
     } catch (e) {
       debugPrint("Orientation Switch Error: $e");
     }
@@ -1550,7 +1540,7 @@ class _GoLivePageState extends State<GoLivePage> with WidgetsBindingObserver {
     try {
       await stopStream();
       await WakelockPlus.disable();
-      liveProvider.deleteSchedules(widget.contentId);
+      liveProvider.deleteSchedules(widget.contentId, widget.contentType);
     } catch (e) {
       debugPrint("Cleanup Error => $e");
     }
@@ -1577,13 +1567,17 @@ class _GoLivePageState extends State<GoLivePage> with WidgetsBindingObserver {
   }
 
   void _navToHome() {
-    if(!mounted) return;
+    if (!mounted) return;
     Navigator.of(context).popUntil((route) => route.isFirst);
   }
 
   // ─── UI COMPONENTS ──────────────────────────────────────────────────────────
 
-  Widget _glassContainer({required Widget child, EdgeInsetsGeometry? padding, double borderRadius = 20}) {
+  Widget _glassContainer({
+    required Widget child,
+    EdgeInsetsGeometry? padding,
+    double borderRadius = 20,
+  }) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(borderRadius),
       child: BackdropFilter(
@@ -1628,13 +1622,13 @@ class _GoLivePageState extends State<GoLivePage> with WidgetsBindingObserver {
         body: Stack(
           children: [
             // Camera Background
-            Positioned.fill(
-              child: const UiKitView(viewType: 'camera_preview'),
-            ),
+            Positioned.fill(child: const UiKitView(viewType: 'camera_preview')),
 
             // Top Gradient Overlay (for text readability)
             Positioned(
-              top: 0, left: 0, right: 0,
+              top: 0,
+              left: 0,
+              right: 0,
               height: 140,
               child: Container(
                 decoration: BoxDecoration(
@@ -1652,14 +1646,19 @@ class _GoLivePageState extends State<GoLivePage> with WidgetsBindingObserver {
                 children: [
                   // Top Bar
                   Positioned(
-                    top: 16, left: 20, right: 20,
+                    top: 16,
+                    left: 20,
+                    right: 20,
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         // Close Button & Channel Name
                         _glassContainer(
                           borderRadius: 30,
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 8,
+                          ),
                           child: Row(
                             children: [
                               GestureDetector(
@@ -1668,10 +1667,18 @@ class _GoLivePageState extends State<GoLivePage> with WidgetsBindingObserver {
                                   await _cleanupOnExit();
                                   _navToHome();
                                 },
-                                child: const Icon(Icons.close_rounded, color: Colors.white, size: 20),
+                                child: const Icon(
+                                  Icons.close_rounded,
+                                  color: Colors.white,
+                                  size: 20,
+                                ),
                               ),
                               const SizedBox(width: 10),
-                              Container(width: 1, height: 16, color: Colors.white30),
+                              Container(
+                                width: 1,
+                                height: 16,
+                                color: Colors.white30,
+                              ),
                               const SizedBox(width: 10),
                               Text(
                                 widget.channelName,
@@ -1688,7 +1695,10 @@ class _GoLivePageState extends State<GoLivePage> with WidgetsBindingObserver {
                         // LIVE Badge
                         if (isStreaming)
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 8,
+                            ),
                             decoration: BoxDecoration(
                               color: appColors.red.withOpacity(0.9),
                               borderRadius: BorderRadius.circular(30),
@@ -1697,13 +1707,14 @@ class _GoLivePageState extends State<GoLivePage> with WidgetsBindingObserver {
                                   color: appColors.red.withOpacity(0.4),
                                   blurRadius: 8,
                                   spreadRadius: 2,
-                                )
-                              ]
+                                ),
+                              ],
                             ),
                             child: Row(
                               children: [
                                 Container(
-                                  width: 8, height: 8,
+                                  width: 8,
+                                  height: 8,
                                   decoration: const BoxDecoration(
                                     color: Colors.white,
                                     shape: BoxShape.circle,
@@ -1728,11 +1739,16 @@ class _GoLivePageState extends State<GoLivePage> with WidgetsBindingObserver {
 
                   // Status Text
                   Positioned(
-                    top: 70, left: 0, right: 0,
+                    top: 70,
+                    left: 0,
+                    right: 0,
                     child: Center(
                       child: _glassContainer(
                         borderRadius: 20,
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 6,
+                        ),
                         child: Text(
                           streamStatus,
                           style: const TextStyle(
@@ -1758,7 +1774,9 @@ class _GoLivePageState extends State<GoLivePage> with WidgetsBindingObserver {
                           ),
                           const SizedBox(height: 20),
                           _controlButton(
-                            icon: isLandscape ? Icons.screen_lock_landscape_rounded : Icons.screen_lock_portrait_rounded,
+                            icon: isLandscape
+                                ? Icons.screen_lock_landscape_rounded
+                                : Icons.screen_lock_portrait_rounded,
                             onTap: _toggleOrientation,
                           ),
                         ],
@@ -1767,22 +1785,24 @@ class _GoLivePageState extends State<GoLivePage> with WidgetsBindingObserver {
 
                   // Main Action Button (Go Live / Stop)
                   Positioned(
-                    bottom: 40, left: 24, right: 24,
+                    bottom: 40,
+                    left: 24,
+                    right: 24,
                     child: GestureDetector(
-                      onTap: isStreaming 
-                        ? () async {
-                            setState(() => isStopping = true);
-                            await _cleanupOnExit();
-                            _navToHome();
-                          }
-                        : startCountdownFlow,
+                      onTap: isStreaming
+                          ? () async {
+                              setState(() => isStopping = true);
+                              await _cleanupOnExit();
+                              _navToHome();
+                            }
+                          : startCountdownFlow,
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 300),
                         height: 64,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(32),
                           gradient: LinearGradient(
-                            colors: isStreaming 
+                            colors: isStreaming
                                 ? [appColors.red, const Color(0xFF991B1B)]
                                 : [appColors.accent, const Color(0xFF1E40AF)],
                             begin: Alignment.topLeft,
@@ -1790,11 +1810,15 @@ class _GoLivePageState extends State<GoLivePage> with WidgetsBindingObserver {
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: (isStreaming ? appColors.red : appColors.accent).withOpacity(0.4),
+                              color:
+                                  (isStreaming
+                                          ? appColors.red
+                                          : appColors.accent)
+                                      .withOpacity(0.4),
                               blurRadius: 16,
                               offset: const Offset(0, 6),
-                            )
-                          ]
+                            ),
+                          ],
                         ),
                         child: Center(
                           child: Text(
@@ -1815,7 +1839,9 @@ class _GoLivePageState extends State<GoLivePage> with WidgetsBindingObserver {
                   if (isPreparing)
                     Positioned.fill(
                       child: Container(
-                        color: Colors.black.withOpacity(0.5), // Dims background slightly to make countdown pop
+                        color: Colors.black.withOpacity(
+                          0.5,
+                        ), // Dims background slightly to make countdown pop
                         child: Center(
                           child: Text(
                             "$countdown",
