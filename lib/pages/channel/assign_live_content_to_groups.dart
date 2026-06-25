@@ -1891,9 +1891,16 @@ class _AssignLiveContentToGroupsState extends State<AssignLiveContentToGroups> {
   Widget buildGroupStep() {
     final groupProvider = context.watch<GroupProvider>();
 
-    final groups = groupProvider.groups
-        .where((g) => g.name.toLowerCase().contains(searchText.toLowerCase()))
-        .toList();
+    // final groups = groupProvider.groups
+    //     .where((g) => g.name.toLowerCase().contains(searchText.toLowerCase()))
+    //     .toList();
+
+    final groups = groupProvider.groups.where((g) {
+      return g.name.toLowerCase().contains(searchText.toLowerCase()) &&
+          (selectedLayout == null ||
+              g.orientation.toLowerCase() ==
+                  selectedLayout!["orientation"].toString().toLowerCase());
+    }).toList();
 
     return Column(
       children: [
@@ -2046,9 +2053,14 @@ class _AssignLiveContentToGroupsState extends State<AssignLiveContentToGroups> {
                 )
               : groups.isEmpty
               ? Center(
+                  // child: Text(
+                  //   'No groups found',
+                  //   style: TextStyle(color: appColors.textMuted, fontSize: 13),
+                  // ),
                   child: Text(
-                    'No groups found',
-                    style: TextStyle(color: appColors.textMuted, fontSize: 13),
+                    selectedLayout == null
+                        ? "No groups found"
+                        : "No ${selectedLayout!["orientation"]} groups available",
                   ),
                 )
               : ListView.builder(
@@ -2122,12 +2134,86 @@ class _AssignLiveContentToGroupsState extends State<AssignLiveContentToGroups> {
                                       fontSize: 11,
                                     ),
                                   ),
-                                  Text(
-                                    'Devices: ${g.deviceCount}',
-                                    style: TextStyle(
-                                      color: appColors.textMuted,
-                                      fontSize: 11,
-                                    ),
+                                  // Text(
+                                  //   'Devices: ${g.deviceCount}',
+                                  //   style: TextStyle(
+                                  //     color: appColors.textMuted,
+                                  //     fontSize: 11,
+                                  //   ),
+                                  // ),
+                                  const SizedBox(height: 4),
+
+                                  Row(
+                                    children: [
+                                      Text(
+                                        'Devices: ${g.deviceCount}',
+                                        style: TextStyle(
+                                          color: appColors.textMuted,
+                                          fontSize: 11,
+                                        ),
+                                      ),
+
+                                      const SizedBox(width: 10),
+
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 3,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color:
+                                              g.orientation.toLowerCase() ==
+                                                  "portrait"
+                                              ? Colors.orange.withOpacity(.12)
+                                              : Colors.blue.withOpacity(.12),
+                                          borderRadius: BorderRadius.circular(
+                                            20,
+                                          ),
+                                          border: Border.all(
+                                            color:
+                                                g.orientation.toLowerCase() ==
+                                                    "portrait"
+                                                ? Colors.orange.withOpacity(.35)
+                                                : Colors.blue.withOpacity(.35),
+                                          ),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(
+                                              g.orientation.toLowerCase() ==
+                                                      "portrait"
+                                                  ? Icons.stay_current_portrait
+                                                  : Icons
+                                                        .stay_current_landscape,
+                                              size: 12,
+                                              color:
+                                                  g.orientation.toLowerCase() ==
+                                                      "portrait"
+                                                  ? Colors.orange
+                                                  : Colors.blue,
+                                            ),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              g.orientation[0].toUpperCase() +
+                                                  g.orientation
+                                                      .substring(1)
+                                                      .toLowerCase(),
+                                              style: TextStyle(
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.w700,
+                                                color:
+                                                    g.orientation
+                                                            .toLowerCase() ==
+                                                        "portrait"
+                                                    ? Colors.orange
+                                                    : Colors.blue,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),

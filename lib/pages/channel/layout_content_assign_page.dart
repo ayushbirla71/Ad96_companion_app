@@ -1123,16 +1123,45 @@ class _ZoneAssignSheetState extends State<_ZoneAssignSheet> {
     }
   }
 
+  bool _isImage(String url) {
+    final clean = url.split('?').first.toLowerCase();
+
+    return clean.endsWith('.jpg') ||
+        clean.endsWith('.jpeg') ||
+        clean.endsWith('.png') ||
+        clean.endsWith('.gif') ||
+        clean.endsWith('.webp');
+  }
+
   Future<void> _fetchAds() async {
     try {
       final res = await ApiService.get('/ads/all');
       final data = jsonDecode(res.body);
-      if (mounted)
+      // if (mounted)
+
+      //   setState(() {
+      //     _ads = (data['ads'] as List? ?? [])
+      //         .where((a) => a['url'] != null)
+      //         .toList();
+      //   });
+
+      final zoneType = widget.zone['content_type_allowed'];
+
+      List<dynamic> ads = (data['ads'] as List? ?? [])
+          .where((a) => a['url'] != null)
+          .toList();
+
+      // Filter according to zone type
+      if (zoneType == "media") {
+        // Media zone -> Only images
+        ads = ads.where((a) => _isImage(a['url'])).toList();
+      }
+
+      if (mounted) {
         setState(() {
-          _ads = (data['ads'] as List? ?? [])
-              .where((a) => a['url'] != null)
-              .toList();
+          _ads = ads;
         });
+      }
     } catch (_) {}
   }
 
@@ -1140,7 +1169,30 @@ class _ZoneAssignSheetState extends State<_ZoneAssignSheet> {
     try {
       final res = await ApiService.get('/carousel/all');
       final data = jsonDecode(res.body);
-      if (mounted) setState(() => _carousels = data['data'] ?? []);
+
+      // if (mounted) setState(() => _carousels = data['data'] ?? []);
+      final zoneType = widget.zone['content_type_allowed'];
+
+      List<dynamic> carousels = data['data'] ?? [];
+
+      if (zoneType == "media") {
+        // Media zone -> only carousels containing image ads
+        carousels = carousels.where((carousel) {
+          final items = carousel['items'] as List? ?? [];
+
+          return items.isNotEmpty &&
+              items.every((item) {
+                final url = item['Ad']?['url'];
+                return url != null && _isImage(url);
+              });
+        }).toList();
+      }
+
+      if (mounted) {
+        setState(() {
+          _carousels = carousels;
+        });
+      }
     } catch (_) {}
   }
 
@@ -1354,6 +1406,7 @@ class _ZoneAssignSheetState extends State<_ZoneAssignSheet> {
 
                         if (_isMedia)
                           _MediaAssignContent(
+                            zoneType: widget.zone['content_type_allowed'],
                             ads: _ads,
                             carousels: _carousels,
                             liveContent: _liveContent,
@@ -1616,6 +1669,8 @@ class _TimeConstraintBanner extends StatelessWidget {
 // ─────────────────────────────────────────────
 
 class _MediaAssignContent extends StatelessWidget {
+  final String zoneType;
+
   final List<dynamic> ads, carousels, liveContent;
   final List<Map<String, dynamic>> assigned;
   final String contentType, search;
@@ -1630,6 +1685,7 @@ class _MediaAssignContent extends StatelessWidget {
   final void Function(String, List<Map<String, String>>) onUpdateSlots;
 
   const _MediaAssignContent({
+    required this.zoneType,
     required this.ads,
     required this.carousels,
     required this.liveContent,
@@ -1668,6 +1724,7 @@ class _MediaAssignContent extends StatelessWidget {
             Expanded(
               child: _ContentTypeDropdown(
                 value: contentType,
+                zoneType: zoneType,
                 onChange: onContentTypeChange,
                 appColors: appColors,
               ),
@@ -1763,11 +1820,14 @@ class _MediaAssignContent extends StatelessWidget {
 
 class _ContentTypeDropdown extends StatelessWidget {
   final String value;
+  final String zoneType;
   final void Function(String) onChange;
   final AppColors appColors;
 
   const _ContentTypeDropdown({
+    super.key,
     required this.value,
+    required this.zoneType,
     required this.onChange,
     required this.appColors,
   });
@@ -1787,8 +1847,8 @@ class _ContentTypeDropdown extends StatelessWidget {
           onChanged: (v) => v != null ? onChange(v) : null,
           dropdownColor: appColors.surface,
           style: TextStyle(color: appColors.textPrimary, fontSize: 14),
-          items: const [
-            DropdownMenuItem(
+          items: [
+            const DropdownMenuItem(
               value: 'ad',
               child: Row(
                 children: [
@@ -1798,7 +1858,8 @@ class _ContentTypeDropdown extends StatelessWidget {
                 ],
               ),
             ),
-            DropdownMenuItem(
+
+            const DropdownMenuItem(
               value: 'carousel',
               child: Row(
                 children: [
@@ -1808,16 +1869,18 @@ class _ContentTypeDropdown extends StatelessWidget {
                 ],
               ),
             ),
-            DropdownMenuItem(
-              value: 'live_content',
-              child: Row(
-                children: [
-                  Icon(Icons.radio_rounded, size: 16),
-                  SizedBox(width: 6),
-                  Text('Live Content'),
-                ],
+
+            if (zoneType == "video_input_media")
+              const DropdownMenuItem(
+                value: 'live_content',
+                child: Row(
+                  children: [
+                    Icon(Icons.radio_rounded, size: 16),
+                    SizedBox(width: 6),
+                    Text('Live Content'),
+                  ],
+                ),
               ),
-            ),
           ],
         ),
       ),
