@@ -349,12 +349,14 @@ import '../../providers/channel_provider.dart';
 import '../../models/channel.dart';
 import '../../theme/app_colors.dart'; // adjust import path as needed
 import 'channel_details_obs_page.dart';
+import 'dart:convert';
 
 class SelectMethodToGoLive extends StatefulWidget {
   final String channelId;
   final String contentId;
   final List<Group> selectedGroups;
   final String? layoutId;
+  final Map<String, dynamic>? schedulePayload;
 
   const SelectMethodToGoLive({
     super.key,
@@ -362,6 +364,7 @@ class SelectMethodToGoLive extends StatefulWidget {
     required this.contentId,
     required this.selectedGroups,
     this.layoutId,
+    this.schedulePayload,
   });
 
   @override
@@ -374,6 +377,7 @@ class _SelectMethodToGoLiveState extends State<SelectMethodToGoLive> {
     super.initState();
 
     print("Received Layout ID: ${widget.layoutId}");
+    print("Received Schedule Payload: ${widget.schedulePayload}");
 
     Future.microtask(() {
       final channelProvider = context.read<ChannelProvider>();
@@ -395,6 +399,19 @@ class _SelectMethodToGoLiveState extends State<SelectMethodToGoLive> {
     });
   }
 
+  void printLongString(String text) {
+    const chunkSize = 1000;
+
+    for (int i = 0; i < text.length; i += chunkSize) {
+      print(
+        text.substring(
+          i,
+          i + chunkSize > text.length ? text.length : i + chunkSize,
+        ),
+      );
+    }
+  }
+
   bool creatingSchedule = false;
 
   Future<bool> createSchedule() async {
@@ -407,10 +424,10 @@ class _SelectMethodToGoLiveState extends State<SelectMethodToGoLive> {
     final groupIds = widget.selectedGroups.map((g) => g.id).toList();
     final bool hasLayout = widget.layoutId != null;
     final payload = {
-      // "content_type": "live_content",
-      // "content_id": widget.contentId,
-      "content_type": hasLayout ? "layout" : "live_content",
-      "content_id": hasLayout ? widget.layoutId : widget.contentId,
+      "content_type": "live_content",
+      "content_id": widget.contentId,
+      // "content_type": hasLayout ? "layout" : "live_content",
+      // "content_id": hasLayout ? widget.layoutId : widget.contentId,
       "groups": groupIds,
       "start_time": start.toIso8601String(),
       "end_time": end.toIso8601String(),
@@ -421,6 +438,39 @@ class _SelectMethodToGoLiveState extends State<SelectMethodToGoLive> {
     print("payload.,.,... ${payload}");
 
     try {
+      // ===========================
+      // LAYOUT SCHEDULE
+      // ===========================
+      if (widget.layoutId != null && widget.schedulePayload != null) {
+        final payload = {
+          ...widget.schedulePayload!,
+
+          // add selected groups like React version
+          "selected_groups": widget.selectedGroups.map((g) => g.id).toList(),
+
+          "updated_at": DateTime.now().toUtc().toIso8601String(),
+        };
+
+        print(
+          "<<<<<<<<<<<<<<<LAYOUT SCHEDULE PAYLOAD>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>",
+        );
+        // print(jsonEncode(payload));
+
+        printLongString("Result full: ${jsonEncode(payload)}");
+
+        final res = await ApiService.post("/layout/schedule", payload);
+
+        if (res.statusCode == 200 || res.statusCode == 201) {
+          return true;
+        }
+
+        print(res.body);
+        return false;
+      }
+
+      // ===========================
+      // NORMAL LIVE CONTENT SCHEDULE
+      // ===========================
       final res = await ApiService.post("/schedule/add_v2", payload);
 
       if (res.statusCode == 200 || res.statusCode == 201) {

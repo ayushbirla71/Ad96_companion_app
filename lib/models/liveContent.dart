@@ -8,6 +8,8 @@ class LiveContent {
   final String url;
   final int duration;
   final String status;
+  final String channelStatus; // NEW
+
   final DateTime createdAt;
 
   LiveContent({
@@ -18,6 +20,7 @@ class LiveContent {
     required this.url,
     required this.duration,
     required this.status,
+    required this.channelStatus,
     required this.createdAt,
   });
 
@@ -30,6 +33,10 @@ class LiveContent {
       url: json["url"] ?? "",
       duration: json["duration"] ?? 0,
       status: json["status"] ?? "",
+      // SAFE
+      channelStatus: json["channel"] != null
+          ? (json["channel"]["status"] ?? "")
+          : "",
       createdAt: DateTime.parse(json["created_at"]),
     );
   }

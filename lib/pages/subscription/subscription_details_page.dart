@@ -406,19 +406,19 @@ class SubscriptionDetailsPage extends StatelessWidget {
                             ),
                             const SizedBox(height: 14),
                             // Status + dates row
-                            Row(
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
                               children: [
                                 _HeroBadge(
                                   icon: Icons.circle,
                                   label: subscription.status,
                                 ),
-                                const SizedBox(width: 8),
                                 _HeroBadge(
                                   icon: Icons.calendar_today_rounded,
                                   label:
                                       'Start: ${formatDate(subscription.startDate)}',
                                 ),
-                                const SizedBox(width: 8),
                                 _HeroBadge(
                                   icon: Icons.event_rounded,
                                   label:

@@ -293,6 +293,8 @@ import 'package:cms_app/pages/settings/profile_page.dart';
 import 'package:cms_app/pages/settings/terms_conditions_page.dart';
 import 'package:cms_app/pages/subscription/subscription_details_page.dart';
 import 'package:cms_app/providers/subscription_provider.dart';
+import 'package:cms_app/services/account_service.dart';
+import 'package:cms_app/models/account_info.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
@@ -309,7 +311,35 @@ class _SettingsPageState extends State<SettingsPage> {
   bool _notificationsEnabled = true;
   bool _darkModeEnabled = false;
 
+  AccountInfo? _account;
+  bool _loadingProfile = true;
+
   @override
+  void initState() {
+    super.initState();
+    _loadAccount();
+  }
+
+  Future<void> _loadAccount() async {
+    try {
+      final account = await AccountService.getAccount();
+
+      if (mounted) {
+        setState(() {
+          _account = account;
+        });
+      }
+    } catch (e) {
+      debugPrint(e.toString());
+    } finally {
+      if (mounted) {
+        setState(() {
+          _loadingProfile = false;
+        });
+      }
+    }
+  }
+
   Widget build(BuildContext context) {
     final auth = context.read<AuthProvider>();
 
@@ -361,6 +391,10 @@ class _SettingsPageState extends State<SettingsPage> {
         children: [
           // ── ACCOUNT ────────────────────────────────────────────────
           _sectionLabel('Account'),
+          if (_account != null) ...[
+            _settingsHeroCard(_account!),
+            const SizedBox(height: 20),
+          ],
           const SizedBox(height: 10),
           _card([
             _tile(
@@ -368,11 +402,17 @@ class _SettingsPageState extends State<SettingsPage> {
               iconColor: appColors.accent,
               iconBg: appColors.accentLight,
               title: 'Edit Profile',
-              onTap: () {
-                Navigator.push(
+              onTap: () async {
+                final updated = await Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const ProfilePage()),
+                  MaterialPageRoute(
+                    builder: (_) => ProfilePage(account: _account!),
+                  ),
                 );
+
+                if (updated == true) {
+                  await _loadAccount();
+                }
               },
             ),
             _divider(),
@@ -644,6 +684,233 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
+  Widget _settingsHeroCard(AccountInfo a) {
+    return GestureDetector(
+      onTap: () async {
+        final updated = await Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => ProfilePage(account: a)),
+        );
+
+        if (updated == true) {
+          await _loadAccount();
+        }
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [appColors.accent, const Color(0xFF1E40AF)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: appColors.accent.withOpacity(0.35),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Stack(
+          children: [
+            Positioned(
+              right: -24,
+              top: -24,
+              child: Container(
+                width: 120,
+                height: 120,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withOpacity(0.06),
+                ),
+              ),
+            ),
+
+            Positioned(
+              left: -12,
+              bottom: -32,
+              child: Container(
+                width: 90,
+                height: 90,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withOpacity(0.06),
+                ),
+              ),
+            ),
+
+            Padding(
+              padding: const EdgeInsets.all(22),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 72,
+                        height: 72,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white.withOpacity(0.2),
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.4),
+                            width: 2.5,
+                          ),
+                        ),
+                        child: ClipOval(
+                          child: a.avatar.isNotEmpty
+                              ? Image.network(
+                                  a.avatar,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) =>
+                                      _avatarFallback(a.name),
+                                )
+                              : _avatarFallback(a.name),
+                        ),
+                      ),
+
+                      const SizedBox(width: 16),
+
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              a.name,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 20,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: -0.4,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+
+                            const SizedBox(height: 4),
+
+                            Text(
+                              a.email,
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.75),
+                                fontSize: 12,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+
+                            const SizedBox(height: 8),
+
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.18),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: Colors.white.withOpacity(0.25),
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(
+                                    Icons.shield_rounded,
+                                    size: 11,
+                                    color: Colors.white,
+                                  ),
+                                  const SizedBox(width: 5),
+                                  Text(
+                                    a.role,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: 0.3,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const Icon(
+                        Icons.chevron_right_rounded,
+                        color: Colors.white,
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 18),
+
+                  Divider(color: Colors.white.withOpacity(0.15), height: 1),
+
+                  const SizedBox(height: 14),
+
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.calendar_today_rounded,
+                        size: 12,
+                        color: Colors.white.withOpacity(0.6),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Member since ${_fmtDate(a.joinedOn)}',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.7),
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _fmtDate(String iso) {
+    final d = DateTime.tryParse(iso);
+    if (d == null) return iso;
+    const months = [
+      '',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    return '${months[d.month]} ${d.day}, ${d.year}';
+  }
+
+  Widget _avatarFallback(String name) => Container(
+    color: Colors.white.withOpacity(0.2),
+    child: Center(
+      child: Text(
+        name.isNotEmpty ? name[0].toUpperCase() : '?',
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 28,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+    ),
+  );
   // ─── Section label ────────────────────────────────────────────────────────
 
   Widget _sectionLabel(String title) => Padding(
@@ -651,9 +918,9 @@ class _SettingsPageState extends State<SettingsPage> {
     child: Text(
       title,
       style: TextStyle(
-        color: appColors.textMuted,
+        color: appColors.textPrimary,
         fontWeight: FontWeight.w600,
-        fontSize: 12,
+        fontSize: 15,
         letterSpacing: 0.3,
       ),
     ),

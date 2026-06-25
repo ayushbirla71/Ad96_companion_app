@@ -1095,40 +1095,42 @@ import 'package:flutter/material.dart';
 import 'package:cms_app/theme/app_colors.dart';
 import 'package:cms_app/theme/custom_app_bar.dart';
 import 'package:cms_app/services/api_service.dart';
-
+import 'package:cms_app/models/account_info.dart';
 // ─── Model ────────────────────────────────────────────────────────────────────
 
-class AccountInfo {
-  final String userId, name, email, phoneNumber, role, joinedOn, avatar;
+// class AccountInfo {
+//   final String userId, name, email, phoneNumber, role, joinedOn, avatar;
 
-  const AccountInfo({
-    required this.userId,
-    required this.name,
-    required this.email,
-    required this.phoneNumber,
-    required this.role,
-    required this.joinedOn,
-    required this.avatar,
-  });
+//   const AccountInfo({
+//     required this.userId,
+//     required this.name,
+//     required this.email,
+//     required this.phoneNumber,
+//     required this.role,
+//     required this.joinedOn,
+//     required this.avatar,
+//   });
 
-  factory AccountInfo.fromJson(Map<String, dynamic> j) {
-    final a = (j['account'] as Map<String, dynamic>?) ?? {};
-    return AccountInfo(
-      userId: a['user_id']?.toString() ?? '',
-      name: a['name']?.toString() ?? '',
-      email: a['email']?.toString() ?? '',
-      phoneNumber: a['phone_number']?.toString() ?? '',
-      role: a['role']?.toString() ?? '',
-      joinedOn: a['joined_on']?.toString() ?? '',
-      avatar: a['avatar']?.toString() ?? '',
-    );
-  }
-}
+//   factory AccountInfo.fromJson(Map<String, dynamic> j) {
+//     final a = (j['account'] as Map<String, dynamic>?) ?? {};
+//     return AccountInfo(
+//       userId: a['user_id']?.toString() ?? '',
+//       name: a['name']?.toString() ?? '',
+//       email: a['email']?.toString() ?? '',
+//       phoneNumber: a['phone_number']?.toString() ?? '',
+//       role: a['role']?.toString() ?? '',
+//       joinedOn: a['joined_on']?.toString() ?? '',
+//       avatar: a['avatar']?.toString() ?? '',
+//     );
+//   }
+// }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 class ProfilePage extends StatefulWidget {
-  const ProfilePage({super.key});
+  final AccountInfo account;
+
+  const ProfilePage({super.key, required this.account});
 
   @override
   State<ProfilePage> createState() => _ProfilePageState();
@@ -1136,9 +1138,9 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage>
     with SingleTickerProviderStateMixin {
-  bool _loading = true;
+  // bool _loading = true;
   AccountInfo? _account;
-  String? _error;
+  // String? _error;
 
   AnimationController? _fadeCtrl;
   Animation<double>? _fadeAnim;
@@ -1146,13 +1148,15 @@ class _ProfilePageState extends State<ProfilePage>
   @override
   void initState() {
     super.initState();
+    _account = widget.account;
     final ctrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 500),
     );
     _fadeCtrl = ctrl;
     _fadeAnim = CurvedAnimation(parent: ctrl, curve: Curves.easeOut);
-    _load();
+    // _load();
+    _fadeCtrl?.forward();
   }
 
   @override
@@ -1161,28 +1165,28 @@ class _ProfilePageState extends State<ProfilePage>
     super.dispose();
   }
 
-  Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
-    try {
-      final res = await ApiService.get('/user/account');
-      if (res.statusCode == 200) {
-        final json = jsonDecode(res.body) as Map<String, dynamic>;
-        if (mounted) {
-          setState(() => _account = AccountInfo.fromJson(json));
-          _fadeCtrl?.forward(from: 0);
-        }
-      } else {
-        throw Exception('Server error ${res.statusCode}');
-      }
-    } catch (e) {
-      if (mounted) setState(() => _error = e.toString());
-    } finally {
-      if (mounted) setState(() => _loading = false);
-    }
-  }
+  // Future<void> _load() async {
+  //   setState(() {
+  //     _loading = true;
+  //     _error = null;
+  //   });
+  //   try {
+  //     final res = await ApiService.get('/user/account');
+  //     if (res.statusCode == 200) {
+  //       final json = jsonDecode(res.body) as Map<String, dynamic>;
+  //       if (mounted) {
+  //         setState(() => _account = AccountInfo.fromJson(json));
+  //         _fadeCtrl?.forward(from: 0);
+  //       }
+  //     } else {
+  //       throw Exception('Server error ${res.statusCode}');
+  //     }
+  //   } catch (e) {
+  //     if (mounted) setState(() => _error = e.toString());
+  //   } finally {
+  //     if (mounted) setState(() => _loading = false);
+  //   }
+  // }
 
   String _fmtDate(String iso) {
     final d = DateTime.tryParse(iso);
@@ -1209,7 +1213,10 @@ class _ProfilePageState extends State<ProfilePage>
     showDialog(
       context: context,
       barrierColor: Colors.black.withOpacity(0.5),
-      builder: (_) => _EditAccountDialog(account: _account!, onUpdated: _load),
+      builder: (_) => _EditAccountDialog(
+        account: _account!,
+        // onUpdated: _load
+      ),
     );
   }
 
@@ -1218,7 +1225,8 @@ class _ProfilePageState extends State<ProfilePage>
     showDialog(
       context: context,
       barrierColor: Colors.black.withOpacity(0.5),
-      builder: (_) => _ResetPasswordDialog(onUpdated: _load),
+      // builder: (_) => _ResetPasswordDialog(onUpdated: _load),
+      builder: (_) => const _ResetPasswordDialog(),
     );
   }
 
@@ -1226,14 +1234,19 @@ class _ProfilePageState extends State<ProfilePage>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: appColors.bg,
-      appBar: CustomAppBar(title: 'My Profile', onRefresh: _load),
-      body: _loading
-          ? _loader()
-          : _error != null
-          ? _errorView()
-          : _fadeAnim != null
-          ? FadeTransition(opacity: _fadeAnim!, child: _body())
-          : _body(),
+      appBar: CustomAppBar(
+        title: 'My Profile',
+        // onRefresh: _load
+        onRefresh: () {},
+      ),
+      // body: _loading
+      //     ? _loader()
+      //     : _error != null
+      //     ? _errorView()
+      //     : _fadeAnim != null
+      //     ? FadeTransition(opacity: _fadeAnim!, child: _body())
+      //     : _body(),
+      body: FadeTransition(opacity: _fadeAnim!, child: _body()),
     );
   }
 
@@ -1246,8 +1259,8 @@ class _ProfilePageState extends State<ProfilePage>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // ── Hero card ──
-          _heroCard(a),
-          const SizedBox(height: 20),
+          // _heroCard(a),
+          // const SizedBox(height: 20),
 
           // ── Info card ──
           _sectionLabel('Account Details'),
@@ -1691,88 +1704,91 @@ class _ProfilePageState extends State<ProfilePage>
     ),
   );
 
-  Widget _loader() => Center(
-    child: Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        SizedBox(
-          width: 44,
-          height: 44,
-          child: CircularProgressIndicator(
-            color: appColors.accent,
-            strokeWidth: 2.5,
-            strokeCap: StrokeCap.round,
-          ),
-        ),
-        const SizedBox(height: 16),
-        Text(
-          'Loading profile…',
-          style: TextStyle(color: appColors.textMuted, fontSize: 13),
-        ),
-      ],
-    ),
-  );
+  // Widget _loader() => Center(
+  //   child: Column(
+  //     mainAxisSize: MainAxisSize.min,
+  //     children: [
+  //       SizedBox(
+  //         width: 44,
+  //         height: 44,
+  //         child: CircularProgressIndicator(
+  //           color: appColors.accent,
+  //           strokeWidth: 2.5,
+  //           strokeCap: StrokeCap.round,
+  //         ),
+  //       ),
+  //       const SizedBox(height: 16),
+  //       Text(
+  //         'Loading profile…',
+  //         style: TextStyle(color: appColors.textMuted, fontSize: 13),
+  //       ),
+  //     ],
+  //   ),
+  // );
 
-  Widget _errorView() => Center(
-    child: Padding(
-      padding: const EdgeInsets.all(32),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: appColors.orangeLight,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              Icons.cloud_off_rounded,
-              color: appColors.orange,
-              size: 36,
-            ),
-          ),
-          const SizedBox(height: 20),
-          Text(
-            'Could not load profile',
-            style: TextStyle(
-              color: appColors.textPrimary,
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            _error ?? 'An unexpected error occurred.',
-            style: TextStyle(color: appColors.textSecondary, fontSize: 13),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 24),
-          FilledButton.icon(
-            onPressed: _load,
-            icon: const Icon(Icons.refresh_rounded, size: 16),
-            label: const Text('Try Again'),
-            style: FilledButton.styleFrom(
-              backgroundColor: appColors.accent,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-          ),
-        ],
-      ),
-    ),
-  );
+  // Widget _errorView() => Center(
+  //   child: Padding(
+  //     padding: const EdgeInsets.all(32),
+  //     child: Column(
+  //       mainAxisSize: MainAxisSize.min,
+  //       children: [
+  //         Container(
+  //           padding: const EdgeInsets.all(20),
+  //           decoration: BoxDecoration(
+  //             color: appColors.orangeLight,
+  //             shape: BoxShape.circle,
+  //           ),
+  //           child: Icon(
+  //             Icons.cloud_off_rounded,
+  //             color: appColors.orange,
+  //             size: 36,
+  //           ),
+  //         ),
+  //         const SizedBox(height: 20),
+  //         Text(
+  //           'Could not load profile',
+  //           style: TextStyle(
+  //             color: appColors.textPrimary,
+  //             fontSize: 18,
+  //             fontWeight: FontWeight.w700,
+  //           ),
+  //         ),
+  //         const SizedBox(height: 8),
+  //         Text(
+  //           _error ?? 'An unexpected error occurred.',
+  //           style: TextStyle(color: appColors.textSecondary, fontSize: 13),
+  //           textAlign: TextAlign.center,
+  //         ),
+  //         const SizedBox(height: 24),
+  //         FilledButton.icon(
+  //           onPressed: _load,
+  //           icon: const Icon(Icons.refresh_rounded, size: 16),
+  //           label: const Text('Try Again'),
+  //           style: FilledButton.styleFrom(
+  //             backgroundColor: appColors.accent,
+  //             foregroundColor: Colors.white,
+  //             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+  //             shape: RoundedRectangleBorder(
+  //               borderRadius: BorderRadius.circular(12),
+  //             ),
+  //           ),
+  //         ),
+  //       ],
+  //     ),
+  //   ),
+  // );
 }
 
 // ─── Edit Account Dialog (name, email, phone only) ────────────────────────────
 
 class _EditAccountDialog extends StatefulWidget {
   final AccountInfo account;
-  final VoidCallback onUpdated;
+  // final VoidCallback onUpdated;
 
-  const _EditAccountDialog({required this.account, required this.onUpdated});
+  const _EditAccountDialog({
+    required this.account,
+    // required this.onUpdated
+  });
 
   @override
   State<_EditAccountDialog> createState() => _EditAccountDialogState();
@@ -1819,8 +1835,12 @@ class _EditAccountDialogState extends State<_EditAccountDialog> {
 
       if (res.statusCode == 200) {
         if (mounted) {
-          Navigator.pop(context);
-          widget.onUpdated();
+          Navigator.of(context).pop();
+
+          Navigator.of(
+            context,
+            rootNavigator: true,
+          ).pop(true); // return true to Settings page
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: const Text('Account updated successfully'),
@@ -2081,10 +2101,8 @@ class _EditAccountDialogState extends State<_EditAccountDialog> {
 }
 
 // ─── Reset Password Dialog (password fields only) ─────────────────────────────
-
 class _ResetPasswordDialog extends StatefulWidget {
-  final VoidCallback onUpdated;
-  const _ResetPasswordDialog({required this.onUpdated});
+  const _ResetPasswordDialog({super.key});
 
   @override
   State<_ResetPasswordDialog> createState() => _ResetPasswordDialogState();
@@ -2147,8 +2165,9 @@ class _ResetPasswordDialogState extends State<_ResetPasswordDialog> {
 
       if (res.statusCode == 200) {
         if (mounted) {
-          Navigator.pop(context);
-          widget.onUpdated();
+          // Navigator.pop(context);
+          // widget.onUpdated();
+          Navigator.pop(context, true);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: const Text('Password reset successfully'),
@@ -2174,10 +2193,211 @@ class _ResetPasswordDialogState extends State<_ResetPasswordDialog> {
   }
 
   @override
+  // Widget build(BuildContext context) {
+  //   return Dialog(
+  //     backgroundColor: Colors.transparent,
+  //     insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 40),
+  //     child: Container(
+  //       decoration: BoxDecoration(
+  //         color: appColors.surface,
+  //         borderRadius: BorderRadius.circular(24),
+  //         boxShadow: [
+  //           BoxShadow(
+  //             color: Colors.black.withOpacity(0.12),
+  //             blurRadius: 32,
+  //             offset: const Offset(0, 12),
+  //           ),
+  //         ],
+  //       ),
+  //       child: Column(
+  //         mainAxisSize: MainAxisSize.min,
+  //         children: [
+  //           // ── Header ──
+  //           Padding(
+  //             padding: const EdgeInsets.fromLTRB(20, 20, 12, 0),
+  //             child: Row(
+  //               children: [
+  //                 Container(
+  //                   width: 36,
+  //                   height: 36,
+  //                   decoration: BoxDecoration(
+  //                     color: appColors.purpleLight,
+  //                     borderRadius: BorderRadius.circular(10),
+  //                   ),
+  //                   child: Icon(
+  //                     Icons.lock_reset_rounded,
+  //                     color: appColors.purple,
+  //                     size: 17,
+  //                   ),
+  //                 ),
+  //                 const SizedBox(width: 12),
+  //                 Expanded(
+  //                   child: Text(
+  //                     'Reset Password',
+  //                     style: TextStyle(
+  //                       color: appColors.textPrimary,
+  //                       fontSize: 16,
+  //                       fontWeight: FontWeight.w800,
+  //                       letterSpacing: -0.3,
+  //                     ),
+  //                   ),
+  //                 ),
+  //                 IconButton(
+  //                   onPressed: () => Navigator.pop(context),
+  //                   icon: Container(
+  //                     width: 32,
+  //                     height: 32,
+  //                     decoration: BoxDecoration(
+  //                       color: appColors.surfaceHigh,
+  //                       shape: BoxShape.circle,
+  //                       border: Border.all(color: appColors.border),
+  //                     ),
+  //                     child: Icon(
+  //                       Icons.close_rounded,
+  //                       color: appColors.textSecondary,
+  //                       size: 15,
+  //                     ),
+  //                   ),
+  //                 ),
+  //               ],
+  //             ),
+  //           ),
+  //           Divider(height: 20, thickness: 1, color: appColors.borderLight),
+  //           // ── Form ──
+  //           Padding(
+  //             padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+  //             child: Column(
+  //               children: [
+  //                 // Info banner
+  //                 Container(
+  //                   padding: const EdgeInsets.all(12),
+  //                   decoration: BoxDecoration(
+  //                     color: appColors.purpleLight,
+  //                     borderRadius: BorderRadius.circular(12),
+  //                     border: Border.all(
+  //                       color: appColors.purple.withOpacity(0.2),
+  //                     ),
+  //                   ),
+  //                   child: Row(
+  //                     children: [
+  //                       Icon(
+  //                         Icons.info_outline_rounded,
+  //                         color: appColors.purple,
+  //                         size: 16,
+  //                       ),
+  //                       const SizedBox(width: 8),
+  //                       Expanded(
+  //                         child: Text(
+  //                           'Enter your new password below. This will update your login credentials.',
+  //                           style: TextStyle(
+  //                             color: appColors.purple,
+  //                             fontSize: 12,
+  //                           ),
+  //                         ),
+  //                       ),
+  //                     ],
+  //                   ),
+  //                 ),
+  //                 const SizedBox(height: 16),
+  //                 // Error banner
+  //                 if (_errorMsg != null) ...[
+  //                   Container(
+  //                     padding: const EdgeInsets.all(12),
+  //                     decoration: BoxDecoration(
+  //                       color: appColors.redLight,
+  //                       borderRadius: BorderRadius.circular(12),
+  //                       border: Border.all(
+  //                         color: appColors.red.withOpacity(0.2),
+  //                       ),
+  //                     ),
+  //                     child: Row(
+  //                       children: [
+  //                         Icon(
+  //                           Icons.error_outline_rounded,
+  //                           color: appColors.red,
+  //                           size: 16,
+  //                         ),
+  //                         const SizedBox(width: 8),
+  //                         Expanded(
+  //                           child: Text(
+  //                             _errorMsg!,
+  //                             style: TextStyle(
+  //                               color: appColors.red,
+  //                               fontSize: 12,
+  //                             ),
+  //                           ),
+  //                         ),
+  //                       ],
+  //                     ),
+  //                   ),
+  //                   const SizedBox(height: 14),
+  //                 ],
+  //                 // New password
+  //                 _passwordField(
+  //                   ctrl: _newPassCtrl,
+  //                   label: 'New Password',
+  //                   hint: 'Enter new password',
+  //                   obscure: _obscureNew,
+  //                   onToggle: () => setState(() => _obscureNew = !_obscureNew),
+  //                 ),
+  //                 const SizedBox(height: 14),
+  //                 // Confirm password
+  //                 _passwordField(
+  //                   ctrl: _confirmPassCtrl,
+  //                   label: 'Confirm Password',
+  //                   hint: 'Confirm new password',
+  //                   obscure: _obscureConfirm,
+  //                   onToggle: () =>
+  //                       setState(() => _obscureConfirm = !_obscureConfirm),
+  //                 ),
+  //                 const SizedBox(height: 20),
+  //                 // Submit
+  //                 SizedBox(
+  //                   width: double.infinity,
+  //                   child: FilledButton.icon(
+  //                     onPressed: _saving ? null : _submit,
+  //                     icon: _saving
+  //                         ? const SizedBox(
+  //                             width: 16,
+  //                             height: 16,
+  //                             child: CircularProgressIndicator(
+  //                               color: Colors.white,
+  //                               strokeWidth: 2,
+  //                             ),
+  //                           )
+  //                         : const Icon(Icons.lock_reset_rounded, size: 16),
+  //                     label: Text(_saving ? 'Resetting…' : 'Reset Password'),
+  //                     style: FilledButton.styleFrom(
+  //                       backgroundColor: appColors.purple,
+  //                       foregroundColor: Colors.white,
+  //                       disabledBackgroundColor: appColors.purple.withOpacity(
+  //                         0.6,
+  //                       ),
+  //                       disabledForegroundColor: Colors.white,
+  //                       padding: const EdgeInsets.symmetric(vertical: 14),
+  //                       shape: RoundedRectangleBorder(
+  //                         borderRadius: BorderRadius.circular(14),
+  //                       ),
+  //                       textStyle: const TextStyle(
+  //                         fontSize: 14,
+  //                         fontWeight: FontWeight.w700,
+  //                       ),
+  //                     ),
+  //                   ),
+  //                 ),
+  //               ],
+  //             ),
+  //           ),
+  //         ],
+  //       ),
+  //     ),
+  //   );
+  // }
+  @override
   Widget build(BuildContext context) {
     return Dialog(
       backgroundColor: Colors.transparent,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 40),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
       child: Container(
         decoration: BoxDecoration(
           color: appColors.surface,
@@ -2190,192 +2410,202 @@ class _ResetPasswordDialogState extends State<_ResetPasswordDialog> {
             ),
           ],
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // ── Header ──
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 20, 12, 0),
-              child: Row(
-                children: [
-                  Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: appColors.purpleLight,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Icon(
-                      Icons.lock_reset_rounded,
-                      color: appColors.purple,
-                      size: 17,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'Reset Password',
-                      style: TextStyle(
-                        color: appColors.textPrimary,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.3,
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: Container(
-                      width: 32,
-                      height: 32,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.8,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // ================= HEADER =================
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 20, 12, 0),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 36,
+                      height: 36,
                       decoration: BoxDecoration(
-                        color: appColors.surfaceHigh,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: appColors.border),
+                        color: appColors.purpleLight,
+                        borderRadius: BorderRadius.circular(10),
                       ),
                       child: Icon(
-                        Icons.close_rounded,
-                        color: appColors.textSecondary,
-                        size: 15,
+                        Icons.lock_reset_rounded,
+                        color: appColors.purple,
+                        size: 17,
                       ),
                     ),
-                  ),
-                ],
-              ),
-            ),
 
-            Divider(height: 20, thickness: 1, color: appColors.borderLight),
+                    const SizedBox(width: 12),
 
-            // ── Form ──
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-              child: Column(
-                children: [
-                  // Info banner
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: appColors.purpleLight,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: appColors.purple.withOpacity(0.2),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.info_outline_rounded,
-                          color: appColors.purple,
-                          size: 16,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            'Enter your new password below. This will update your login credentials.',
-                            style: TextStyle(
-                              color: appColors.purple,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Error banner
-                  if (_errorMsg != null) ...[
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: appColors.redLight,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: appColors.red.withOpacity(0.2),
+                    Expanded(
+                      child: Text(
+                        'Reset Password',
+                        style: TextStyle(
+                          color: appColors.textPrimary,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.3,
                         ),
                       ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.error_outline_rounded,
-                            color: appColors.red,
-                            size: 16,
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              _errorMsg!,
-                              style: TextStyle(
-                                color: appColors.red,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ),
-                        ],
+                    ),
+
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          color: appColors.surfaceHigh,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: appColors.border),
+                        ),
+                        child: Icon(
+                          Icons.close_rounded,
+                          color: appColors.textSecondary,
+                          size: 15,
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 14),
                   ],
+                ),
+              ),
 
-                  // New password
-                  _passwordField(
-                    ctrl: _newPassCtrl,
-                    label: 'New Password',
-                    hint: 'Enter new password',
-                    obscure: _obscureNew,
-                    onToggle: () => setState(() => _obscureNew = !_obscureNew),
+              Divider(height: 20, thickness: 1, color: appColors.borderLight),
+
+              // ================= SCROLLABLE CONTENT =================
+              Flexible(
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.fromLTRB(
+                    20,
+                    0,
+                    20,
+                    MediaQuery.of(context).viewInsets.bottom + 20,
                   ),
-                  const SizedBox(height: 14),
-
-                  // Confirm password
-                  _passwordField(
-                    ctrl: _confirmPassCtrl,
-                    label: 'Confirm Password',
-                    hint: 'Confirm new password',
-                    obscure: _obscureConfirm,
-                    onToggle: () =>
-                        setState(() => _obscureConfirm = !_obscureConfirm),
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Submit
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton.icon(
-                      onPressed: _saving ? null : _submit,
-                      icon: _saving
-                          ? const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 2,
+                  child: Column(
+                    children: [
+                      // Info Banner
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: appColors.purpleLight,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: appColors.purple.withOpacity(0.2),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.info_outline_rounded,
+                              color: appColors.purple,
+                              size: 16,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Enter your new password below. This will update your login credentials.',
+                                style: TextStyle(
+                                  color: appColors.purple,
+                                  fontSize: 12,
+                                ),
                               ),
-                            )
-                          : const Icon(Icons.lock_reset_rounded, size: 16),
-                      label: Text(_saving ? 'Resetting…' : 'Reset Password'),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: appColors.purple,
-                        foregroundColor: Colors.white,
-                        disabledBackgroundColor: appColors.purple.withOpacity(
-                          0.6,
-                        ),
-                        disabledForegroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        textStyle: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
+                            ),
+                          ],
                         ),
                       ),
-                    ),
+
+                      const SizedBox(height: 16),
+
+                      // Error Banner
+                      if (_errorMsg != null) ...[
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: appColors.redLight,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: appColors.red.withOpacity(0.2),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.error_outline_rounded,
+                                color: appColors.red,
+                                size: 16,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  _errorMsg!,
+                                  style: TextStyle(
+                                    color: appColors.red,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                      ],
+
+                      _passwordField(
+                        ctrl: _newPassCtrl,
+                        label: 'New Password',
+                        hint: 'Enter new password',
+                        obscure: _obscureNew,
+                        onToggle: () =>
+                            setState(() => _obscureNew = !_obscureNew),
+                      ),
+
+                      const SizedBox(height: 14),
+
+                      _passwordField(
+                        ctrl: _confirmPassCtrl,
+                        label: 'Confirm Password',
+                        hint: 'Confirm new password',
+                        obscure: _obscureConfirm,
+                        onToggle: () =>
+                            setState(() => _obscureConfirm = !_obscureConfirm),
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      SizedBox(
+                        width: double.infinity,
+                        child: FilledButton.icon(
+                          onPressed: _saving ? null : _submit,
+                          icon: _saving
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Icon(Icons.lock_reset_rounded, size: 16),
+                          label: Text(
+                            _saving ? 'Resetting...' : 'Reset Password',
+                          ),
+                          style: FilledButton.styleFrom(
+                            backgroundColor: appColors.purple,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

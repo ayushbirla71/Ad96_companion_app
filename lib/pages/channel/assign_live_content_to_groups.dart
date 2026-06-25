@@ -1108,6 +1108,7 @@ import '../../providers/live_content_provider.dart';
 import '../../providers/group_provider.dart';
 import '../../models/group.dart';
 import '../../models/liveContent.dart';
+import './layout_content_assign_page.dart';
 
 import 'select_method_to_go_live.dart';
 import 'package:cms_app/theme/app_colors.dart';
@@ -1144,10 +1145,25 @@ class _AssignLiveContentToGroupsState extends State<AssignLiveContentToGroups> {
   List<dynamic> layouts = [];
   bool layoutsLoading = false;
 
+  Map<String, dynamic>? schedulePayload; // ADD THIS
+
   @override
   void initState() {
     super.initState();
     initData();
+  }
+
+  void printLongString(String text) {
+    const chunkSize = 1000;
+
+    for (int i = 0; i < text.length; i += chunkSize) {
+      print(
+        text.substring(
+          i,
+          i + chunkSize > text.length ? text.length : i + chunkSize,
+        ),
+      );
+    }
   }
 
   Future<void> loadLayouts() async {
@@ -1282,6 +1298,7 @@ class _AssignLiveContentToGroupsState extends State<AssignLiveContentToGroups> {
           contentId: providerContent!.id,
           selectedGroups: selectedGroups,
           layoutId: selectedLayoutId, // optional
+          schedulePayload: schedulePayload,
         ),
       ),
     );
@@ -1446,14 +1463,21 @@ class _AssignLiveContentToGroupsState extends State<AssignLiveContentToGroups> {
             itemBuilder: (_, i) {
               final content = contents[i];
               final isSelected = providerContent?.id == content.id;
+              final isLive = content.channelStatus.toLowerCase() == 'live';
 
               return GestureDetector(
-                onTap: () => setState(() => providerContent = content),
+                // onTap: () => setState(() => providerContent = content),
+                onTap: isLive
+                    ? null
+                    : () => setState(() => providerContent = content),
                 child: Container(
                   margin: const EdgeInsets.only(bottom: 10),
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: appColors.surface,
+                    // color: appColors.surface,
+                    color: isLive
+                        ? appColors.surface.withOpacity(0.6)
+                        : appColors.surface,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
                       color: isSelected
@@ -1490,36 +1514,106 @@ class _AssignLiveContentToGroupsState extends State<AssignLiveContentToGroups> {
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              content.name,
-                              style: TextStyle(
-                                color: appColors.textPrimary,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                        child:
+                            // Column(
+                            //   crossAxisAlignment: CrossAxisAlignment.start,
+                            //   children: [
+                            //     Text(
+                            //       content.name,
+                            //       style: TextStyle(
+                            //         color: appColors.textPrimary,
+                            //         fontSize: 13,
+                            //         fontWeight: FontWeight.w600,
+                            //       ),
+                            //       maxLines: 1,
+                            //       overflow: TextOverflow.ellipsis,
+                            //     ),
+                            //     const SizedBox(height: 3),
+                            //     Text(
+                            //       'Type: ${content.type}',
+                            //       style: TextStyle(
+                            //         color: appColors.textMuted,
+                            //         fontSize: 11,
+                            //       ),
+                            //     ),
+                            //   ],
+                            // ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        content.name,
+                                        style: TextStyle(
+                                          color: appColors.textPrimary,
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+
+                                    if (isLive)
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 3,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.green.withOpacity(.12),
+                                          borderRadius: BorderRadius.circular(
+                                            20,
+                                          ),
+                                          border: Border.all(
+                                            color: Colors.green.withOpacity(.3),
+                                          ),
+                                        ),
+                                        child: const Text(
+                                          "LIVE",
+                                          style: TextStyle(
+                                            color: Colors.green,
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+
+                                const SizedBox(height: 3),
+
+                                Text(
+                                  isLive
+                                      ? 'Currently running'
+                                      : 'Type: ${content.type}',
+                                  style: TextStyle(
+                                    color: isLive
+                                        ? Colors.green
+                                        : appColors.textMuted,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ],
                             ),
-                            const SizedBox(height: 3),
-                            Text(
-                              'Type: ${content.type}',
-                              style: TextStyle(
-                                color: appColors.textMuted,
-                                fontSize: 11,
-                              ),
-                            ),
-                          ],
-                        ),
                       ),
+                      // Radio<LiveContent>(
+                      //   value: content,
+                      //   groupValue: providerContent,
+                      //   activeColor: appColors.accent,
+                      //   onChanged: (value) =>
+                      //       setState(() => providerContent = value),
+                      // ),
                       Radio<LiveContent>(
                         value: content,
                         groupValue: providerContent,
                         activeColor: appColors.accent,
-                        onChanged: (value) =>
-                            setState(() => providerContent = value),
+                        onChanged: isLive
+                            ? null
+                            : (value) =>
+                                  setState(() => providerContent = value),
                       ),
                     ],
                   ),
@@ -1603,6 +1697,9 @@ class _AssignLiveContentToGroupsState extends State<AssignLiveContentToGroups> {
                     return GestureDetector(
                       onTap: () {
                         setState(() {
+                          if (selectedLayoutId != layout["layout_id"]) {
+                            schedulePayload = null;
+                          }
                           selectedLayoutId = layout["layout_id"];
                           selectedLayout = layout;
                         });
@@ -1622,12 +1719,13 @@ class _AssignLiveContentToGroupsState extends State<AssignLiveContentToGroups> {
                         ),
                         child: Row(
                           children: [
-                            Icon(
-                              Icons.dashboard_customize_rounded,
-                              color: isSelected
-                                  ? appColors.accent
-                                  : appColors.textMuted,
-                            ),
+                            // Icon(
+                            //   Icons.dashboard_customize_rounded,
+                            //   color: isSelected
+                            //       ? appColors.accent
+                            //       : appColors.textMuted,
+                            // ),
+                            LayoutPreview(layout: layout),
                             const SizedBox(width: 12),
 
                             Expanded(
@@ -1659,6 +1757,9 @@ class _AssignLiveContentToGroupsState extends State<AssignLiveContentToGroups> {
                               groupValue: selectedLayoutId,
                               onChanged: (value) {
                                 setState(() {
+                                  if (selectedLayoutId != value) {
+                                    schedulePayload = null;
+                                  }
                                   selectedLayoutId = value;
                                   selectedLayout = layout;
                                 });
@@ -1693,6 +1794,7 @@ class _AssignLiveContentToGroupsState extends State<AssignLiveContentToGroups> {
                     setState(() {
                       selectedLayoutId = null;
                       selectedLayout = null;
+                      schedulePayload = null;
 
                       showLayouts = false;
                       showGroups = true;
@@ -1721,14 +1823,44 @@ class _AssignLiveContentToGroupsState extends State<AssignLiveContentToGroups> {
                 child: FilledButton.icon(
                   onPressed: selectedLayoutId == null
                       ? null
-                      : () {
-                          setState(() {
-                            showLayouts = false;
-                            showGroups = true;
-                          });
+                      : () async {
+                          if (schedulePayload != null) {
+                            // Already assigned — go straight to groups
+                            setState(() {
+                              showLayouts = false;
+                              showGroups = true;
+                            });
+                            return;
+                          }
+                          final result = await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => LayoutContentAssignPage(
+                                layout: selectedLayout!,
+                                contentId: providerContent!.id,
+                              ),
+                            ),
+                          );
+                          if (result != null) {
+                            print("Result: $result");
+                            printLongString(
+                              "Result full: ${jsonEncode(result)}",
+                            );
+                            setState(() {
+                              schedulePayload = Map<String, dynamic>.from(
+                                result,
+                              );
+                            });
+                            // result is the full schedule payload
+                            // pass it to your go-live / select method here
+                            // e.g. goLive(result); or selectSchedule(result);
+                          }
                         },
                   icon: const Icon(Icons.arrow_forward_rounded, size: 18),
-                  label: const Text("Continue"),
+                  // label: const Text("Continue"),
+                  label: Text(
+                    schedulePayload != null ? "Select Group" : "Continue",
+                  ),
                   style: FilledButton.styleFrom(
                     backgroundColor: appColors.accent,
                     foregroundColor: Colors.white,
@@ -2210,6 +2342,112 @@ class _AssignLiveContentToGroupsState extends State<AssignLiveContentToGroups> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class LayoutPreview extends StatelessWidget {
+  final Map<String, dynamic> layout;
+
+  const LayoutPreview({super.key, required this.layout});
+
+  Color parseColor(dynamic colorValue) {
+    if (colorValue == null) return Colors.grey;
+
+    String color = colorValue.toString().trim();
+
+    // HEX Color
+    if (color.startsWith('#')) {
+      try {
+        color = color.replaceFirst('#', '');
+
+        if (color.length == 6) {
+          color = 'FF$color';
+        }
+
+        return Color(int.parse(color, radix: 16));
+      } catch (e) {
+        debugPrint('Color parse error: $e');
+      }
+    }
+
+    // HSL Color
+    if (color.startsWith('hsl')) {
+      try {
+        final match = RegExp(
+          r'hsl\(([\d.]+),\s*([\d.]+)%?,\s*([\d.]+)%?\)',
+        ).firstMatch(color);
+
+        if (match != null) {
+          final h = double.parse(match.group(1)!);
+          final s = double.parse(match.group(2)!) / 100;
+          final l = double.parse(match.group(3)!) / 100;
+
+          return HSLColor.fromAHSL(1.0, h, s, l).toColor();
+        }
+      } catch (_) {}
+    }
+
+    return Colors.grey;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final zones = List<Map<String, dynamic>>.from(layout["zones"] ?? [])
+      ..sort(
+        (a, b) =>
+            ((a["z_index"] ?? 0) as num).compareTo((b["z_index"] ?? 0) as num),
+      );
+
+    final isLandscape = layout["orientation"] == "landscape";
+
+    final previewWidth = isLandscape ? 100.0 : 70.0;
+    final previewHeight = isLandscape ? 60.0 : 100.0;
+
+    return Container(
+      width: previewWidth,
+      height: previewHeight,
+      decoration: BoxDecoration(
+        color: parseColor(layout["background_color"]),
+        // borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: Colors.grey.shade300),
+      ),
+      child: Stack(
+        children: zones.map((zone) {
+          final x = (zone["x"] as num).toDouble();
+          final y = (zone["y"] as num).toDouble();
+          final width = (zone["width"] as num).toDouble();
+          final height = (zone["height"] as num).toDouble();
+          debugPrint('Raw color: ${zone["color"]}');
+          return Positioned(
+            left: previewWidth * (x / 100),
+            top: previewHeight * (y / 100),
+            width: previewWidth * (width / 100),
+            height: previewHeight * (height / 100),
+            child: Container(
+              decoration: BoxDecoration(
+                color: parseColor(zone["color"]),
+
+                // color: Colors.red,
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.6),
+                  width: 0.5,
+                ),
+              ),
+              child: Center(
+                child: Text(
+                  zone["content_type_allowed"] == "widget" ? "W" : "M",
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 7,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+          );
+        }).toList(),
       ),
     );
   }
