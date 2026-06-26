@@ -82,11 +82,20 @@ class SubscriptionModel {
 class TierModel {
   final String name;
   final int price;
+  final bool featuresVisibleToClient;
 
-  TierModel({required this.name, required this.price});
+  TierModel({
+    required this.name,
+    required this.price,
+    required this.featuresVisibleToClient,
+  });
 
   factory TierModel.fromJson(Map<String, dynamic> json) {
-    return TierModel(name: json['name'] ?? '', price: json['price'] ?? 0);
+    return TierModel(
+      name: json['name'] ?? '',
+      price: json['price'] ?? 0,
+      featuresVisibleToClient: json['features_visible_to_client'] ?? true,
+    );
   }
 }
 

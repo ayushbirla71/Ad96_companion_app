@@ -174,6 +174,7 @@ class _ChannelDetailsPageState extends State<ChannelDetailsPage> {
                                   channelName: channel.name,
                                   channelId: channel.channelId,
                                   contentId: "",
+                                  contentType: "",
                                 ),
                               ),
                             );

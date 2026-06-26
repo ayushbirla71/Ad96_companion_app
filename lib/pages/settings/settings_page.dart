@@ -838,10 +838,10 @@ class _SettingsPageState extends State<SettingsPage> {
                         ),
                       ),
 
-                      const Icon(
-                        Icons.chevron_right_rounded,
-                        color: Colors.white,
-                      ),
+                      // const Icon(
+                      //   Icons.chevron_right_rounded,
+                      //   color: Colors.white,
+                      // ),
                     ],
                   ),
 

@@ -410,4 +410,35 @@ class FeatureAccess {
 
     return expiryDate.isBefore(DateTime.now());
   }
+
+  static SubscriptionProvider _provider(BuildContext context) {
+    return context.watch<SubscriptionProvider>();
+  }
+
+  /// Tier visibility
+  static bool showPremiumFeatures(BuildContext context) {
+    final provider = _provider(context);
+    return provider.subscription?.tier?.featuresVisibleToClient ?? true;
+  }
+
+  static bool showProofOfPlay(BuildContext context) {
+    final provider = _provider(context);
+
+    return (provider.subscription?.tier?.featuresVisibleToClient ?? true) &&
+        provider.hasFeature("PROOF_OF_PLAY");
+  }
+
+  static bool showLiveStreaming(BuildContext context) {
+    final provider = _provider(context);
+
+    return (provider.subscription?.tier?.featuresVisibleToClient ?? true) &&
+        provider.hasFeature("LIVE_STREAMING");
+  }
+
+  static bool showCarousels(BuildContext context) {
+    final provider = _provider(context);
+
+    return (provider.subscription?.tier?.featuresVisibleToClient ?? true) &&
+        provider.hasFeature("CAROUSELS");
+  }
 }

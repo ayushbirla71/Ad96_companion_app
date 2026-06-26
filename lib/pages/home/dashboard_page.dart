@@ -1272,6 +1272,7 @@
 import 'dart:convert';
 import 'package:cms_app/pages/home/notifications_page.dart';
 import 'package:cms_app/pages/layoutpage/layout_access_page.dart';
+import 'package:cms_app/providers/subscription_provider.dart';
 import 'package:cms_app/services/api_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -1289,6 +1290,8 @@ import '../liveContent/live_content_page.dart';
 import '../schedules/schedules_page.dart';
 import '../settings/settings_page.dart';
 import '../exports/export_details_page.dart';
+import 'package:cms_app/utils/feature_access.dart';
+import 'package:cms_app/providers/subscription_provider.dart';
 
 // ─── Safe parsers ──────────────────────────────────────────────────────────────
 
@@ -1514,6 +1517,7 @@ class _DashboardPageState extends State<DashboardPage>
     try {
       await Future.wait([
         _fetchStats(),
+        context.read<SubscriptionProvider>().loadSubscription(),
         context.read<AdProvider>().loadAds(),
         context.read<DeviceProvider>().loadDevices(),
         context.read<ScheduleProvider>().loadSchedules(),
@@ -2428,6 +2432,12 @@ class _DashboardPageState extends State<DashboardPage>
   // ─── Quick Actions ─────────────────────────────────────────────────────────
 
   Widget _quickActions() {
+    context.watch<SubscriptionProvider>();
+    final showPremium = FeatureAccess.showPremiumFeatures(context);
+    final showReports = FeatureAccess.showProofOfPlay(context);
+    final showLive = FeatureAccess.showLiveStreaming(context);
+    final showCarousels = FeatureAccess.showCarousels(context);
+
     final actions = [
       _QAData(
         Icons.campaign_rounded,
@@ -2457,13 +2467,17 @@ class _DashboardPageState extends State<DashboardPage>
         _c.yellowLight,
         () => _go(const SchedulesPage()),
       ),
-      _QAData(
-        Icons.bar_chart_rounded,
-        'Reports',
-        _c.teal,
-        _c.tealLight,
-        () => _go(const ExportDetailsPage()),
-      ),
+
+      if (showReports)
+        _QAData(
+          Icons.bar_chart_rounded,
+          'Reports',
+          _c.teal,
+          _c.tealLight,
+          () => _go(const ExportDetailsPage()),
+        ),
+
+      // if (showCarousels)
       _QAData(
         Icons.view_carousel_rounded,
         'Carousels',
@@ -2471,21 +2485,26 @@ class _DashboardPageState extends State<DashboardPage>
         _c.orangeLight,
         () => _go(const CarouselPage()),
       ),
-      _QAData(
-        Icons.stream_rounded,
-        'Live',
-        _c.red,
-        _c.redLight,
-        () => _go(const LiveContentPage()),
-      ),
+
+      if (showLive)
+        _QAData(
+          Icons.stream_rounded,
+          'Live',
+          _c.red,
+          _c.redLight,
+          () => _go(const LiveContentPage()),
+        ),
+
       // NEW LAYOUTS TAB
-      _QAData(
-        Icons.dashboard_customize_rounded,
-        'Layouts',
-        Colors.indigo,
-        Colors.indigo.shade100,
-        () => _go(const LayoutAccessPage()),
-      ),
+      if (showPremium)
+        _QAData(
+          Icons.dashboard_customize_rounded,
+          'Layouts',
+          Colors.indigo,
+          Colors.indigo.shade100,
+          () => _go(const LayoutAccessPage()),
+        ),
+
       _QAData(
         Icons.settings_rounded,
         'Settings',

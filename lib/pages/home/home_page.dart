@@ -120,10 +120,10 @@
 //             index = 0;
 //           });
 //           // Return false to prevent the app from closing/popping
-//           return false; 
+//           return false;
 //         }
 //         // If we ARE on the Dashboard, return true to allow the app to close normally
-//         return true; 
+//         return true;
 //       },
 //       child: Scaffold(
 //         body: IndexedStack(index: index, children: pages),
@@ -221,9 +221,8 @@
 //   }
 // }
 
-
 import 'package:flutter/material.dart';
-import 'package:cms_app/theme/app_colors.dart'; 
+import 'package:cms_app/theme/app_colors.dart';
 import 'package:cms_app/pages/ads/ad_create_page.dart';
 import 'package:cms_app/pages/channel/create_channel_page.dart';
 import 'package:cms_app/pages/devices/add_device_step1.dart';
@@ -237,6 +236,7 @@ import '../schedules/schedules_page.dart';
 import '../settings/settings_page.dart';
 import '../deviceGroups/device_groups_page.dart';
 import 'dashboard_page.dart';
+import 'package:cms_app/utils/feature_access.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -386,10 +386,7 @@ class _HomePageState extends State<HomePage> {
           children: [
             Container(
               padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: bgColor,
-                shape: BoxShape.circle,
-              ),
+              decoration: BoxDecoration(color: bgColor, shape: BoxShape.circle),
               child: Icon(icon, color: color, size: 28),
             ),
             const SizedBox(height: 12),
@@ -425,48 +422,54 @@ class _HomePageState extends State<HomePage> {
         backgroundColor: appColors.bg,
         body: IndexedStack(index: index, children: pages),
 
-        floatingActionButton: GestureDetector(
-          onTap: () => navigate(const AssignLiveContentToGroups()),
-          child: Container(
-            width: 68, 
-            height: 68,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: LinearGradient(
-                colors: [appColors.accent, const Color(0xFF1E40AF)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: appColors.accent.withOpacity(0.4),
-                  blurRadius: 16,
-                  offset: const Offset(0, 6),
-                ),
-              ],
-              border: Border.all(
-                color: appColors.surface.withOpacity(0.2), 
-                width: 2,
-              )
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: const [
-                Icon(Icons.wifi_tethering_rounded, color: Colors.white, size: 26),
-                SizedBox(height: 2),
-                Text(
-                  "LIVE",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.5,
+        floatingActionButton: FeatureAccess.showLiveStreaming(context)
+            ? GestureDetector(
+                onTap: () => navigate(const AssignLiveContentToGroups()),
+                child: Container(
+                  width: 68,
+                  height: 68,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      colors: [appColors.accent, const Color(0xFF1E40AF)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: appColors.accent.withOpacity(0.4),
+                        blurRadius: 16,
+                        offset: const Offset(0, 6),
+                      ),
+                    ],
+                    border: Border.all(
+                      color: appColors.surface.withOpacity(0.2),
+                      width: 2,
+                    ),
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: const [
+                      Icon(
+                        Icons.wifi_tethering_rounded,
+                        color: Colors.white,
+                        size: 26,
+                      ),
+                      SizedBox(height: 2),
+                      Text(
+                        "LIVE",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ],
-            ),
-          ),
-        ),
+              )
+            : null,
 
         floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
 
@@ -482,14 +485,16 @@ class _HomePageState extends State<HomePage> {
             shadowColor: appColors.shadow,
             shape: const CircularNotchedRectangle(),
             notchMargin: 8,
-            padding: EdgeInsets.zero, 
+            padding: EdgeInsets.zero,
             child: SizedBox(
-              height: 70, 
+              height: 70,
               child: Row(
                 children: [
-                  Expanded(child: _navItem(Icons.dashboard_rounded, "Dashboard", 0)),
+                  Expanded(
+                    child: _navItem(Icons.dashboard_rounded, "Dashboard", 0),
+                  ),
                   Expanded(child: _navItem(Icons.campaign_rounded, "Ads", 1)),
-                  const SizedBox(width: 48), 
+                  const SizedBox(width: 48),
                   Expanded(child: _navItem(Icons.tv_rounded, "Devices", 2)),
                   Expanded(child: _navItem(Icons.group_rounded, "Groups", 3)),
                 ],
@@ -517,14 +522,14 @@ class _HomePageState extends State<HomePage> {
             Icon(
               icon,
               color: isSelected ? appColors.accent : appColors.textMuted,
-              size: isSelected ? 26 : 24, 
+              size: isSelected ? 26 : 24,
             ),
             const SizedBox(height: 4),
             // No Flexible here! Just the Text with maxLines to prevent height looping
             Text(
               label,
-              maxLines: 1, 
-              overflow: TextOverflow.ellipsis, 
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,

@@ -2081,6 +2081,9 @@ import '../../providers/group_provider.dart';
 import '../../providers/live_content_provider.dart';
 import '../../providers/carousel_provider.dart';
 import 'package:cms_app/theme/app_colors.dart';
+import 'package:cms_app/utils/feature_access.dart';
+import '../../providers/subscription_provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 enum ScheduleType { single, multiple }
 
@@ -2153,6 +2156,8 @@ class _CreateSchedulePageState extends State<CreateSchedulePage> {
     toDate = today;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<SubscriptionProvider>().loadSubscription();
+
       context.read<AdProvider>().loadAds();
       context.read<GroupProvider>().loadGroups();
       context.read<LiveContentProvider>().loadLiveContents();
@@ -2333,34 +2338,69 @@ class _CreateSchedulePageState extends State<CreateSchedulePage> {
               const SizedBox(height: 22),
 
               // ── Website chip ──
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 10,
-                ),
-                decoration: BoxDecoration(
-                  color: appColors.surfaceHigh,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: appColors.border),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.language_rounded,
-                      color: appColors.textMuted,
-                      size: 15,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Available on Web Dashboard',
-                      style: TextStyle(
-                        color: appColors.textSecondary,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
+              // Container(
+              //   padding: const EdgeInsets.symmetric(
+              //     horizontal: 16,
+              //     vertical: 10,
+              //   ),
+              //   decoration: BoxDecoration(
+              //     color: appColors.surfaceHigh,
+              //     borderRadius: BorderRadius.circular(12),
+              //     border: Border.all(color: appColors.border),
+              //   ),
+
+              //   child: Row(
+              //     mainAxisSize: MainAxisSize.min,
+              //     children: [
+              //       Icon(
+              //         Icons.language_rounded,
+              //         color: appColors.textMuted,
+              //         size: 15,
+              //       ),
+              //       const SizedBox(width: 8),
+              //       Text(
+              //         'Available on Web Dashboard',
+              //         style: TextStyle(
+              //           color: appColors.textSecondary,
+              //           fontSize: 12,
+              //           fontWeight: FontWeight.w600,
+              //         ),
+              //       ),
+              //     ],
+              //   ),
+              // ),
+              InkWell(
+                onTap: _openWebDashboard,
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: appColors.surfaceHigh,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: appColors.border),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.language_rounded,
+                        color: appColors.textMuted,
+                        size: 15,
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 8),
+                      Text(
+                        'Available on Web Dashboard',
+                        style: TextStyle(
+                          color: appColors.textSecondary,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(height: 22),
@@ -2463,6 +2503,11 @@ class _CreateSchedulePageState extends State<CreateSchedulePage> {
 
   String toISODate(String date) => '${date}T00:00:00.000Z';
 
+  Future<void> _openWebDashboard() async {
+    final url = Uri.parse("https://cms.ad96.in/");
+
+    await launchUrl(url, mode: LaunchMode.externalApplication);
+  }
   // ─── Build ────────────────────────────────────────────────────────────────
 
   @override
@@ -2510,6 +2555,9 @@ class _CreateSchedulePageState extends State<CreateSchedulePage> {
         emptyText = '';
         break;
     }
+
+    final showLive = FeatureAccess.showLiveStreaming(context);
+    final showCarousels = FeatureAccess.showCarousels(context);
 
     return Scaffold(
       backgroundColor: appColors.bg,
@@ -2584,14 +2632,17 @@ class _CreateSchedulePageState extends State<CreateSchedulePage> {
                     color: appColors.textMuted,
                   ),
                   items: [
-                    const DropdownMenuItem(
-                      value: ContentType.live,
-                      child: Text('Live Content'),
-                    ),
+                    if (showLive)
+                      const DropdownMenuItem(
+                        value: ContentType.live,
+                        child: Text('Live Content'),
+                      ),
                     const DropdownMenuItem(
                       value: ContentType.ad,
                       child: Text('Ads'),
                     ),
+
+                    // if (showCarousels)
                     const DropdownMenuItem(
                       value: ContentType.carousel,
                       child: Text('Carousel'),
