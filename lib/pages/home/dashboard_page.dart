@@ -2477,14 +2477,14 @@ class _DashboardPageState extends State<DashboardPage>
           () => _go(const ExportDetailsPage()),
         ),
 
-      // if (showCarousels)
-      _QAData(
-        Icons.view_carousel_rounded,
-        'Carousels',
-        _c.orange,
-        _c.orangeLight,
-        () => _go(const CarouselPage()),
-      ),
+      if (showCarousels)
+        _QAData(
+          Icons.view_carousel_rounded,
+          'Carousels',
+          _c.orange,
+          _c.orangeLight,
+          () => _go(const CarouselPage()),
+        ),
 
       if (showLive)
         _QAData(

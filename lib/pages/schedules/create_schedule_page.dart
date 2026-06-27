@@ -2642,11 +2642,11 @@ class _CreateSchedulePageState extends State<CreateSchedulePage> {
                       child: Text('Ads'),
                     ),
 
-                    // if (showCarousels)
-                    const DropdownMenuItem(
-                      value: ContentType.carousel,
-                      child: Text('Carousel'),
-                    ),
+                    if (showCarousels)
+                      const DropdownMenuItem(
+                        value: ContentType.carousel,
+                        child: Text('Carousel'),
+                      ),
                     // ── NEW: Screen Layout ──
                     DropdownMenuItem(
                       value: ContentType.screenLayout,

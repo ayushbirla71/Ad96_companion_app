@@ -43,18 +43,10 @@ class SubscriptionModel {
     return false;
   }
 
-  /// LIMIT CHECK
-  bool hasLimitAvailable(String key, int currentCount) {
-    final value = featuresCache[key];
-
-    if (value is int) {
-      return currentCount < value;
-    }
-
-    return false;
+  bool isUnlimited(String key) {
+    return featuresCache[key] == "unlimited";
   }
 
-  /// GET LIMIT VALUE
   int getLimit(String key) {
     final value = featuresCache[key];
 
@@ -62,18 +54,55 @@ class SubscriptionModel {
       return value;
     }
 
+    if (value is String) {
+      return int.tryParse(value) ?? 0;
+    }
+
     return 0;
   }
 
+  /// LIMIT CHECK
+  bool hasLimitAvailable(String key, int currentCount) {
+    // final value = featuresCache[key];
+
+    // if (value is int) {
+    //   return currentCount < value;
+    // }
+
+    // return false;
+    if (isUnlimited(key)) {
+      return true;
+    }
+
+    final limit = getLimit(key);
+
+    return currentCount < limit;
+  }
+
+  /// GET LIMIT VALUE
+  // int getLimit(String key) {
+  //   final value = featuresCache[key];
+
+  //   if (value is int) {
+  //     return value;
+  //   }
+
+  //   return 0;
+  // }
+
   bool hasStorageAvailable(int newFileSizeBytes) {
+    if (isUnlimited("STORAGE_LIMIT")) {
+      return true;
+    }
+
     final storageLimit = getLimit("STORAGE_LIMIT");
 
     final usedStorage = client?.usedStorageBytes ?? 0;
 
     // UNLIMITED
-    if (storageLimit == 0) {
-      return true;
-    }
+    // if (storageLimit == 0) {
+    //   return true;
+    // }
 
     return (usedStorage + newFileSizeBytes) <= storageLimit;
   }
