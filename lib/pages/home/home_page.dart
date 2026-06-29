@@ -424,7 +424,12 @@ class _HomePageState extends State<HomePage> {
 
         floatingActionButton: FeatureAccess.showLiveStreaming(context)
             ? GestureDetector(
-                onTap: () => navigate(const AssignLiveContentToGroups()),
+                // onTap: () => navigate(const AssignLiveContentToGroups()),
+                onTap: () => FeatureAccess.openFeature(
+                  context: context,
+                  featureKey: "LIVE_STREAMING",
+                  page: const AssignLiveContentToGroups(),
+                ),
                 child: Container(
                   width: 68,
                   height: 68,

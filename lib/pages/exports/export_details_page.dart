@@ -407,10 +407,47 @@ class _ExportDetailsPageState extends State<ExportDetailsPage> {
     return Scaffold(
       backgroundColor: appColors.bg,
 
+      // appBar: AppBar(
+      //   backgroundColor: appColors.surface,
+      //   surfaceTintColor: Colors.transparent,
+      //   elevation: 0,
+
+      //   leading: IconButton(
+      //     icon: Container(
+      //       width: 34,
+      //       height: 34,
+      //       decoration: BoxDecoration(
+      //         color: appColors.surfaceHigh,
+      //         shape: BoxShape.circle,
+      //         border: Border.all(color: appColors.border),
+      //       ),
+      //       child: Icon(
+      //         Icons.arrow_back_ios_new_rounded,
+      //         color: appColors.textSecondary,
+      //         size: 15,
+      //       ),
+      //     ),
+      //     onPressed: () => Navigator.pop(context),
+      //   ),
+      //   title: Text(
+      //     'Exports',
+      //     style: TextStyle(
+      //       color: appColors.textPrimary,
+      //       fontSize: 15,
+      //       fontWeight: FontWeight.w700,
+      //       letterSpacing: -0.3,
+      //     ),
+      //   ),
+      //   bottom: PreferredSize(
+      //     preferredSize: const Size.fromHeight(1),
+      //     child: Container(height: 1, color: appColors.border),
+      //   ),
+      // ),
       appBar: AppBar(
         backgroundColor: appColors.surface,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
+
         leading: IconButton(
           icon: Container(
             width: 34,
@@ -428,21 +465,53 @@ class _ExportDetailsPageState extends State<ExportDetailsPage> {
           ),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text(
-          'Exports',
-          style: TextStyle(
-            color: appColors.textPrimary,
-            fontSize: 15,
-            fontWeight: FontWeight.w700,
-            letterSpacing: -0.3,
-          ),
+
+        titleSpacing: 16,
+
+        title: Row(
+          children: [
+            Container(
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [appColors.accent, const Color(0xFF1D4ED8)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(
+                Icons.file_download_rounded,
+                color: Colors.white,
+                size: 18,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Exports',
+                  style: TextStyle(
+                    color: appColors.textPrimary,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.3,
+                    height: 1.1,
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
+
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
           child: Container(height: 1, color: appColors.border),
         ),
       ),
-
       body: Padding(
         padding: const EdgeInsets.all(16),
 

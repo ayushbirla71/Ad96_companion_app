@@ -2097,7 +2097,7 @@ class CreateSchedulePage extends StatefulWidget {
 }
 
 class _CreateSchedulePageState extends State<CreateSchedulePage> {
-  ContentType selectedContentType = ContentType.live;
+  ContentType selectedContentType = ContentType.ad;
   String? selectedItemId;
 
   final Set<String> selectedGroupIds = {};
@@ -2556,8 +2556,15 @@ class _CreateSchedulePageState extends State<CreateSchedulePage> {
         break;
     }
 
-    final showLive = FeatureAccess.showLiveStreaming(context);
-    final showCarousels = FeatureAccess.showCarousels(context);
+    final showLive = FeatureAccess.showFeatureDropdown(
+      context,
+      "LIVE_STREAMING",
+    );
+
+    final showCarousels = FeatureAccess.showFeatureDropdown(
+      context,
+      "CAROUSELS",
+    );
 
     return Scaffold(
       backgroundColor: appColors.bg,
@@ -2632,15 +2639,16 @@ class _CreateSchedulePageState extends State<CreateSchedulePage> {
                     color: appColors.textMuted,
                   ),
                   items: [
+                    const DropdownMenuItem(
+                      value: ContentType.ad,
+                      child: Text('Ads'),
+                    ),
+
                     if (showLive)
                       const DropdownMenuItem(
                         value: ContentType.live,
                         child: Text('Live Content'),
                       ),
-                    const DropdownMenuItem(
-                      value: ContentType.ad,
-                      child: Text('Ads'),
-                    ),
 
                     if (showCarousels)
                       const DropdownMenuItem(

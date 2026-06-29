@@ -424,21 +424,26 @@ class FeatureAccess {
   static bool showProofOfPlay(BuildContext context) {
     final provider = _provider(context);
 
-    return (provider.subscription?.tier?.featuresVisibleToClient ?? true) &&
+    return (provider.subscription?.tier?.featuresVisibleToClient ?? true) ||
         provider.hasFeature("PROOF_OF_PLAY");
   }
 
   static bool showLiveStreaming(BuildContext context) {
     final provider = _provider(context);
 
-    return (provider.subscription?.tier?.featuresVisibleToClient ?? true) &&
+    return (provider.subscription?.tier?.featuresVisibleToClient ?? true) ||
         provider.hasFeature("LIVE_STREAMING");
   }
 
   static bool showCarousels(BuildContext context) {
     final provider = _provider(context);
 
-    return (provider.subscription?.tier?.featuresVisibleToClient ?? true) &&
+    return (provider.subscription?.tier?.featuresVisibleToClient ?? true) ||
         provider.hasFeature("CAROUSELS");
+  }
+
+  static bool showFeatureDropdown(BuildContext context, String featureKey) {
+    final provider = _provider(context);
+    return provider.hasFeature(featureKey);
   }
 }

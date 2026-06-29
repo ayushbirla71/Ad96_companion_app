@@ -2474,7 +2474,12 @@ class _DashboardPageState extends State<DashboardPage>
           'Reports',
           _c.teal,
           _c.tealLight,
-          () => _go(const ExportDetailsPage()),
+          // () => _go(const ExportDetailsPage()),
+          () => FeatureAccess.openFeature(
+            context: context,
+            featureKey: "PROOF_OF_PLAY",
+            page: const ExportDetailsPage(),
+          ),
         ),
 
       if (showCarousels)
@@ -2483,7 +2488,12 @@ class _DashboardPageState extends State<DashboardPage>
           'Carousels',
           _c.orange,
           _c.orangeLight,
-          () => _go(const CarouselPage()),
+          // () => _go(const CarouselPage()),
+          () => FeatureAccess.openFeature(
+            context: context,
+            featureKey: "CAROUSELS",
+            page: const CarouselPage(),
+          ),
         ),
 
       if (showLive)
@@ -2492,7 +2502,12 @@ class _DashboardPageState extends State<DashboardPage>
           'Live',
           _c.red,
           _c.redLight,
-          () => _go(const LiveContentPage()),
+          // () => _go(const LiveContentPage()),
+          () => FeatureAccess.openFeature(
+            context: context,
+            featureKey: "LIVE_STREAMING",
+            page: const LiveContentPage(),
+          ),
         ),
 
       // NEW LAYOUTS TAB

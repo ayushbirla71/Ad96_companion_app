@@ -207,7 +207,12 @@ class SubscriptionDetailsPage extends StatelessWidget {
   }
 
   String formatStorage(dynamic bytes) {
+    // Handle unlimited
+    if (bytes.toString().toLowerCase() == "unlimited") {
+      return "Unlimited";
+    }
     if (bytes == null) return "0 GB";
+
     final value = bytes is int ? bytes : int.tryParse(bytes.toString()) ?? 0;
     final gb = value / (1024 * 1024 * 1024);
     return "${gb.toStringAsFixed(0)} GB";
@@ -464,7 +469,9 @@ class SubscriptionDetailsPage extends StatelessWidget {
                         final i = mapEntry.key;
                         final e = mapEntry.value;
                         final isEnabled =
-                            e.value == true || (e.value is int && e.value > 0);
+                            e.value == true ||
+                            (e.value is int && e.value > 0) ||
+                            e.value == 'unlimited';
                         final isLast = i == entries.length - 1;
 
                         return Column(
@@ -509,7 +516,11 @@ class SubscriptionDetailsPage extends StatelessWidget {
                                   Text(
                                     e.key == "STORAGE_LIMIT"
                                         ? formatStorage(e.value)
-                                        : "${e.value}",
+                                        : e.value.toString().toLowerCase() ==
+                                              "unlimited"
+                                        ? "Unlimited"
+                                        : e.value.toString(),
+
                                     style: TextStyle(
                                       color: isEnabled
                                           ? appColors.green
