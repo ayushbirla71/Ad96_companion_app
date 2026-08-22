@@ -14,14 +14,16 @@ import 'providers/group_provider.dart';
 import 'providers/subscription_provider.dart';
 
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
+import 'services/fcm_service.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // ✅ NEW WAY
-  // await FMTCStore('mapStore').manage.create();
+  // Initialize Firebase & FCM Push Notifications
+  await FCMService.initialize();
 
   runApp(
+
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()..checkAuth()),

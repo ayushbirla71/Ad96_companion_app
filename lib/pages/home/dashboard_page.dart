@@ -1208,29 +1208,6 @@
 //                 fontWeight: FontWeight.w600,
 //               ),
 //             ),
-//           ],
-//         ),
-//         const SizedBox(height: 8),
-//         ClipRRect(
-//           borderRadius: BorderRadius.circular(4),
-//           child: LinearProgressIndicator(
-//             value: value.clamp(0.0, 1.0),
-//             backgroundColor: Colors.white10,
-//             valueColor: AlwaysStoppedAnimation<Color>(color),
-//             minHeight: 5,
-//           ),
-//         ),
-//       ],
-//     ),
-//   );
-// }
-
-// class _QAction extends StatelessWidget {
-//   final IconData icon;
-//   final String label;
-//   final Color color;
-//   final VoidCallback onTap;
-
 //   const _QAction({
 //     required this.icon,
 //     required this.label,
@@ -1274,7 +1251,9 @@ import 'package:cms_app/pages/home/notifications_page.dart';
 import 'package:cms_app/pages/layoutpage/layout_access_page.dart';
 import 'package:cms_app/providers/subscription_provider.dart';
 import 'package:cms_app/services/api_service.dart';
+import 'package:cms_app/services/notification_api_service.dart';
 import 'package:flutter/material.dart';
+
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
@@ -1486,6 +1465,7 @@ class _DashboardPageState extends State<DashboardPage>
   String? _error;
   int _outlierPage = 0;
   int _eventPage = 0;
+  int _unreadNotificationCount = 0;
   AnimationController? _fadeCtrl;
   Animation<double>? _fadeAnim;
 
@@ -1507,6 +1487,19 @@ class _DashboardPageState extends State<DashboardPage>
     super.dispose();
   }
 
+  Future<void> _fetchUnreadNotificationCount() async {
+    try {
+      final res = await NotificationApiService.fetchNotifications(limit: 1);
+      if (res["success"] == true && mounted) {
+        setState(() {
+          _unreadNotificationCount = res["unreadCount"] ?? 0;
+        });
+      }
+    } catch (e) {
+      print("Error fetching unread notification count: $e");
+    }
+  }
+
   Future<void> _loadAll() async {
     setState(() {
       _loading = true;
@@ -1517,8 +1510,10 @@ class _DashboardPageState extends State<DashboardPage>
     try {
       await Future.wait([
         _fetchStats(),
+        _fetchUnreadNotificationCount(),
         context.read<SubscriptionProvider>().loadSubscription(),
         context.read<AdProvider>().loadAds(),
+
         context.read<DeviceProvider>().loadDevices(),
         context.read<ScheduleProvider>().loadSchedules(),
       ]);
@@ -1936,12 +1931,17 @@ class _DashboardPageState extends State<DashboardPage>
     actions: [
       _AppBarAction(
         icon: Icons.notifications_outlined,
-        badge:
-            _stats?.diagnosticErrors != null && (_stats!.diagnosticErrors) > 0
-            ? true
-            : false,
-        onTap: () => _go(const NotificationsPage()),
+        badge: _unreadNotificationCount > 0,
+        count: _unreadNotificationCount,
+        onTap: () async {
+          await Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const NotificationsPage()),
+          );
+          _fetchUnreadNotificationCount();
+        },
       ),
+
       const SizedBox(width: 6),
       _AppBarAction(
         icon: Icons.person_outline_rounded,
@@ -3029,10 +3029,12 @@ class _AppBarAction extends StatelessWidget {
   final IconData icon;
   final VoidCallback onTap;
   final bool badge;
+  final int count;
   const _AppBarAction({
     required this.icon,
     required this.onTap,
     this.badge = false,
+    this.count = 0,
   });
 
   @override
@@ -3053,17 +3055,27 @@ class _AppBarAction extends StatelessWidget {
             ),
             child: Icon(icon, color: c.textSecondary, size: 18),
           ),
-          if (badge)
+          if (badge || count > 0)
             Positioned(
-              top: 0,
-              right: 0,
+              top: -2,
+              right: -2,
               child: Container(
-                width: 10,
-                height: 10,
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
                 decoration: BoxDecoration(
                   color: c.red,
-                  shape: BoxShape.circle,
+                  borderRadius: BorderRadius.circular(10),
                   border: Border.all(color: Colors.white, width: 1.5),
+                ),
+                child: Center(
+                  child: Text(
+                    count > 99 ? '99+' : (count > 0 ? '$count' : ''),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 9,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -3072,6 +3084,7 @@ class _AppBarAction extends StatelessWidget {
     );
   }
 }
+
 
 // ─── Hero Badge ───────────────────────────────────────────────────────────────
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cms_app/theme/app_colors.dart';
+import 'package:cms_app/services/notification_api_service.dart';
 
 // ─── Notification Model ───────────────────────────────────────────────────────
 
@@ -55,8 +56,9 @@ class _NotificationsPageState extends State<NotificationsPage>
   // ── Expanded notification id ──
   String? _expandedId;
 
-  // ── Notifications list (seeded with welcome, ready for real data) ──
+  // ── Notifications list & API Loading ──
   late List<AppNotification> _notifications;
+  bool _isLoadingApi = false;
 
   @override
   void initState() {
@@ -68,7 +70,47 @@ class _NotificationsPageState extends State<NotificationsPage>
     _fadeAnim = CurvedAnimation(parent: _fadeCtrl, curve: Curves.easeOut);
     _notifications = _seedNotifications();
     _fadeCtrl.forward();
+    _fetchNotificationsFromApi();
   }
+
+  Future<void> _fetchNotificationsFromApi() async {
+    setState(() => _isLoadingApi = true);
+    final result = await NotificationApiService.fetchNotifications();
+    if (result["success"] == true) {
+      final List rawData = result["data"] ?? [];
+      if (rawData.isNotEmpty) {
+        final List<AppNotification> loadedList = rawData.map((item) {
+          final type = item["type"]?.toString().toUpperCase() ?? "GENERAL";
+          NotificationCategory category = NotificationCategory.system;
+          if (type.contains("LOGIN") || type.contains("SECURITY")) {
+            category = NotificationCategory.alert;
+          } else if (type.contains("DEVICE")) {
+            category = NotificationCategory.device;
+          } else if (type.contains("SCHEDULE")) {
+            category = NotificationCategory.schedule;
+          }
+
+          return AppNotification(
+            id: item["id"]?.toString() ?? DateTime.now().millisecondsSinceEpoch.toString(),
+            title: item["title"]?.toString() ?? "Notification",
+            body: item["body"]?.toString() ?? "",
+            category: category,
+            priority: NotificationPriority.medium,
+            timestamp: item["created_at"] != null
+                ? DateTime.tryParse(item["created_at"].toString()) ?? DateTime.now()
+                : DateTime.now(),
+            isRead: item["is_read"] == true,
+          );
+        }).toList();
+
+        setState(() {
+          _notifications = loadedList;
+        });
+      }
+    }
+    setState(() => _isLoadingApi = false);
+  }
+
 
   @override
   void dispose() {
@@ -117,6 +159,7 @@ class _NotificationsPageState extends State<NotificationsPage>
         n.isRead = true;
       }
     });
+    NotificationApiService.markAllAsRead();
     _snack('All notifications marked as read');
   }
 
@@ -125,14 +168,28 @@ class _NotificationsPageState extends State<NotificationsPage>
       final n = _notifications.firstWhere((n) => n.id == id);
       n.isRead = true;
     });
+    NotificationApiService.markAsRead(id);
   }
+
 
   void _dismiss(String id) {
     setState(() {
       _notifications.removeWhere((n) => n.id == id);
       if (_expandedId == id) _expandedId = null;
     });
+    NotificationApiService.deleteNotification(id);
+    _snack('Notification permanently deleted from database');
   }
+
+  void _clearAll() {
+    setState(() {
+      _notifications.clear();
+      _expandedId = null;
+    });
+    NotificationApiService.clearAllNotifications();
+    _snack('All notifications cleared permanently from database');
+  }
+
 
   void _snack(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -315,8 +372,15 @@ class _NotificationsPageState extends State<NotificationsPage>
             ),
           ),
         ),
+      if (_notifications.isNotEmpty)
+        IconButton(
+          icon: Icon(Icons.delete_sweep_rounded, color: appColors.red, size: 20),
+          tooltip: 'Clear all from database',
+          onPressed: _clearAll,
+        ),
       const SizedBox(width: 4),
     ],
+
     bottom: PreferredSize(
       preferredSize: const Size.fromHeight(1),
       child: Container(height: 1, color: appColors.border),
@@ -333,36 +397,49 @@ class _NotificationsPageState extends State<NotificationsPage>
 
         // ── List ──
         Expanded(
-          child: filtered.isEmpty
-              ? _emptyState()
-              : ListView.builder(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 48),
-                  itemCount: filtered.length,
-                  itemBuilder: (_, i) {
-                    final n = filtered[i];
-                    return _NotificationCard(
-                      notification: n,
-                      isExpanded: _expandedId == n.id,
-                      categoryIcon: _categoryIcon(n.category),
-                      categoryColor: _categoryColor(n.category),
-                      categoryBg: _categoryBg(n.category),
-                      priorityColor: _priorityColor(n.priority),
-                      timeAgo: _timeAgo(n.timestamp),
-                      onTap: () {
-                        setState(() {
-                          _expandedId = _expandedId == n.id ? null : n.id;
-                        });
-                        if (!n.isRead) _markRead(n.id);
-                      },
-                      onDismiss: () => _dismiss(n.id),
-                      onMarkRead: () => _markRead(n.id),
-                    );
-                  },
-                ),
+          child: RefreshIndicator(
+            onRefresh: _fetchNotificationsFromApi,
+            color: appColors.accent,
+            backgroundColor: appColors.surfaceHigh,
+            child: filtered.isEmpty
+                ? SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    child: SizedBox(
+                      height: MediaQuery.of(context).size.height * 0.6,
+                      child: _emptyState(),
+                    ),
+                  )
+                : ListView.builder(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 48),
+                    itemCount: filtered.length,
+                    itemBuilder: (_, i) {
+                      final n = filtered[i];
+                      return _NotificationCard(
+                        notification: n,
+                        isExpanded: _expandedId == n.id,
+                        categoryIcon: _categoryIcon(n.category),
+                        categoryColor: _categoryColor(n.category),
+                        categoryBg: _categoryBg(n.category),
+                        priorityColor: _priorityColor(n.priority),
+                        timeAgo: _timeAgo(n.timestamp),
+                        onTap: () {
+                          setState(() {
+                            _expandedId = _expandedId == n.id ? null : n.id;
+                          });
+                          if (!n.isRead) _markRead(n.id);
+                        },
+                        onDismiss: () => _dismiss(n.id),
+                        onMarkRead: () => _markRead(n.id),
+                      );
+                    },
+                  ),
+          ),
         ),
       ],
     );
   }
+
 
   // ── Filter chips row ──────────────────────────────────────────────────────
 
