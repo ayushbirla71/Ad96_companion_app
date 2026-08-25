@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:cms_app/theme/app_colors.dart';
 import 'package:cms_app/services/notification_api_service.dart';
+import 'package:cms_app/services/fcm_service.dart';
 
 // ─── Notification Model ───────────────────────────────────────────────────────
 
 enum NotificationCategory { system, device, schedule, alert, update, welcome }
 
 enum NotificationPriority { low, medium, high, critical }
+
 
 class AppNotification {
   final String id;
@@ -46,7 +48,7 @@ class NotificationsPage extends StatefulWidget {
 }
 
 class _NotificationsPageState extends State<NotificationsPage>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late AnimationController _fadeCtrl;
   late Animation<double> _fadeAnim;
 
@@ -63,88 +65,100 @@ class _NotificationsPageState extends State<NotificationsPage>
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _fadeCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 500),
     );
     _fadeAnim = CurvedAnimation(parent: _fadeCtrl, curve: Curves.easeOut);
-    _notifications = _seedNotifications();
+    _notifications = [];
     _fadeCtrl.forward();
+    _fetchNotificationsFromApi();
+    FCMService.onSyncEvent.addListener(_onSyncSignalReceived);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _fetchNotificationsFromApi();
+    }
+  }
+
+  void _onSyncSignalReceived() {
+    if (!mounted) return;
+
+    final msg = FCMService.lastSyncMessage;
+    final action = msg?.data["action"]?.toString();
+    final notifId = msg?.data["notification_id"]?.toString();
+
+    if (action == "NOTIFICATION_DELETED" && notifId != null && notifId.isNotEmpty) {
+      setState(() {
+        _notifications.removeWhere((n) => n.id == notifId);
+      });
+    } else if (action == "NOTIFICATIONS_CLEARED") {
+      setState(() {
+        _notifications.clear();
+      });
+    }
+
     _fetchNotificationsFromApi();
   }
 
   Future<void> _fetchNotificationsFromApi() async {
+    if (!mounted) return;
     setState(() => _isLoadingApi = true);
     final result = await NotificationApiService.fetchNotifications();
     if (result["success"] == true) {
       final List rawData = result["data"] ?? [];
-      if (rawData.isNotEmpty) {
-        final List<AppNotification> loadedList = rawData.map((item) {
-          final type = item["type"]?.toString().toUpperCase() ?? "GENERAL";
-          NotificationCategory category = NotificationCategory.system;
-          if (type.contains("LOGIN") || type.contains("SECURITY")) {
-            category = NotificationCategory.alert;
-          } else if (type.contains("DEVICE")) {
-            category = NotificationCategory.device;
-          } else if (type.contains("SCHEDULE")) {
-            category = NotificationCategory.schedule;
-          }
+      final List<AppNotification> loadedList = rawData.map<AppNotification>((item) {
+        NotificationCategory category = NotificationCategory.system;
+        final typeStr = (item["type"] ?? "").toString().toUpperCase();
+        if (typeStr == "LOGIN_SUCCESS" || typeStr == "SECURITY") {
+          category = NotificationCategory.alert;
+        } else if (typeStr == "DEVICE_OFFLINE" || typeStr == "DEVICE_ONLINE") {
 
-          return AppNotification(
-            id: item["id"]?.toString() ?? DateTime.now().millisecondsSinceEpoch.toString(),
-            title: item["title"]?.toString() ?? "Notification",
-            body: item["body"]?.toString() ?? "",
-            category: category,
-            priority: NotificationPriority.medium,
-            timestamp: item["created_at"] != null
-                ? DateTime.tryParse(item["created_at"].toString()) ?? DateTime.now()
-                : DateTime.now(),
-            isRead: item["is_read"] == true,
-          );
-        }).toList();
+          category = NotificationCategory.device;
+        } else if (typeStr == "SCHEDULE_ALERT" || typeStr == "CAMPAIGN") {
+          category = NotificationCategory.schedule;
+        } else if (typeStr == "SYSTEM") {
+          category = NotificationCategory.system;
+        }
 
+        return AppNotification(
+          id: item["notification_id"]?.toString() ?? item["id"]?.toString() ?? DateTime.now().millisecondsSinceEpoch.toString(),
+          title: item["title"]?.toString() ?? "Notification",
+          body: item["body"]?.toString() ?? "",
+          category: category,
+          priority: NotificationPriority.medium,
+          timestamp: item["created_at"] != null
+              ? DateTime.tryParse(item["created_at"].toString()) ?? DateTime.now()
+              : DateTime.now(),
+          isRead: item["is_read"] == true,
+        );
+      }).toList();
+
+      if (mounted) {
         setState(() {
           _notifications = loadedList;
         });
       }
     }
-    setState(() => _isLoadingApi = false);
+    if (mounted) {
+      setState(() => _isLoadingApi = false);
+    }
   }
 
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    FCMService.onSyncEvent.removeListener(_onSyncSignalReceived);
     _fadeCtrl.dispose();
     super.dispose();
   }
 
-  // ── Seed data (replace with API call when ready) ──────────────────────────
-
-  List<AppNotification> _seedNotifications() {
-    return [
-      AppNotification(
-        id: 'welcome_001',
-        title: 'Welcome to CMS Dashboard 🎉',
-        body:
-            'Your content management system is set up and ready to go. Start by adding your first device or scheduling a campaign.',
-        detail:
-            'Everything is configured and running smoothly. Here\'s what you can do next:\n\n'
-            '• Add your first device group under Devices\n'
-            '• Upload media assets under Ads\n'
-            '• Create your first schedule under Schedules\n'
-            '• Explore Carousels and Live Content for advanced campaigns\n\n'
-            'Our team is here to help if you need anything. Reach out to your sales representative anytime.',
-        category: NotificationCategory.welcome,
-        priority: NotificationPriority.low,
-        timestamp: DateTime.now().subtract(const Duration(minutes: 3)),
-        isRead: false,
-        isPinned: true,
-        actionLabel: 'Get Started',
-      ),
-    ];
-  }
-
   // ── Helpers ───────────────────────────────────────────────────────────────
+
 
   List<AppNotification> get _filtered {
     if (_activeFilter == null) return _notifications;
@@ -382,9 +396,12 @@ class _NotificationsPageState extends State<NotificationsPage>
     ],
 
     bottom: PreferredSize(
-      preferredSize: const Size.fromHeight(1),
-      child: Container(height: 1, color: appColors.border),
+      preferredSize: const Size.fromHeight(2),
+      child: _isLoadingApi
+          ? LinearProgressIndicator(color: appColors.accent, minHeight: 2)
+          : Container(height: 1, color: appColors.border),
     ),
+
   );
 
   Widget _body() {
