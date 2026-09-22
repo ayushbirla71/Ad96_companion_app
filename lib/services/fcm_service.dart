@@ -1,11 +1,13 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:http/http.dart' as http;
 import '../utils/api_constants.dart';
 import '../utils/token_storage.dart';
+
 
 // Top-level background message handler
 
@@ -31,8 +33,13 @@ class FCMService {
   static String get backendUrl =>
       "${ApiConstants.baseUrl}/v1/notifications/register-token";
 
+  static final ValueNotifier<int> onSyncEvent = ValueNotifier<int>(0);
+  static RemoteMessage? lastSyncMessage;
+
   static final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
+
+
 
   static const AndroidNotificationChannel _androidChannel =
       AndroidNotificationChannel(
@@ -139,35 +146,47 @@ class FCMService {
       // 5. Foreground Message Handler (Shows Local Banner when app is open)
       FirebaseMessaging.onMessage.listen((RemoteMessage message) {
         print(
-          "Foreground FCM message received: ${message.notification?.title}",
+          "Foreground FCM message received: ${message.notification?.title ?? message.data}",
         );
 
-        RemoteNotification? notification = message.notification;
-        AndroidNotification? android = message.notification?.android;
+        final action = message.data["action"];
+        final isSilentAction =
+            action == "NOTIFICATION_DELETED" || action == "NOTIFICATIONS_CLEARED";
 
-        if (notification != null) {
-          _localNotifications.show(
-            notification.hashCode,
-            notification.title,
-            notification.body,
-            NotificationDetails(
-              android: AndroidNotificationDetails(
-                _androidChannel.id,
-                _androidChannel.name,
-                channelDescription: _androidChannel.description,
-                icon: android?.smallIcon ?? '@mipmap/ic_launcher',
-                importance: Importance.max,
-                priority: Priority.high,
-                playSound: true,
+        if (!isSilentAction) {
+          RemoteNotification? notification = message.notification;
+          AndroidNotification? android = message.notification?.android;
+
+          if (notification != null) {
+            _localNotifications.show(
+              notification.hashCode,
+              notification.title,
+              notification.body,
+              NotificationDetails(
+                android: AndroidNotificationDetails(
+                  _androidChannel.id,
+                  _androidChannel.name,
+                  channelDescription: _androidChannel.description,
+                  icon: android?.smallIcon ?? '@mipmap/ic_launcher',
+                  importance: Importance.max,
+                  priority: Priority.high,
+                  playSound: true,
+                ),
+                iOS: const DarwinNotificationDetails(
+                  presentAlert: true,
+                  presentBadge: true,
+                  presentSound: true,
+                ),
               ),
-              iOS: const DarwinNotificationDetails(
-                presentAlert: true,
-                presentBadge: true,
-                presentSound: true,
-              ),
-            ),
-          );
+            );
+          }
         }
+
+        // Always trigger UI sync notifier in real time
+        FCMService.lastSyncMessage = message;
+        FCMService.onSyncEvent.value++;
+
+
       });
 
       // 6. Handle Notification Tap (When user clicks push notification)

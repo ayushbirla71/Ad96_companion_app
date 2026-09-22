@@ -1252,7 +1252,9 @@ import 'package:cms_app/pages/layoutpage/layout_access_page.dart';
 import 'package:cms_app/providers/subscription_provider.dart';
 import 'package:cms_app/services/api_service.dart';
 import 'package:cms_app/services/notification_api_service.dart';
+import 'package:cms_app/services/fcm_service.dart';
 import 'package:flutter/material.dart';
+
 
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -1270,7 +1272,7 @@ import '../schedules/schedules_page.dart';
 import '../settings/settings_page.dart';
 import '../exports/export_details_page.dart';
 import 'package:cms_app/utils/feature_access.dart';
-import 'package:cms_app/providers/subscription_provider.dart';
+
 
 // ─── Safe parsers ──────────────────────────────────────────────────────────────
 
@@ -1459,7 +1461,7 @@ class DashboardPage extends StatefulWidget {
 }
 
 class _DashboardPageState extends State<DashboardPage>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   bool _loading = true;
   DashboardStats? _stats;
   String? _error;
@@ -1472,6 +1474,7 @@ class _DashboardPageState extends State<DashboardPage>
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     final ctrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 600),
@@ -1479,10 +1482,35 @@ class _DashboardPageState extends State<DashboardPage>
     _fadeCtrl = ctrl;
     _fadeAnim = CurvedAnimation(parent: ctrl, curve: Curves.easeOut);
     _loadAll();
+    FCMService.onSyncEvent.addListener(_onSyncSignalReceived);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _fetchUnreadNotificationCount();
+    }
+  }
+
+  void _onSyncSignalReceived() {
+    if (!mounted) return;
+
+    final msg = FCMService.lastSyncMessage;
+    final action = msg?.data["action"]?.toString();
+
+    if (action == "NOTIFICATIONS_CLEARED") {
+      setState(() {
+        _unreadNotificationCount = 0;
+      });
+    }
+
+    _fetchUnreadNotificationCount();
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    FCMService.onSyncEvent.removeListener(_onSyncSignalReceived);
     _fadeCtrl?.dispose();
     super.dispose();
   }
@@ -1499,6 +1527,7 @@ class _DashboardPageState extends State<DashboardPage>
       print("Error fetching unread notification count: $e");
     }
   }
+
 
   Future<void> _loadAll() async {
     setState(() {
@@ -2027,25 +2056,9 @@ class _DashboardPageState extends State<DashboardPage>
 
   Widget _body() {
     final s = _stats;
-    final now = DateTime.now();
-    const months = [
-      '',
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-    final monthName = months[now.month];
 
     return SingleChildScrollView(
+
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 48),
       child: Column(
