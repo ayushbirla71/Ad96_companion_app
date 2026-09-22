@@ -188,14 +188,18 @@ class FCMService {
       String platform = Platform.isAndroid
           ? "android"
           : (Platform.isIOS ? "ios" : "web");
+      final authToken = await TokenStorage.getToken();
       final response = await http.post(
         Uri.parse(backendUrl),
-        headers: {"Content-Type": "application/json"},
+        headers: {
+          "Content-Type": "application/json",
+          if (authToken != null) "Authorization": "Bearer $authToken",
+        },
         body: jsonEncode({
           "deviceToken": token,
           "platform": platform,
           "deviceId": deviceId ?? "flutter_device_${Platform.operatingSystem}",
-          "userId": userId,
+          if (userId != null) "userId": userId,
         }),
       );
 
@@ -208,6 +212,33 @@ class FCMService {
       }
     } catch (e) {
       print("Network error registering Flutter FCM token: $e");
+    }
+  }
+
+  static Future<void> unregisterTokenWithBackend() async {
+    try {
+      final authToken = await TokenStorage.getToken();
+      final deviceId = await TokenStorage.getOrCreateDeviceId();
+      String? token;
+      try {
+        token = await FirebaseMessaging.instance.getToken();
+      } catch (_) {}
+
+      final unregisterUrl =
+          "${ApiConstants.baseUrl}/v1/notifications/unregister-token";
+      await http.post(
+        Uri.parse(unregisterUrl),
+        headers: {
+          "Content-Type": "application/json",
+          if (authToken != null) "Authorization": "Bearer $authToken",
+        },
+        body: jsonEncode({
+          if (token != null) "deviceToken": token,
+          "deviceId": deviceId,
+        }),
+      );
+    } catch (e) {
+      print("Error unregistering Flutter FCM token: $e");
     }
   }
 }

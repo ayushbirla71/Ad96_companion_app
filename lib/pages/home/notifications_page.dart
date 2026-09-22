@@ -76,39 +76,39 @@ class _NotificationsPageState extends State<NotificationsPage>
   Future<void> _fetchNotificationsFromApi() async {
     setState(() => _isLoadingApi = true);
     final result = await NotificationApiService.fetchNotifications();
-    if (result["success"] == true) {
+    if (result["success"] == true && mounted) {
       final List rawData = result["data"] ?? [];
-      if (rawData.isNotEmpty) {
-        final List<AppNotification> loadedList = rawData.map((item) {
-          final type = item["type"]?.toString().toUpperCase() ?? "GENERAL";
-          NotificationCategory category = NotificationCategory.system;
-          if (type.contains("LOGIN") || type.contains("SECURITY")) {
-            category = NotificationCategory.alert;
-          } else if (type.contains("DEVICE")) {
-            category = NotificationCategory.device;
-          } else if (type.contains("SCHEDULE")) {
-            category = NotificationCategory.schedule;
-          }
+      final List<AppNotification> loadedList = rawData.map((item) {
+        final type = item["type"]?.toString().toUpperCase() ?? "GENERAL";
+        NotificationCategory category = NotificationCategory.system;
+        if (type.contains("LOGIN") || type.contains("SECURITY")) {
+          category = NotificationCategory.alert;
+        } else if (type.contains("DEVICE")) {
+          category = NotificationCategory.device;
+        } else if (type.contains("SCHEDULE")) {
+          category = NotificationCategory.schedule;
+        }
 
-          return AppNotification(
-            id: item["id"]?.toString() ?? DateTime.now().millisecondsSinceEpoch.toString(),
-            title: item["title"]?.toString() ?? "Notification",
-            body: item["body"]?.toString() ?? "",
-            category: category,
-            priority: NotificationPriority.medium,
-            timestamp: item["created_at"] != null
-                ? DateTime.tryParse(item["created_at"].toString()) ?? DateTime.now()
-                : DateTime.now(),
-            isRead: item["is_read"] == true,
-          );
-        }).toList();
+        return AppNotification(
+          id: item["id"]?.toString() ?? item["notification_id"]?.toString() ?? DateTime.now().millisecondsSinceEpoch.toString(),
+          title: item["title"]?.toString() ?? "Notification",
+          body: item["body"]?.toString() ?? "",
+          category: category,
+          priority: NotificationPriority.medium,
+          timestamp: item["created_at"] != null
+              ? DateTime.tryParse(item["created_at"].toString()) ?? DateTime.now()
+              : DateTime.now(),
+          isRead: item["is_read"] == true,
+        );
+      }).toList();
 
-        setState(() {
-          _notifications = loadedList;
-        });
-      }
+      setState(() {
+        _notifications = loadedList;
+      });
     }
-    setState(() => _isLoadingApi = false);
+    if (mounted) {
+      setState(() => _isLoadingApi = false);
+    }
   }
 
 

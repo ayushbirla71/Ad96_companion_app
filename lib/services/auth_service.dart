@@ -46,6 +46,9 @@ class AuthService {
 
 
   static Future<void> logout() async {
+    try {
+      await FCMService.unregisterTokenWithBackend();
+    } catch (_) {}
     await TokenStorage.clearToken();
   }
 
