@@ -5,4 +5,7 @@ class ApiConstants {
   // static const String baseUrl = "https://142dfc01a583.ngrok-free.app/api";
 
   static const String login = "/login";
+  static const String forgotPassword = "/user/forgot-password";
+  static const String verifyOtp = "/user/verify-otp";
+  static const String resetPassword = "/user/reset-password";
 }

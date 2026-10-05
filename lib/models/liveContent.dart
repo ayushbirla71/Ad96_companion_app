@@ -1,21 +1,20 @@
-import 'package:cms_app/services/api_service.dart';
-
 class LiveContent {
   final String id;
   final String name;
-  final String channel_id;
+  final String channelId;
   final String type;
   final String url;
   final int duration;
   final String status;
-  final String channelStatus; // NEW
-
+  final String channelStatus;
   final DateTime createdAt;
+
+  String get channel_id => channelId;
 
   LiveContent({
     required this.id,
     required this.name,
-    required this.channel_id,
+    required this.channelId,
     required this.type,
     required this.url,
     required this.duration,
@@ -26,40 +25,19 @@ class LiveContent {
 
   factory LiveContent.fromJson(Map<String, dynamic> json) {
     return LiveContent(
-      id: json["live_content_id"],
+      id: json["live_content_id"] ?? "",
       name: json["name"] ?? "",
-      channel_id: json["channel_id"] ?? "",
+      channelId: json["channel_id"] ?? "",
       type: json["content_type"] ?? "",
       url: json["url"] ?? "",
       duration: json["duration"] ?? 0,
       status: json["status"] ?? "",
-      // SAFE
       channelStatus: json["channel"] != null
           ? (json["channel"]["status"] ?? "")
           : "",
-      createdAt: DateTime.parse(json["created_at"]),
+      createdAt: json["created_at"] != null
+          ? DateTime.parse(json["created_at"])
+          : DateTime.now(),
     );
-  }
-}
-
-Future<void> createLiveContent({
-  required String name,
-
-  required String url,
-  required int duration,
-  required String type,
-  required String status,
-}) async {
-  final response = await ApiService.post("/live-content/create", {
-    "name": name,
-
-    "url": url,
-    "duration": duration,
-    "type": type,
-    "status": status,
-  });
-
-  if (response.statusCode != 200) {
-    throw Exception("Failed to create live content");
   }
 }

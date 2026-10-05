@@ -1,80 +1,4 @@
-// class Carousel {
-//   final String carouselId;
-//   final String name;
-//   final String status;
-//   final int totalDuration;
-//   final List<CarouselItem> items;
-
-//   Carousel({
-//     required this.carouselId,
-//     required this.name,
-//     required this.status,
-//     required this.totalDuration,
-//     required this.items,
-//   });
-
-//   /// optional universal id getter
-//   String get id => carouselId;
-
-//   factory Carousel.fromJson(Map<String, dynamic> json) {
-//     return Carousel(
-//       carouselId: json["carousel_id"] ?? "",
-//       name: json["name"] ?? "",
-//       status: json["status"] ?? "",
-//       totalDuration: json["total_duration"] ?? 0,
-//       items: (json["items"] as List? ?? [])
-//           .map((e) => CarouselItem.fromJson(e))
-//           .toList(),
-//     );
-//   }
-// }
-
-// class CarouselItem {
-//   final String carouselItemId;
-//   final int displayOrder;
-//   final Ad ad;
-
-//   CarouselItem({
-//     required this.carouselItemId,
-//     required this.displayOrder,
-//     required this.ad,
-//   });
-
-//   factory CarouselItem.fromJson(Map<String, dynamic> json) {
-//     return CarouselItem(
-//       carouselItemId: json["carousel_item_id"] ?? "",
-//       displayOrder: json["display_order"] ?? 0,
-//       ad: Ad.fromJson(json["Ad"] ?? {}),
-//     );
-//   }
-// }
-
-// class Ad {
-//   final String adId;
-//   final String name;
-//   final String url;
-//   final int duration;
-
-//   Ad({
-//     required this.adId,
-//     required this.name,
-//     required this.url,
-//     required this.duration,
-//   });
-
-//   factory Ad.fromJson(Map<String, dynamic> json) {
-//     return Ad(
-//       adId: json["ad_id"] ?? "",
-//       name: json["name"] ?? "",
-//       url: json["url"] ?? "",
-//       duration: json["duration"] ?? 0,
-//     );
-//   }
-// }
-
-
-
-
+import 'ad.dart';
 
 class Carousel {
   final String carouselId;
@@ -118,10 +42,6 @@ class Carousel {
     );
   }
 }
-
-
-
-
 
 class CarouselItem {
   final String id;
@@ -191,33 +111,5 @@ class CarouselItem {
       "ad_id": adId,
       "display_order": displayOrder,
     };
-  }
-} 
-
-
-
-class Ad {
-  final String adId;
-  final String name;
-  final String url;
-  final int duration;
-  final String? status;
-
-  Ad({
-    required this.adId,
-    required this.name,
-    required this.url,
-    required this.duration,
-    this.status,
-  });
-
-  factory Ad.fromJson(Map<String, dynamic> json) {
-    return Ad(
-      adId: json["ad_id"] ?? "",
-      name: json["name"] ?? "",
-      url: json["url"] ?? "",
-      duration: json["duration"] ?? 0,
-      status: json["status"],
-    );
   }
 }

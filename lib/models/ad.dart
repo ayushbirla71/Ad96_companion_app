@@ -10,19 +10,22 @@ class Ad {
     required this.adId,
     required this.name,
     this.url,
-    required this.clientName,
+    this.clientName = "",
     required this.duration,
-    required this.status,
+    this.status = "",
   });
+
   String get id => adId;
+
   factory Ad.fromJson(Map<String, dynamic> json) {
     return Ad(
-      adId: json['ad_id'],
-      name: json['name'],
-      url: json['url'],
-      clientName: json['client_name'],
-      duration: json['duration'],
-      status: json['status'],
+      adId: json['ad_id']?.toString() ?? '',
+      name: json['name']?.toString() ?? '',
+      url: json['url']?.toString() ?? json['file_url']?.toString(),
+      clientName: json['client_name']?.toString() ?? json['Client']?['name']?.toString() ?? '',
+      duration: json['duration'] is int ? json['duration'] : int.tryParse(json['duration']?.toString() ?? '0') ?? 0,
+      status: json['status']?.toString() ?? '',
     );
   }
 }
+
