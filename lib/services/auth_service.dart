@@ -44,6 +44,28 @@ class AuthService {
     return false;
   }
 
+  /// Asks the backend to email a password reset link.
+  /// Returns null on success, or an error message to show the user.
+  /// The link opens the web reset page, so the app has no reset screen.
+  static Future<String?> forgotPassword(String email) async {
+    try {
+      final response = await ApiService.post(ApiConstants.forgotPassword, {
+        "email": email,
+      });
+
+      if (response.statusCode == 200) return null;
+
+      try {
+        final message = jsonDecode(response.body)["message"];
+        if (message is String && message.isNotEmpty) return message;
+      } catch (_) {}
+      return "Could not send reset link. Please try again.";
+    } catch (e) {
+      print("Forgot password request failed: $e");
+      return "Could not reach the server. Check your connection and try again.";
+    }
+  }
+
 
   static Future<void> logout() async {
     try {
