@@ -78,6 +78,33 @@ Future<void> stopChannel(String id) async {
   notifyListeners();
 }
 
+  /// Stops the channel, retrying with backoff. Returns whether it succeeded.
+  /// Does not touch [loading], so it is safe to call during page teardown.
+  Future<bool> stopChannelWithRetry(String id, {int attempts = 3}) async {
+    for (var i = 1; i <= attempts; i++) {
+      try {
+        await ChannelService.stopChannel(id);
+        return true;
+      } catch (e) {
+        debugPrint("Stop channel attempt $i/$attempts failed: $e");
+        if (i < attempts) await Future.delayed(Duration(seconds: i * 2));
+      }
+    }
+    return false;
+  }
+
+  /// Liveness ping while streaming. Transient failures are only logged.
+  /// Returns false when the backend does not support heartbeats (older
+  /// backend), meaning the caller should stop pinging.
+  Future<bool> heartbeat(String id) async {
+    try {
+      return await ChannelService.sendHeartbeat(id);
+    } catch (e) {
+      debugPrint("Heartbeat failed: $e");
+      return true;
+    }
+  }
+
   /// CREATE CHANNEL
   Future<void> createChannel(String name) async {
     try {

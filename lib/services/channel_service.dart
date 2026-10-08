@@ -75,6 +75,25 @@ class ChannelService {
     }
   }
 
+  /// HEARTBEAT (sent while a camera stream is live; the backend auto-stops
+  /// the channel if these stop arriving).
+  ///
+  /// Returns false when the backend does not know the endpoint (an older
+  /// backend), so callers can stop sending instead of failing every time.
+  static Future<bool> sendHeartbeat(String id) async {
+    final response = await ApiService.put("/streaming/channel/$id/heartbeat", {});
+
+    if (response.statusCode == 404 ||
+        response.statusCode == 405 ||
+        response.statusCode == 501) {
+      return false;
+    }
+    if (response.statusCode != 200) {
+      throw Exception("Heartbeat failed: ${response.statusCode}");
+    }
+    return true;
+  }
+
   /// STOP CHANNEL
   static Future<void> stopChannel(String id) async {
     final response = await ApiService.put(

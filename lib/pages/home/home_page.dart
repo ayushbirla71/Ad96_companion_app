@@ -222,6 +222,10 @@
 // }
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:cms_app/providers/channel_provider.dart';
+import 'package:cms_app/providers/live_content_provider.dart';
+import 'package:cms_app/services/streaming/streaming_recovery_service.dart';
 import 'package:cms_app/theme/app_colors.dart';
 import 'package:cms_app/pages/ads/ad_create_page.dart';
 import 'package:cms_app/pages/channel/create_channel_page.dart';
@@ -247,6 +251,19 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int index = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    // Finish any live-stream teardown that never completed (app killed / offline).
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      StreamingRecoveryService.recoverIfNeeded(
+        channels: context.read<ChannelProvider>(),
+        liveContent: context.read<LiveContentProvider>(),
+      );
+    });
+  }
 
   final pages = const [
     DashboardPage(),

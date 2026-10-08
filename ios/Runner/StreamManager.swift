@@ -1,178 +1,35 @@
-// import Foundation
-// import AVFoundation
-// import HaishinKit
-// import VideoToolbox
-
-// final class StreamManager {
-
-//     static let shared = StreamManager()
-
-//     private let connection = RTMPConnection()
-//     private lazy var stream = RTMPStream(connection: connection)
-
-//     private init() {
-
-//         // VIDEO SETTINGS
-//         stream.videoSettings = VideoCodecSettings(
-//             videoSize: CGSize(width: 720, height: 1280),
-//             bitRate: 1_000_000,
-//             profileLevel: kVTProfileLevel_H264_Baseline_AutoLevel as String
-//         )
-
-//         // AUDIO SETTINGS
-//         stream.audioSettings = AudioCodecSettings(
-//             bitRate: 64_000
-//         )
-//     }
-
-//     func startStream(url: String, streamKey: String) {
-
-//         Task {
-//             do {
-
-//                 // BACK CAMERA
-//                 if let camera = AVCaptureDevice.default(
-//                     .builtInWideAngleCamera,
-//                     for: .video,
-//                     position: .back
-//                 ) {
-//                     try await stream.attachCamera(camera)
-//                 }
-
-//                 // MICROPHONE
-//                 if let mic = AVCaptureDevice.default(for: .audio) {
-//                     try await stream.attachAudio(mic)
-//                 }
-
-//                 // CONNECT
-//                 connection.connect(url)
-
-//                 // PUBLISH
-//                 stream.publish(streamKey)
-
-//                 print("✅ Streaming started")
-
-//             } catch {
-//                 print("❌ Stream error: \(error)")
-//             }
-//         }
-//     }
-
-//     func stopStream() {
-//         stream.close()
-//         connection.close()
-
-//         print("🛑 Streaming stopped")
-//     }
-// }
-
-
-
-// import Foundation
-// import AVFoundation
-// import VideoToolbox
-
-// import HaishinKit
-// import RTMPHaishinKit
-
-// final class StreamManager {
-
-//     static let shared = StreamManager()
-
-//     private let connection = RTMPConnection()
-//     private let mixer = MediaMixer()
-//     private lazy var stream = RTMPStream(connection: connection)
-
-//     private init() {
-
-//         Task {
-//             do {
-
-//                 // MARK: Add Stream Output
-//                 try await mixer.addOutput(stream)
-
-//                 // MARK: Video Settings
-//                 try await stream.setVideoSettings(
-//                     VideoCodecSettings(
-//                         videoSize: CGSize(width: 720, height: 1280),
-//                         bitRate: 1_000_000,
-//                         profileLevel: kVTProfileLevel_H264_Baseline_AutoLevel as String
-//                     )
-//                 )
-
-//                 // MARK: Audio Settings
-//                 try await stream.setAudioSettings(
-//                     AudioCodecSettings(
-//                         bitRate: 64_000
-//                     )
-//                 )
-
-//             } catch {
-//                 print("❌ Init Error: \(error)")
-//             }
-//         }
-//     }
-
-//     func startStream(url: String, streamKey: String) {
-
-//         Task {
-//             do {
-
-//                 // MARK: Camera
-//                 if let camera = AVCaptureDevice.default(
-//                     .builtInWideAngleCamera,
-//                     for: .video,
-//                     position: .back
-//                 ) {
-
-//                     try await mixer.attachVideo(camera, track: 0)
-//                 }
-
-//                 // MARK: Microphone
-//                 if let mic = AVCaptureDevice.default(for: .audio) {
-
-//                     try await mixer.attachAudio(mic, track: 0)
-//                 }
-
-//                 // MARK: Connect
-//                 try await connection.connect(url)
-
-//                 // MARK: Publish
-//                 try await stream.publish(streamKey)
-
-//                 print("✅ Streaming Started")
-
-//             } catch {
-//                 print("❌ Stream Error: \(error)")
-//             }
-//         }
-//     }
-
-//     func stopStream() {
-
-//         Task {
-//             do {
-
-//                 try await stream.close()
-//                 try await connection.close()
-
-//                 print("🛑 Streaming Stopped")
-
-//             } catch {
-//                 print("❌ Stop Error: \(error)")
-//             }
-//         }
-//     }
-// }
-
-
 import Foundation
 import UIKit
 import AVFoundation
 import VideoToolbox
 import MetalKit
+import Flutter
 import HaishinKit
 import RTMPHaishinKit
+
+/// Errors surfaced to Flutter as `FlutterError(code:message:)`.
+enum StreamError: Error {
+    case simulator
+    case permissionDenied
+    case previewFailed(String)
+    case alreadyStreaming
+    case connectFailed(String)
+
+    var flutterError: FlutterError {
+        switch self {
+        case .simulator:
+            return FlutterError(code: "SIMULATOR", message: "Camera streaming is not supported on the iOS Simulator.", details: nil)
+        case .permissionDenied:
+            return FlutterError(code: "PERMISSION_DENIED", message: "Camera or microphone permission denied.", details: nil)
+        case .previewFailed(let reason):
+            return FlutterError(code: "PREVIEW_FAILED", message: reason, details: nil)
+        case .alreadyStreaming:
+            return FlutterError(code: "ALREADY_STREAMING", message: "A stream is already running.", details: nil)
+        case .connectFailed(let reason):
+            return FlutterError(code: "CONNECT_FAILED", message: reason, details: nil)
+        }
+    }
+}
 
 final class StreamManager {
 
@@ -182,69 +39,88 @@ final class StreamManager {
     private let connection = RTMPConnection()
     private let mixer = MediaMixer()
     private lazy var stream = RTMPStream(connection: connection)
+    private var setupTask: Task<Void, Never>?
 
+    /// Set before connecting, so a second start can never overlap the first.
     private var isStreaming = false
+    private var isStopping = false
+    private var previewRunning = false
     private var isFrontFacing = false
     private var isLandscape = false
+
+    private var stopTask: Task<Void, Never>?
+    private var monitorTask: Task<Void, Never>?
+
+    /// Events for Flutter (`streaming_events` EventChannel).
+    var eventSink: FlutterEventSink?
 
     private init() {
         hkView.videoGravity = .resizeAspectFill
         hkView.backgroundColor = .black
-        Task {
+        setupTask = Task {
             try? await mixer.addOutput(hkView)
             try? await mixer.addOutput(stream)
         }
+        observeSystemEvents()
     }
 
-    ////////////////////////////////////////////////////////////
-    /// 1. PREVIEW & SETUP
-    ////////////////////////////////////////////////////////////
+    // MARK: - Events to Flutter
 
-    func startPreview(isFront: Bool, isLandscape: Bool) {
+    func emit(_ event: String, reason: String? = nil) {
+        DispatchQueue.main.async { [weak self] in
+            self?.eventSink?(["event": event, "reason": reason ?? NSNull()])
+        }
+    }
+
+    // MARK: - 1. Preview & setup
+
+    /// Returns once permissions are resolved and the preview is running.
+    func startPreview(isFront: Bool, isLandscape: Bool) async throws {
         #if targetEnvironment(simulator)
-        print("❌ ERROR: Camera preview is not supported on the iOS Simulator.")
-        return
+        throw StreamError.simulator
         #else
         self.isFrontFacing = isFront
         self.isLandscape = isLandscape
-        
-        Task {
-            let video = await AVCaptureDevice.requestAccess(for: .video)
-            let audio = await AVCaptureDevice.requestAccess(for: .audio)
-            guard video && audio else {
-                print("❌ Permissions denied")
-                return
-            }
 
+        await setupTask?.value
+
+        let video = await AVCaptureDevice.requestAccess(for: .video)
+        let audio = await AVCaptureDevice.requestAccess(for: .audio)
+        guard video && audio else { throw StreamError.permissionDenied }
+
+        do {
             try await configureSettings()
             try await attachCamera()
             try await attachMicrophone()
-            
             await mixer.startRunning()
-            print("✅ Preview Started")
+            previewRunning = true
+        } catch {
+            throw StreamError.previewFailed("\(error)")
         }
         #endif
     }
 
-    func switchCamera(isFront: Bool) {
+    func switchCamera(isFront: Bool) async throws {
         #if !targetEnvironment(simulator)
         self.isFrontFacing = isFront
-        Task {
+        do {
             try await attachCamera()
+        } catch {
+            throw StreamError.previewFailed("\(error)")
         }
         #endif
     }
 
-    func setOrientation(isLandscape: Bool) {
+    func setOrientation(isLandscape: Bool) async throws {
         self.isLandscape = isLandscape
-        Task {
+        do {
             try await configureSettings()
+        } catch {
+            throw StreamError.previewFailed("\(error)")
         }
     }
 
-    ////////////////////////////////////////////////////////////
-    /// HARDWARE ATTACHMENT
-    ////////////////////////////////////////////////////////////
+    // MARK: - Hardware attachment
 
     private func attachCamera() async throws {
         let position: AVCaptureDevice.Position = isFrontFacing ? .front : .back
@@ -259,14 +135,12 @@ final class StreamManager {
         }
     }
 
-    ////////////////////////////////////////////////////////////
-    /// CONFIGURATION
-    ////////////////////////////////////////////////////////////
+    // MARK: - Configuration
 
     private func configureSettings() async throws {
         let width: CGFloat = isLandscape ? 1280 : 720
         let height: CGFloat = isLandscape ? 720 : 1280
-        
+
         let orientation: AVCaptureVideoOrientation = isLandscape ? .landscapeRight : .portrait
         await mixer.setVideoOrientation(orientation)
 
@@ -281,53 +155,154 @@ final class StreamManager {
         try await stream.setAudioSettings(AudioCodecSettings(bitRate: 64_000))
     }
 
-    ////////////////////////////////////////////////////////////
-    /// 2. START PUBLISHING
-    ////////////////////////////////////////////////////////////
+    // MARK: - 2. Publish
 
-    func startStream(url: String, streamKey: String) {
-        if isStreaming { return }
-
+    /// Returns only after the RTMP connection is up and publishing has begun.
+    func startStream(url: String, streamKey: String) async throws {
         #if targetEnvironment(simulator)
-        print("❌ ERROR: Cannot publish RTMP stream from iOS Simulator.")
-        return
+        throw StreamError.simulator
         #else
-        Task {
-            do {
-                let connectResp = try await connection.connect(url)
-                print("✅ RTMP Connected: \(connectResp.status?.code ?? "")")
+        if isStreaming { throw StreamError.alreadyStreaming }
+        isStreaming = true
+        isStopping = false
+        emit("connecting")
 
-                try await Task.sleep(nanoseconds: 2_000_000_000)
+        do {
+            _ = try await connection.connect(url)
 
-                let pubResp = try await stream.publish(streamKey)
-                print("✅ STREAM STARTED: \(pubResp.status?.code ?? "")")
-                
-                isStreaming = true
-            } catch {
-                print("❌ ERROR => \(error)")
+            // Give the server a moment between connect and publish.
+            try await Task.sleep(nanoseconds: 2_000_000_000)
+            if isStopping { throw CancellationError() }
+
+            _ = try await stream.publish(streamKey)
+            if isStopping { throw CancellationError() }
+
+            startMonitor()
+            emit("live")
+        } catch {
+            let cancelledByStop = isStopping
+            isStreaming = false
+            try? await stream.close()
+            try? await connection.close()
+            if !cancelledByStop {
+                emit("failed", reason: "\(error)")
             }
+            throw StreamError.connectFailed("\(error)")
         }
         #endif
     }
 
-    ////////////////////////////////////////////////////////////
-    /// STOP STREAM
-    ////////////////////////////////////////////////////////////
+    /// Watches the RTMP connection so a server-side drop reaches Flutter
+    /// instead of leaving the UI showing LIVE.
+    private func startMonitor() {
+        monitorTask?.cancel()
+        monitorTask = Task { [weak self] in
+            guard let self = self else { return }
+            for await status in await self.connection.status {
+                if Task.isCancelled { return }
+                guard self.isStreaming && !self.isStopping else { continue }
 
-    func stopStream() {
-        Task {
-            do {
-                try await mixer.attachVideo(nil)
-                try await mixer.attachAudio(nil)
-                await mixer.stopRunning()
-                
-                try await stream.close()
-                try await connection.close()
-                isStreaming = false
-                print("🛑 STREAM STOPPED")
-            } catch {
-                print("❌ STOP ERROR => \(error)")
+                if status.code == RTMPConnection.Code.connectClosed.rawValue
+                    || status.code == RTMPConnection.Code.connectFailed.rawValue {
+                    self.emit("failed", reason: "RTMP connection lost: \(status.code)")
+                    await self.stopStream()
+                    return
+                }
             }
         }
+    }
+
+    // MARK: - 3. Stop
+
+    /// Idempotent and awaitable: concurrent callers share one stop run.
+    /// Releases the stream, the camera and the microphone.
+    func stopStream() async {
+        if let running = stopTask {
+            await running.value
+            return
+        }
+        let task = Task { await self.performStop() }
+        stopTask = task
+        await task.value
+        stopTask = nil
+    }
+
+    private func performStop() async {
+        isStopping = true
+        monitorTask?.cancel()
+        monitorTask = nil
+        let wasStreaming = isStreaming
+
+        try? await stream.close()
+        try? await connection.close()
+        try? await mixer.attachVideo(nil)
+        try? await mixer.attachAudio(nil)
+        await mixer.stopRunning()
+
+        isStreaming = false
+        previewRunning = false
+        isStopping = false
+        if wasStreaming { emit("stopped") }
+    }
+
+    /// For `applicationWillTerminate`: blocks briefly so the stop can finish.
+    func stopStreamSync(timeout: TimeInterval = 1.5) {
+        guard isStreaming || previewRunning else { return }
+        let done = DispatchSemaphore(value: 0)
+        Task {
+            await self.stopStream()
+            done.signal()
+        }
+        _ = done.wait(timeout: .now() + timeout)
+    }
+
+    // MARK: - System events
+
+    private func observeSystemEvents() {
+        let center = NotificationCenter.default
+
+        center.addObserver(
+            forName: UIApplication.didEnterBackgroundNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.handleBackground()
+        }
+
+        // Phone call, Siri, another app taking the audio session.
+        center.addObserver(
+            forName: AVAudioSession.interruptionNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] note in
+            guard
+                let raw = note.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt,
+                AVAudioSession.InterruptionType(rawValue: raw) == .began
+            else { return }
+            self?.handleInterruption(reason: "audio-interrupted")
+        }
+    }
+
+    /// The camera is cut when the app is backgrounded, so end the session
+    /// cleanly instead of leaving a dead RTMP publish behind.
+    private func handleBackground() {
+        guard isStreaming || previewRunning else { return }
+        emit("interrupted", reason: "background")
+
+        let application = UIApplication.shared
+        var taskId = UIBackgroundTaskIdentifier.invalid
+        taskId = application.beginBackgroundTask(withName: "stop-stream") {
+            application.endBackgroundTask(taskId)
+        }
+        Task {
+            await self.stopStream()
+            application.endBackgroundTask(taskId)
+        }
+    }
+
+    private func handleInterruption(reason: String) {
+        guard isStreaming || previewRunning else { return }
+        emit("interrupted", reason: reason)
+        Task { await self.stopStream() }
     }
 }

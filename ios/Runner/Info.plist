@@ -27,28 +27,15 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>
-	<string>Camera access required for streaming</string>
+	<string>Camera access is required to broadcast live video to your channel.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Microphone access required for streaming</string>
+	<string>Microphone access is required to broadcast audio with your live video.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 <string>Photo library access is required to upload and select media.</string>
 
 <key>NSPhotoLibraryAddUsageDescription</key>
 <string>Photo library access is required to save media.</string>
 
-<key>UISupportedInterfaceOrientations</key>
-<array>
-    <string>UIInterfaceOrientationPortrait</string>
-    <string>UIInterfaceOrientationLandscapeLeft</string>
-    <string>UIInterfaceOrientationLandscapeRight</string>
-</array>
-<key>UISupportedInterfaceOrientations~ipad</key>
-<array>
-    <string>UIInterfaceOrientationPortrait</string>
-    <string>UIInterfaceOrientationPortraitUpsideDown</string>
-    <string>UIInterfaceOrientationLandscapeLeft</string>
-    <string>UIInterfaceOrientationLandscapeRight</string>
-</array>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>
