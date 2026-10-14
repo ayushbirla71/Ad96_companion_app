@@ -486,14 +486,15 @@ class _LoginPageState extends State<LoginPage> {
     setState(() => loading = true);
 
     final auth = context.read<AuthProvider>();
-    final success = await auth.login(
+    final error = await auth.login(
       emailCtrl.text.trim(),
       passCtrl.text.trim(),
     );
 
+    if (!mounted) return;
     setState(() => loading = false);
 
-    if (success) {
+    if (error == null) {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const HomePage()),
@@ -501,7 +502,7 @@ class _LoginPageState extends State<LoginPage> {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Invalid credentials'),
+          content: Text(error),
           backgroundColor: const Color(0xFFDC2626),
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(

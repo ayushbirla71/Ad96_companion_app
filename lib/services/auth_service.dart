@@ -1,13 +1,16 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:http/http.dart' as http;
 import '../utils/api_constants.dart';
 import '../utils/token_storage.dart';
 import 'api_service.dart';
 import 'fcm_service.dart';
 
 class AuthService {
-  static Future<bool> login(String email, String password) async {
+  /// Returns null on success, or an error message to show the user
+  /// (e.g. "This account is suspended. Please contact support.").
+  static Future<String?> login(String email, String password) async {
     String? fcmToken;
     try {
       fcmToken = await FirebaseMessaging.instance.getToken();
@@ -18,13 +21,19 @@ class AuthService {
 
     final deviceId = await TokenStorage.getOrCreateDeviceId();
 
-    final response = await ApiService.post(ApiConstants.login, {
-      "email": email,
-      "password": password,
-      "deviceToken": fcmToken ?? "",
-      "platform": Platform.isAndroid ? "android" : (Platform.isIOS ? "ios" : "web"),
-      "deviceId": deviceId,
-    });
+    final http.Response response;
+    try {
+      response = await ApiService.post(ApiConstants.login, {
+        "email": email,
+        "password": password,
+        "deviceToken": fcmToken ?? "",
+        "platform": Platform.isAndroid ? "android" : (Platform.isIOS ? "ios" : "web"),
+        "deviceId": deviceId,
+      });
+    } catch (e) {
+      print("Login request failed: $e");
+      return "Could not reach the server. Check your connection and try again.";
+    }
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
@@ -37,11 +46,19 @@ class AuthService {
         await FCMService.registerTokenWithBackend(fcmToken, userId: userId, deviceId: deviceId);
       }
 
-      return true;
+      return null;
     }
 
+    // Suspended / deleted accounts come back as 403 with a readable message.
+    if (response.statusCode == 403) {
+      try {
+        final message = jsonDecode(response.body)["message"];
+        if (message is String && message.isNotEmpty) return message;
+      } catch (_) {}
+      return "This account is suspended. Please contact support.";
+    }
 
-    return false;
+    return "Invalid credentials";
   }
 
   /// Asks the backend to email a password reset link.

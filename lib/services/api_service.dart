@@ -117,6 +117,7 @@
 
 
 
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -128,6 +129,7 @@ import '../utils/api_constants.dart';
 import '../utils/token_storage.dart';
 import '../utils/app_navigator.dart';
 import '../providers/auth_provider.dart';
+import '../providers/connectivity_provider.dart';
 
 class ApiService {
 
@@ -141,6 +143,34 @@ class ApiService {
       if (json) "Content-Type": "application/json",
       if (token != null) "Authorization": "Bearer $token",
     };
+  }
+
+  // -----------------------------
+  // Network failures
+  // -----------------------------
+  /// Runs a request; on a network error (offline, DNS, timeout) asks the
+  /// connectivity provider to re-check so the "No internet" popup appears,
+  /// then rethrows so callers keep their existing error handling.
+  static Future<T> _guard<T>(Future<T> Function() request) async {
+    try {
+      return await request();
+    } on SocketException {
+      _reportNetworkFailure();
+      rethrow;
+    } on http.ClientException {
+      _reportNetworkFailure();
+      rethrow;
+    } on TimeoutException {
+      _reportNetworkFailure();
+      rethrow;
+    }
+  }
+
+  static void _reportNetworkFailure() {
+    final context = AppNavigator.navigatorKey.currentContext;
+    if (context != null) {
+      context.read<ConnectivityProvider>().checkNow();
+    }
   }
 
   // -----------------------------
@@ -161,7 +191,37 @@ class ApiService {
       throw Exception("Session expired");
     }
 
+    // Client suspended/deleted by an admin while the user is logged in.
+    if (response.statusCode == 403 && _isAccountBlocked(response.body)) {
+      await TokenStorage.clearToken();
+
+      final context = AppNavigator.navigatorKey.currentContext;
+
+      if (context != null) {
+        context.read<AuthProvider>().logout();
+      }
+
+      throw Exception(_blockedMessage(response.body));
+    }
+
     return response;
+  }
+
+  static bool _isAccountBlocked(String body) {
+    try {
+      final code = jsonDecode(body)["code"];
+      return code == "CLIENT_SUSPENDED" || code == "CLIENT_DELETED";
+    } catch (_) {
+      return false;
+    }
+  }
+
+  static String _blockedMessage(String body) {
+    try {
+      final message = jsonDecode(body)["message"];
+      if (message is String && message.isNotEmpty) return message;
+    } catch (_) {}
+    return "This account is suspended. Please contact support.";
   }
 
   // -----------------------------
@@ -169,9 +229,11 @@ class ApiService {
   // -----------------------------
   static Future<http.Response> get(String endpoint) async {
 
-    final response = await http.get(
-      Uri.parse(ApiConstants.baseUrl + endpoint),
-      headers: await _headers(),
+    final response = await _guard(
+      () async => http.get(
+        Uri.parse(ApiConstants.baseUrl + endpoint),
+        headers: await _headers(),
+      ),
     );
 
     return _handleResponse(response);
@@ -185,10 +247,12 @@ class ApiService {
     Map<String, dynamic> body,
   ) async {
 
-    final response = await http.post(
-      Uri.parse(ApiConstants.baseUrl + endpoint),
-      headers: await _headers(json: true),
-      body: jsonEncode(body),
+    final response = await _guard(
+      () async => http.post(
+        Uri.parse(ApiConstants.baseUrl + endpoint),
+        headers: await _headers(json: true),
+        body: jsonEncode(body),
+      ),
     );
 
     return _handleResponse(response);
@@ -202,10 +266,12 @@ class ApiService {
     Map<String, dynamic> body,
   ) async {
 
-    final response = await http.put(
-      Uri.parse(ApiConstants.baseUrl + endpoint),
-      headers: await _headers(json: true),
-      body: jsonEncode(body),
+    final response = await _guard(
+      () async => http.put(
+        Uri.parse(ApiConstants.baseUrl + endpoint),
+        headers: await _headers(json: true),
+        body: jsonEncode(body),
+      ),
     );
 
     return _handleResponse(response);
@@ -216,9 +282,11 @@ class ApiService {
   // -----------------------------
   static Future<http.Response> delete(String endpoint) async {
 
-    final response = await http.delete(
-      Uri.parse(ApiConstants.baseUrl + endpoint),
-      headers: await _headers(),
+    final response = await _guard(
+      () async => http.delete(
+        Uri.parse(ApiConstants.baseUrl + endpoint),
+        headers: await _headers(),
+      ),
     );
 
     return _handleResponse(response);
@@ -248,7 +316,7 @@ class ApiService {
       ),
     );
 
-    final response = await request.send();
+    final response = await _guard(() => request.send());
 
     if (response.statusCode == 401) {
 

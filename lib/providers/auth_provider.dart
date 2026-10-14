@@ -86,13 +86,14 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<bool> login(String email, String password) async {
-    final success = await AuthService.login(email, password);
-    if (success) {
+  /// Returns null on success, or an error message to show the user.
+  Future<String?> login(String email, String password) async {
+    final error = await AuthService.login(email, password);
+    if (error == null) {
       _isAuthenticated = true;
       notifyListeners();
     }
-    return success;
+    return error;
   }
 
   Future<void> logout() async {

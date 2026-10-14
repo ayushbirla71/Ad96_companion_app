@@ -47,6 +47,7 @@ import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../pages/login/login_page.dart';
 import '../pages/home/home_page.dart';
+import '../widgets/no_internet_overlay.dart';
 
 // 👇 1. IMPORT YOUR COLORS HERE!
 import '../theme/app_colors.dart'; // Adjust this path if your colors file is somewhere else!
@@ -83,6 +84,10 @@ class MyApp extends StatelessWidget {
         ),
       ),
       // 👆 END THEME BLOCK
+
+      // Shows the "No internet connection" popup above every screen.
+      builder: (context, child) =>
+          NoInternetOverlay(child: child ?? const SizedBox.shrink()),
 
       home: Consumer<AuthProvider>(
         builder: (_, auth, __) {
