@@ -469,6 +469,11 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
   // ─── Delete ────────────────────────────────────────────────────────────────
 
   void _confirmDelete(BuildContext context) {
+    final current = _currentDevice(context);
+    if (current.isDeleting || current.deleteFailed) {
+      _showDeleteStatus(context, current);
+      return;
+    }
     showDialog(
       context: context,
       barrierColor: Colors.black.withOpacity(0.5),
@@ -515,7 +520,9 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Are you sure you want to delete this device? This action cannot be undone.',
+                'The app on the device will be told to exit, and the record is '
+                'removed once the device confirms. If it is offline you can '
+                'retry or force delete later.',
                 style: TextStyle(color: appColors.textSecondary, fontSize: 13),
                 textAlign: TextAlign.center,
               ),
@@ -569,47 +576,107 @@ class _DeviceDetailsPageState extends State<DeviceDetailsPage> {
     );
   }
 
+  /// The list entry carries the live delete state; widget.device is a snapshot.
+  Device _currentDevice(BuildContext context) {
+    final list = context.read<DeviceProvider>().devices;
+    return list.firstWhere(
+      (d) => d.deviceId == widget.device.deviceId,
+      orElse: () => widget.device,
+    );
+  }
+
+  /// Delete is a handshake: the screen is told to exit and the record is removed
+  /// once it confirms, so success here means "command sent", not "deleted".
   Future<void> _deleteDevice(BuildContext context) async {
     final provider = context.read<DeviceProvider>();
     final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
     setState(() => _deleting = true);
-    try {
-      final response = await ApiService.post(
-        '/device/delete/${widget.device.deviceId}',
-        {},
-      );
-      if (response.statusCode == 200 ||
-          response.statusCode == 204 ||
-          response.statusCode == 201) {
-        provider.devices.removeWhere(
-          (d) => d.deviceId == widget.device.deviceId,
-        );
-        provider.notifyListeners();
-        messenger.showSnackBar(
-          SnackBar(
-            content: const Text('Device deleted successfully'),
-            backgroundColor: appColors.green,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-          ),
-        );
-        Navigator.pop(context);
-      } else {
-        messenger.showSnackBar(
-          SnackBar(
-            content: Text('Failed to delete device (${response.statusCode})'),
-          ),
-        );
-      }
-    } catch (e) {
+    final error = await provider.requestDelete(widget.device.deviceId);
+    if (!mounted) return;
+    setState(() => _deleting = false);
+    if (error == null) {
       messenger.showSnackBar(
-        SnackBar(content: Text('Error deleting device: $e')),
+        SnackBar(
+          content: const Text('Exit command sent. Waiting for the device to confirm.'),
+          backgroundColor: appColors.green,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
       );
-    } finally {
-      setState(() => _deleting = false);
+      navigator.pop();
+    } else {
+      messenger.showSnackBar(SnackBar(content: Text(error)));
     }
+  }
+
+  /// Shown instead of the confirm dialog while a delete is waiting on the screen
+  /// or has failed (screen offline / never confirmed): retry or force delete.
+  void _showDeleteStatus(BuildContext context, Device device) {
+    final provider = context.read<DeviceProvider>();
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+    final failed = device.deleteFailed;
+
+    Future<void> run(Future<String?> Function() action, String done) async {
+      final error = await action();
+      messenger.showSnackBar(SnackBar(content: Text(error ?? done)));
+    }
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: appColors.surface,
+        title: Text(
+          failed ? 'Device did not confirm deletion' : 'Waiting for device',
+          style: TextStyle(
+            color: appColors.textPrimary,
+            fontSize: 17,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        content: Text(
+          failed
+              ? '${device.deleteFailureReason ?? 'The device did not respond.'} '
+                    'It may be offline. Retry to send the command again, or force '
+                    'delete to remove the record without its confirmation.'
+              : 'The exit command was sent'
+                    '${device.deleteAttempts > 1 ? ' (attempt ${device.deleteAttempts})' : ''}. '
+                    'The record is removed as soon as the device confirms.',
+          style: TextStyle(color: appColors.textSecondary, fontSize: 13),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Close'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(dialogContext);
+              run(
+                () => provider.retryDelete(device.deviceId),
+                'Exit command re-sent',
+              );
+            },
+            child: Text(failed ? 'Retry' : 'Resend'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: appColors.red),
+            onPressed: () async {
+              Navigator.pop(dialogContext);
+              await run(
+                () => provider.forceDelete(device.deviceId),
+                'Device deleted without device confirmation',
+              );
+              if (mounted) navigator.pop();
+            },
+            child: const Text('Force delete'),
+          ),
+        ],
+      ),
+    );
   }
 
   // ─── Helpers ───────────────────────────────────────────────────────────────

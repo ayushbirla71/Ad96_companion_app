@@ -1145,8 +1145,23 @@ class _DeviceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final sc = _statusColor(device.status ?? '');
-    final sb = _statusBg(device.status ?? '');
+    // A delete in flight replaces the online/offline badge.
+    final deletion = device.deletionStatus as String? ?? 'active';
+    final deleteLabel = deletion == 'deleting'
+        ? 'DELETING…'
+        : deletion == 'delete_failed'
+        ? 'DELETE FAILED'
+        : null;
+    final sc = deletion == 'deleting'
+        ? appColors.accent
+        : deletion == 'delete_failed'
+        ? appColors.red
+        : _statusColor(device.status ?? '');
+    final sb = deletion == 'deleting'
+        ? appColors.surfaceHigh
+        : deletion == 'delete_failed'
+        ? appColors.redLight
+        : _statusBg(device.status ?? '');
 
     return GestureDetector(
       onTap: onTap,
@@ -1258,7 +1273,8 @@ class _DeviceCard extends StatelessWidget {
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              (device.status ?? 'unknown').toUpperCase(),
+                              deleteLabel ??
+                                  (device.status ?? 'unknown').toUpperCase(),
                               style: TextStyle(
                                 color: sc,
                                 fontSize: 9,
