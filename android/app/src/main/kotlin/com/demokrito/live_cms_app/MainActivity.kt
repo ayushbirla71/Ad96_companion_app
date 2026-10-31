@@ -1,4 +1,4 @@
-package com.demokrito.cms_app
+package com.demokrito.live_cms_app
 
 import io.flutter.embedding.android.FlutterActivity
 

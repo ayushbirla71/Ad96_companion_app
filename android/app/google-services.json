@@ -1,21 +1,21 @@
 {
   "project_info": {
-    "project_number": "80844393688",
-    "project_id": "ad96-c974f",
-    "storage_bucket": "ad96-c974f.firebasestorage.app"
+    "project_number": "894680885358",
+    "project_id": "stg-cms-3f818",
+    "storage_bucket": "stg-cms-3f818.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:80844393688:android:dc774e1cf19a004d941bad",
+        "mobilesdk_app_id": "1:894680885358:android:2786b33f9ee7e705799e7f",
         "android_client_info": {
-          "package_name": "com.demokrito.cms_app"
+          "package_name": "com.demokrito.live_cms_app"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyCQEcy7Q0tstFeqeqYD75siwEOX5FqzM1A"
+          "current_key": "AIzaSyDnEq4u03JAqco4f26f7wgAEvI3Zvb-KVY"
         }
       ],
       "services": {

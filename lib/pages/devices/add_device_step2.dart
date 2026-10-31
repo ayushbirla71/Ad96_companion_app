@@ -121,7 +121,7 @@ class _AddDeviceStep2PageState extends State<AddDeviceStep2Page> {
               children: [
                 TileLayer(
                   urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-                  userAgentPackageName: 'com.demokrito.cms_app',
+                  userAgentPackageName: 'com.demokrito.live_cms_app',
                 ),
                 if (selectedLocation != null)
                   MarkerLayer(
